@@ -54,7 +54,7 @@ export default function Login() {
             employee_id: employee.id,
             employee_username: employee.username,
             employee_name: employee.name,
-            check_in: new Date().toISOString(),
+            clock_in: new Date().toISOString(),
             date: new Date().toISOString().split('T')[0]
           });
 

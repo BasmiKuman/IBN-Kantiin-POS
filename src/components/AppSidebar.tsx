@@ -94,15 +94,15 @@ export function AppSidebar() {
           .select('*')
           .eq('employee_id', employeeId)
           .eq('date', today)
-          .is('check_out', null)
-          .order('check_in', { ascending: false })
+          .is('clock_out', null)
+          .order('clock_in', { ascending: false })
           .limit(1);
 
         if (attendances && attendances.length > 0) {
-          // Update check_out
+          // Update clock_out
           await supabase
             .from('attendance')
-            .update({ check_out: new Date().toISOString() })
+            .update({ clock_out: new Date().toISOString() })
             .eq('id', attendances[0].id);
         }
       } catch (error) {

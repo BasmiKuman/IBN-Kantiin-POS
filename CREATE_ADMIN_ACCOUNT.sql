@@ -173,8 +173,8 @@ CREATE TABLE IF NOT EXISTS public.attendance (
   employee_id UUID REFERENCES public.employees(id) ON DELETE CASCADE,
   employee_username TEXT NOT NULL,
   employee_name TEXT NOT NULL,
-  check_in TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  check_out TIMESTAMPTZ,
+  clock_in TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  clock_out TIMESTAMPTZ,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
