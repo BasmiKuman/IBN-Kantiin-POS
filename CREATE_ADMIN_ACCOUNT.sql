@@ -133,12 +133,34 @@ CREATE TABLE IF NOT EXISTS public.employees (
   email TEXT,
   phone TEXT,
   position TEXT,
+  salary DECIMAL(12,2),
+  user_id UUID,
   photo_url TEXT,
   hire_date DATE,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Add missing columns if table already exists
+DO $$ 
+BEGIN
+  -- Add salary column if not exists
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = 'public' 
+                 AND table_name = 'employees' 
+                 AND column_name = 'salary') THEN
+    ALTER TABLE public.employees ADD COLUMN salary DECIMAL(12,2);
+  END IF;
+  
+  -- Add user_id column if not exists
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_schema = 'public' 
+                 AND table_name = 'employees' 
+                 AND column_name = 'user_id') THEN
+    ALTER TABLE public.employees ADD COLUMN user_id UUID;
+  END IF;
+END $$;
 
 -- Index untuk mempercepat pencarian username
 CREATE INDEX IF NOT EXISTS idx_employees_username ON public.employees(username);
