@@ -1,0 +1,383 @@
+// =====================================================
+// SUPABASE QUICK REFERENCE - IBN KANTIIN POS
+// =====================================================
+
+import { supabase } from '@/integrations/supabase/client';
+
+// =====================================================
+// 1. PRODUCTS - Manajemen Produk
+// =====================================================
+
+// Get all products
+const { data: products, error } = await supabase
+  .from('products')
+  .select('*');
+
+// Get products with category
+const { data: productsWithCategory } = await supabase
+  .from('products')
+  .select(`
+    *,
+    categories (
+      id,
+      name,
+      description
+    )
+  `);
+
+// Add new product
+const { data: newProduct, error } = await supabase
+  .from('products')
+  .insert({
+    name: 'Nasi Goreng',
+    sku: 'FOOD-001',
+    price: 25000,
+    cost: 15000,
+    stock: 50,
+    category_id: 'uuid-here'
+  })
+  .select()
+  .single();
+
+// Update product stock
+const { data, error } = await supabase
+  .from('products')
+  .update({ stock: 100 })
+  .eq('id', productId)
+  .select()
+  .single();
+
+// Search products
+const { data, error } = await supabase
+  .from('products')
+  .select('*')
+  .ilike('name', '%nasi%')
+  .eq('is_active', true);
+
+// =====================================================
+// 2. CUSTOMERS - Manajemen Pelanggan
+// =====================================================
+
+// Get all customers
+const { data: customers } = await supabase
+  .from('customers')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+// Add new customer
+const { data: newCustomer } = await supabase
+  .from('customers')
+  .insert({
+    name: 'John Doe',
+    phone: '08123456789',
+    email: 'john@example.com',
+    tier: 'bronze',
+    points: 0
+  })
+  .select()
+  .single();
+
+// Update customer points
+const { data } = await supabase
+  .from('customers')
+  .update({ 
+    points: currentPoints + earnedPoints,
+    total_purchases: currentTotal + newAmount 
+  })
+  .eq('id', customerId)
+  .select()
+  .single();
+
+// Search customer by phone
+const { data: customer } = await supabase
+  .from('customers')
+  .select('*')
+  .eq('phone', '08123456789')
+  .single();
+
+// =====================================================
+// 3. TRANSACTIONS - Transaksi Penjualan
+// =====================================================
+
+// Create new transaction
+const { data: transaction, error } = await supabase
+  .from('transactions')
+  .insert({
+    transaction_number: `TRX-${Date.now()}`,
+    customer_id: customerId,
+    cashier_id: employeeId,
+    subtotal: 50000,
+    discount: 5000,
+    tax: 0,
+    total: 45000,
+    payment_method: 'cash',
+    payment_amount: 50000,
+    change_amount: 5000,
+    status: 'completed'
+  })
+  .select()
+  .single();
+
+// Add transaction items
+const items = [
+  {
+    transaction_id: transaction.id,
+    product_id: product1.id,
+    product_name: product1.name,
+    quantity: 2,
+    unit_price: product1.price,
+    subtotal: product1.price * 2
+  },
+  // ... more items
+];
+
+const { data: transactionItems } = await supabase
+  .from('transaction_items')
+  .insert(items)
+  .select();
+
+// Get transactions with details
+const { data: transactions } = await supabase
+  .from('transactions')
+  .select(`
+    *,
+    customers (
+      name,
+      phone,
+      tier
+    ),
+    employees:cashier_id (
+      name
+    ),
+    transaction_items (
+      *,
+      products (
+        name,
+        sku
+      )
+    )
+  `)
+  .order('created_at', { ascending: false });
+
+// Get daily sales
+const today = new Date().toISOString().split('T')[0];
+const { data: dailySales } = await supabase
+  .from('transactions')
+  .select('total')
+  .gte('created_at', `${today}T00:00:00`)
+  .lte('created_at', `${today}T23:59:59`)
+  .eq('status', 'completed');
+
+const totalSales = dailySales.reduce((sum, t) => sum + parseFloat(t.total), 0);
+
+// =====================================================
+// 4. CATEGORIES - Kategori Produk
+// =====================================================
+
+// Get all categories
+const { data: categories } = await supabase
+  .from('categories')
+  .select('*');
+
+// Get category with product count
+const { data: categoriesWithCount } = await supabase
+  .from('categories')
+  .select(`
+    *,
+    products (count)
+  `);
+
+// =====================================================
+// 5. EMPLOYEES - Karyawan
+// =====================================================
+
+// Get all active employees
+const { data: employees } = await supabase
+  .from('employees')
+  .select('*')
+  .eq('is_active', true);
+
+// Get employee by user_id
+const { data: employee } = await supabase
+  .from('employees')
+  .select('*')
+  .eq('user_id', userId)
+  .single();
+
+// =====================================================
+// 6. REPORTS - Laporan
+// =====================================================
+
+// Sales by date range
+const { data: salesReport } = await supabase
+  .from('transactions')
+  .select('*')
+  .gte('created_at', startDate)
+  .lte('created_at', endDate)
+  .eq('status', 'completed');
+
+// Top selling products
+const { data: topProducts } = await supabase
+  .from('transaction_items')
+  .select(`
+    product_id,
+    product_name,
+    quantity,
+    products (
+      name,
+      price
+    )
+  `)
+  .order('quantity', { ascending: false })
+  .limit(10);
+
+// Revenue by payment method
+const { data: revenueByMethod } = await supabase
+  .from('transactions')
+  .select('payment_method, total')
+  .eq('status', 'completed');
+
+// =====================================================
+// 7. REALTIME SUBSCRIPTIONS
+// =====================================================
+
+// Subscribe to new transactions
+const subscription = supabase
+  .channel('transactions')
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'transactions'
+    },
+    (payload) => {
+      console.log('New transaction:', payload.new);
+      // Update UI
+    }
+  )
+  .subscribe();
+
+// Subscribe to product stock changes
+const stockSubscription = supabase
+  .channel('product-stock')
+  .on(
+    'postgres_changes',
+    {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'products',
+      filter: 'stock=lt.10'
+    },
+    (payload) => {
+      console.log('Low stock alert:', payload.new);
+    }
+  )
+  .subscribe();
+
+// Unsubscribe
+subscription.unsubscribe();
+
+// =====================================================
+// 8. AUTHENTICATION (if needed)
+// =====================================================
+
+// Sign in
+const { data, error } = await supabase.auth.signInWithPassword({
+  email: 'user@example.com',
+  password: 'password'
+});
+
+// Sign out
+await supabase.auth.signOut();
+
+// Get current user
+const { data: { user } } = await supabase.auth.getUser();
+
+// Check user role
+const { data: userRole } = await supabase
+  .from('user_roles')
+  .select('role')
+  .eq('user_id', user.id)
+  .single();
+
+// =====================================================
+// 9. UTILITY FUNCTIONS
+// =====================================================
+
+// Generate transaction number
+function generateTransactionNumber() {
+  const date = new Date();
+  const year = date.getFullYear().toString().slice(-2);
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `TRX${year}${month}${day}${random}`;
+}
+
+// Calculate customer tier
+function calculateTier(totalPurchases: number): string {
+  if (totalPurchases >= 5000000) return 'platinum';
+  if (totalPurchases >= 2000000) return 'gold';
+  if (totalPurchases >= 500000) return 'silver';
+  return 'bronze';
+}
+
+// Calculate points (1 point per 1000 rupiah)
+function calculatePoints(amount: number): number {
+  return Math.floor(amount / 1000);
+}
+
+// =====================================================
+// 10. ERROR HANDLING
+// =====================================================
+
+async function handleSupabaseOperation() {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*');
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Failed to fetch products:', err);
+    // Show toast notification
+    return null;
+  }
+}
+
+// =====================================================
+// USEFUL ENUMS (from database)
+// =====================================================
+
+export const AppRole = {
+  ADMIN: 'admin',
+  KASIR: 'kasir',
+  MANAJER: 'manajer'
+} as const;
+
+export const CustomerTier = {
+  BRONZE: 'bronze',
+  SILVER: 'silver',
+  GOLD: 'gold',
+  PLATINUM: 'platinum'
+} as const;
+
+export const PaymentMethod = {
+  CASH: 'cash',
+  DEBIT: 'debit',
+  CREDIT: 'credit',
+  QRIS: 'qris',
+  TRANSFER: 'transfer'
+} as const;
+
+export const TransactionStatus = {
+  COMPLETED: 'completed',
+  PENDING: 'pending',
+  CANCELLED: 'cancelled'
+} as const;

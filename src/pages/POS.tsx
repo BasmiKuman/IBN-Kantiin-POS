@@ -1,33 +1,125 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone } from "lucide-react";
+import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Loader2, Printer, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useProducts } from "@/hooks/supabase/useProducts";
+import { useCategories } from "@/hooks/supabase/useCategories";
+import { useCreateTransaction, generateTransactionNumber } from "@/hooks/supabase/useTransactions";
+import { useSearchCustomer, useUpdateCustomerPoints } from "@/hooks/supabase/useCustomers";
+import { toast } from "@/hooks/use-toast";
+import { Receipt } from "@/components/Receipt";
+import { KitchenReceipt } from "@/components/KitchenReceipt";
+import { useReactToPrint } from "react-to-print";
 
 interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   quantity: number;
   category: string;
 }
 
+interface PaymentSettings {
+  cashEnabled: boolean;
+  cardEnabled: boolean;
+  ewalletEnabled: boolean;
+  transferEnabled: boolean;
+  taxRate: number;
+  serviceCharge: number;
+  showTaxSeparately: boolean;
+}
+
 export default function POS() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [orderNotes, setOrderNotes] = useState("");
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  const [kitchenReceiptDialogOpen, setKitchenReceiptDialogOpen] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash' | 'qris' | 'transfer'>('cash');
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
+    cashEnabled: true,
+    cardEnabled: false,
+    ewalletEnabled: true,
+    transferEnabled: true,
+    taxRate: 10,
+    serviceCharge: 0,
+    showTaxSeparately: true,
+  });
+  const [lastTransaction, setLastTransaction] = useState<{
+    transactionNumber: string;
+    date: Date;
+    items: CartItem[];
+    subtotal: number;
+    tax: number;
+    taxRate: number;
+    serviceCharge: number;
+    total: number;
+    paymentMethod: 'cash' | 'qris' | 'transfer';
+    paymentAmount: number;
+    changeAmount: number;
+    customerName?: string;
+    customerPoints?: number;
+    earnedPoints: number;
+  } | null>(null);
 
-  const products = [
-    { id: 1, name: "Nasi Goreng", price: 15000, category: "Makanan" },
-    { id: 2, name: "Mie Goreng", price: 15000, category: "Makanan" },
-    { id: 3, name: "Ayam Bakar", price: 25000, category: "Makanan" },
-    { id: 4, name: "Es Teh Manis", price: 5000, category: "Minuman" },
-    { id: 5, name: "Kopi Susu", price: 8000, category: "Minuman" },
-    { id: 6, name: "Jus Jeruk", price: 10000, category: "Minuman" },
-    { id: 7, name: "Sate Ayam", price: 20000, category: "Makanan" },
-    { id: 8, name: "Gado-gado", price: 15000, category: "Makanan" },
-  ];
+  const [lastOpenBill, setLastOpenBill] = useState<{
+    orderNumber: string;
+    date: Date;
+    items: CartItem[];
+    customerName?: string;
+    notes?: string;
+  } | null>(null);
+
+  // State untuk menyimpan semua open bills
+  const [openBills, setOpenBills] = useState<Array<{
+    orderNumber: string;
+    date: Date;
+    items: CartItem[];
+    customerName?: string;
+    notes?: string;
+    subtotal: number;
+    tax: number;
+    serviceCharge: number;
+    total: number;
+  }>>([]);
+
+  const receiptRef = useRef<HTMLDivElement>(null);
+  const kitchenReceiptRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: receiptRef,
+  });
+
+  const handlePrintKitchen = useReactToPrint({
+    contentRef: kitchenReceiptRef,
+  });
+
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: categories = [] } = useCategories();
+  const { data: customer } = useSearchCustomer(customerPhone);
+  const createTransaction = useCreateTransaction();
+  const updateCustomerPoints = useUpdateCustomerPoints();
+
+  // Load payment settings from localStorage
+  useEffect(() => {
+    const loadPaymentSettings = () => {
+      const saved = localStorage.getItem("settings_payment");
+      if (saved) {
+        setPaymentSettings(JSON.parse(saved));
+      }
+    };
+    loadPaymentSettings();
+  }, []);
 
   const addToCart = (product: typeof products[0]) => {
     const existingItem = cart.find((item) => item.id === product.id);
@@ -38,11 +130,17 @@ export default function POS() {
         )
       );
     } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+      setCart([...cart, { 
+        id: product.id,
+        name: product.name, 
+        price: Number(product.price), 
+        quantity: 1, 
+        category: product.categories?.name || 'Lainnya' 
+      }]);
     }
   };
 
-  const updateQuantity = (id: number, change: number) => {
+  const updateQuantity = (id: string, change: number) => {
     setCart(
       cart
         .map((item) =>
@@ -52,17 +150,298 @@ export default function POS() {
     );
   };
 
-  const removeFromCart = (id: number) => {
+  const removeFromCart = (id: string) => {
     setCart(cart.filter((item) => item.id !== id));
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
+  const tax = paymentSettings.showTaxSeparately ? (subtotal * paymentSettings.taxRate / 100) : 0;
+  const serviceCharge = subtotal * paymentSettings.serviceCharge / 100;
+  const total = subtotal + tax + serviceCharge;
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handlePayment = async (method: 'cash' | 'qris' | 'transfer') => {
+    setSelectedPaymentMethod(method);
+    
+    if (method === 'cash') {
+      setPaymentDialogOpen(true);
+    } else {
+      await processTransaction(method, total);
+    }
+  };
+
+  const processTransaction = async (method: 'cash' | 'qris' | 'transfer', paidAmount?: number) => {
+    try {
+      const transactionNumber = generateTransactionNumber();
+      const paymentAmountNum = paidAmount || total;
+      const changeAmount = method === 'cash' ? Math.max(0, paymentAmountNum - total) : 0;
+
+      // Calculate points (1 point per 1000 rupiah)
+      const earnedPoints = Math.floor(total / 1000);
+
+      await createTransaction.mutateAsync({
+        transaction: {
+          transaction_number: transactionNumber,
+          customer_id: customer?.id || null,
+          cashier_id: null, // TODO: Get from auth
+          subtotal,
+          discount: 0,
+          tax,
+          total,
+          payment_method: method,
+          payment_amount: paymentAmountNum,
+          change_amount: changeAmount,
+          status: 'completed',
+          notes: null,
+        },
+        items: cart.map(item => ({
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          unit_price: item.price,
+          subtotal: item.price * item.quantity,
+        })),
+      });
+
+      // Update customer points if customer selected
+      let updatedCustomerPoints = customer?.points || 0;
+      if (customer) {
+        const newPoints = (customer.points || 0) + earnedPoints;
+        const newTotalPurchases = (customer.total_purchases || 0) + total;
+        updatedCustomerPoints = newPoints;
+
+        await updateCustomerPoints.mutateAsync({
+          id: customer.id,
+          points: newPoints,
+          totalPurchases: newTotalPurchases,
+        });
+      }
+
+      // Save transaction data for receipt
+      setLastTransaction({
+        transactionNumber,
+        date: new Date(),
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          category: item.category,
+        })),
+        subtotal,
+        tax,
+        taxRate: paymentSettings.taxRate,
+        serviceCharge: subtotal * paymentSettings.serviceCharge / 100,
+        total,
+        paymentMethod: method,
+        paymentAmount: paymentAmountNum,
+        changeAmount,
+        customerName: customer?.name,
+        customerPoints: updatedCustomerPoints,
+        earnedPoints,
+      });
+
+      // Reset cart and close payment dialog
+      setCart([]);
+      setPaymentDialogOpen(false);
+      setPaymentAmount("");
+
+      // Show receipt dialog
+      setReceiptDialogOpen(true);
+
+      toast({
+        title: "Transaksi Berhasil!",
+        description: `No. Transaksi: ${transactionNumber}${customer ? ` | Poin: +${earnedPoints}` : ''}`,
+      });
+
+    } catch (error) {
+      console.error('Transaction error:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memproses transaksi",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOpenBill = () => {
+    if (cart.length === 0) {
+      toast({
+        title: "Keranjang Kosong",
+        description: "Tambahkan produk terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const orderNumber = generateTransactionNumber();
+    const billSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const billTax = paymentSettings.showTaxSeparately ? (billSubtotal * paymentSettings.taxRate / 100) : 0;
+    const billServiceCharge = billSubtotal * paymentSettings.serviceCharge / 100;
+    const billTotal = billSubtotal + billTax + billServiceCharge;
+    
+    const newOpenBill = {
+      orderNumber,
+      date: new Date(),
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        category: item.category,
+      })),
+      customerName: customerName || undefined,
+      notes: orderNotes || undefined,
+      subtotal: billSubtotal,
+      tax: billTax,
+      serviceCharge: billServiceCharge,
+      total: billTotal,
+    };
+
+    // Simpan ke array openBills
+    setOpenBills(prev => [...prev, newOpenBill]);
+
+    setLastOpenBill({
+      orderNumber,
+      date: new Date(),
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        category: item.category,
+      })),
+      customerName: customerName || undefined,
+      notes: orderNotes || undefined,
+    });
+
+    // Show kitchen receipt dialog
+    setKitchenReceiptDialogOpen(true);
+
+    toast({
+      title: "Open Bill Dibuat!",
+      description: `No. Order: ${orderNumber}`,
+    });
+  };
+
+  const handleCloseOpenBill = () => {
+    // Reset form after printing
+    setCart([]);
+    setCustomerName("");
+    setOrderNotes("");
+    setKitchenReceiptDialogOpen(false);
+  };
+
+  const handlePayOpenBill = async (orderNumber: string, method: 'cash' | 'qris' | 'transfer') => {
+    const bill = openBills.find(b => b.orderNumber === orderNumber);
+    if (!bill) return;
+
+    try {
+      const paymentAmountNum = bill.total;
+      const changeAmount = 0;
+      const earnedPoints = Math.floor(bill.total / 1000);
+
+      await createTransaction.mutateAsync({
+        transaction: {
+          transaction_number: bill.orderNumber,
+          customer_id: customer?.id || null,
+          cashier_id: null,
+          subtotal: bill.subtotal,
+          discount: 0,
+          tax: bill.tax,
+          total: bill.total,
+          payment_method: method,
+          payment_amount: paymentAmountNum,
+          change_amount: changeAmount,
+          status: 'completed',
+          notes: bill.notes || null,
+        },
+        items: bill.items.map(item => ({
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          unit_price: item.price,
+          subtotal: item.price * item.quantity,
+        })),
+      });
+
+      // Update customer points if customer selected
+      let updatedCustomerPoints = customer?.points || 0;
+      if (customer) {
+        const newPoints = (customer.points || 0) + earnedPoints;
+        const newTotalPurchases = (customer.total_purchases || 0) + bill.total;
+        updatedCustomerPoints = newPoints;
+
+        await updateCustomerPoints.mutateAsync({
+          id: customer.id,
+          points: newPoints,
+          totalPurchases: newTotalPurchases,
+        });
+      }
+
+      // Set last transaction for receipt
+      setLastTransaction({
+        transactionNumber: bill.orderNumber,
+        date: bill.date,
+        items: bill.items,
+        subtotal: bill.subtotal,
+        tax: bill.tax,
+        taxRate: paymentSettings.taxRate,
+        serviceCharge: bill.serviceCharge,
+        total: bill.total,
+        paymentMethod: method,
+        paymentAmount: paymentAmountNum,
+        changeAmount,
+        customerName: bill.customerName,
+        customerPoints: updatedCustomerPoints,
+        earnedPoints,
+      });
+
+      // Remove from open bills
+      setOpenBills(prev => prev.filter(b => b.orderNumber !== orderNumber));
+
+      // Show receipt dialog
+      setReceiptDialogOpen(true);
+
+      toast({
+        title: "Pembayaran Berhasil!",
+        description: `Open Bill ${orderNumber} telah dibayar`,
+      });
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memproses pembayaran",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteOpenBill = (orderNumber: string) => {
+    setOpenBills(prev => prev.filter(b => b.orderNumber !== orderNumber));
+    toast({
+      title: "Open Bill Dihapus",
+      description: `Order ${orderNumber} telah dihapus`,
+    });
+  };
+
+  const handleLoadOpenBillToCart = (orderNumber: string) => {
+    const bill = openBills.find(b => b.orderNumber === orderNumber);
+    if (!bill) return;
+
+    setCart(bill.items);
+    setCustomerName(bill.customerName || "");
+    setOrderNotes(bill.notes || "");
+    
+    toast({
+      title: "Open Bill Dimuat",
+      description: `Order ${orderNumber} dimuat ke keranjang`,
+    });
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -104,7 +483,7 @@ export default function POS() {
                           <p className="text-sm font-semibold text-primary">
                             Rp {product.price.toLocaleString()}
                           </p>
-                          <Badge variant="secondary">{product.category}</Badge>
+                          <Badge variant="secondary">{product.categories?.name || 'Lainnya'}</Badge>
                         </div>
                       </CardContent>
                     </Card>
@@ -114,7 +493,7 @@ export default function POS() {
               <TabsContent value="makanan">
                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                   {filteredProducts
-                    .filter((p) => p.category === "Makanan")
+                    .filter((p) => p.categories?.name === "Makanan")
                     .map((product) => (
                       <Card
                         key={product.id}
@@ -137,7 +516,7 @@ export default function POS() {
               <TabsContent value="minuman">
                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                   {filteredProducts
-                    .filter((p) => p.category === "Minuman")
+                    .filter((p) => p.categories?.name === "Minuman")
                     .map((product) => (
                       <Card
                         key={product.id}
@@ -165,97 +544,442 @@ export default function POS() {
       <div className="lg:col-span-1">
         <Card className="sticky top-20">
           <CardHeader>
-            <CardTitle>Keranjang</CardTitle>
+            <CardTitle>Keranjang & Open Bills</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="max-h-[300px] space-y-2 overflow-auto">
-              {cart.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-8">
-                  Keranjang kosong
-                </p>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 rounded-lg border p-3">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Rp {item.price.toLocaleString()} x {item.quantity}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-7 w-7"
-                        onClick={() => updateQuantity(item.id, -1)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="w-8 text-center text-sm">{item.quantity}</span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-7 w-7"
-                        onClick={() => updateQuantity(item.id, 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="h-7 w-7"
-                        onClick={() => removeFromCart(item.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
+            <Tabs defaultValue="cart" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="cart">
+                  Keranjang
+                  {cart.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">{cart.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="openbills">
+                  Open Bills
+                  {openBills.length > 0 && (
+                    <Badge variant="destructive" className="ml-2">{openBills.length}</Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab Keranjang */}
+              <TabsContent value="cart" className="space-y-4 mt-4">
+                <div className="max-h-[300px] space-y-2 overflow-auto">
+                  {cart.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground py-8">
+                      Keranjang kosong
+                    </p>
+                  ) : (
+                    cart.map((item) => (
+                      <div key={item.id} className="flex items-center gap-2 rounded-lg border p-3">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Rp {item.price.toLocaleString()} x {item.quantity}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-7 w-7"
+                            onClick={() => updateQuantity(item.id, -1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm">{item.quantity}</span>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-7 w-7"
+                            onClick={() => updateQuantity(item.id, 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="h-7 w-7"
+                            onClick={() => removeFromCart(item.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="space-y-2 border-t pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName" className="text-xs">Nama Customer (Opsional)</Label>
+                    <Input
+                      id="customerName"
+                      placeholder="Nama untuk order"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      className="h-8 text-sm"
+                    />
                   </div>
-                ))
-              )}
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="orderNotes" className="text-xs">Catatan Order (Opsional)</Label>
+                    <Input
+                      id="orderNotes"
+                      placeholder="Catatan khusus"
+                      value={orderNotes}
+                      onChange={(e) => setOrderNotes(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2 border-t pt-4">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>Rp {subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Pajak (10%)</span>
-                <span>Rp {tax.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span className="text-primary">Rp {total.toLocaleString()}</span>
-              </div>
-            </div>
+                <div className="space-y-2 border-t pt-4">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>Rp {subtotal.toLocaleString()}</span>
+                  </div>
+                  {paymentSettings.showTaxSeparately && paymentSettings.taxRate > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Pajak ({paymentSettings.taxRate}%)</span>
+                      <span>Rp {tax.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {paymentSettings.serviceCharge > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Service Charge ({paymentSettings.serviceCharge}%)</span>
+                      <span>Rp {serviceCharge.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total</span>
+                    <span className="text-primary">Rp {total.toLocaleString()}</span>
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Button className="w-full" size="lg" disabled={cart.length === 0}>
-                <CreditCard className="mr-2 h-4 w-4" />
-                Kartu Debit/Kredit
-              </Button>
-              <Button
-                className="w-full"
-                variant="secondary"
-                size="lg"
-                disabled={cart.length === 0}
-              >
-                <Banknote className="mr-2 h-4 w-4" />
-                Tunai
-              </Button>
-              <Button
-                className="w-full"
-                variant="outline"
-                size="lg"
-                disabled={cart.length === 0}
-              >
-                <Smartphone className="mr-2 h-4 w-4" />
-                E-Wallet
-              </Button>
-            </div>
+                <div className="space-y-2">
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    size="lg"
+                    disabled={cart.length === 0}
+                    onClick={handleOpenBill}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Open Bill (Cetak Dapur)
+                  </Button>
+                  
+                  <div className="text-xs text-center text-muted-foreground font-medium">
+                    atau bayar sekarang
+                  </div>
+
+                  {paymentSettings.cashEnabled && (
+                    <Button 
+                      className="w-full" 
+                      size="lg" 
+                      disabled={cart.length === 0}
+                      onClick={() => handlePayment('cash')}
+                    >
+                      <Banknote className="mr-2 h-4 w-4" />
+                      Tunai
+                    </Button>
+                  )}
+                  {paymentSettings.ewalletEnabled && (
+                    <Button
+                      className="w-full"
+                      variant="secondary"
+                      size="lg"
+                      disabled={cart.length === 0}
+                      onClick={() => handlePayment('qris')}
+                    >
+                      <Smartphone className="mr-2 h-4 w-4" />
+                      QRIS
+                    </Button>
+                  )}
+                  {paymentSettings.transferEnabled && (
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      size="lg"
+                      disabled={cart.length === 0}
+                      onClick={() => handlePayment('transfer')}
+                    >
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Transfer Bank
+                    </Button>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Tab Open Bills */}
+              <TabsContent value="openbills" className="space-y-2 mt-4">
+                <div className="max-h-[500px] space-y-2 overflow-auto">
+                  {openBills.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground py-8">
+                      Belum ada Open Bill
+                    </p>
+                  ) : (
+                    openBills.map((bill, index) => (
+                      <Collapsible key={bill.orderNumber} className="border rounded-lg">
+                        <CollapsibleTrigger className="w-full p-3 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="text-left flex-1">
+                              <p className="font-medium text-sm">{bill.customerName || `Order #${index + 1}`}</p>
+                              <p className="text-xs text-muted-foreground">{bill.orderNumber}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(bill.date).toLocaleString('id-ID')}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-sm text-primary">
+                                Rp {bill.total.toLocaleString()}
+                              </p>
+                              <Badge variant="outline" className="mt-1">
+                                {bill.items.length} item
+                              </Badge>
+                            </div>
+                            <ChevronDown className="h-4 w-4 ml-2" />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="px-3 pb-3 space-y-2">
+                          <div className="border-t pt-2 space-y-1">
+                            {bill.items.map((item, idx) => (
+                              <div key={idx} className="flex justify-between text-xs">
+                                <span>{item.name} x{item.quantity}</span>
+                                <span>Rp {(item.price * item.quantity).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {bill.notes && (
+                            <div className="text-xs bg-yellow-50 p-2 rounded border border-yellow-200">
+                              <strong>Catatan:</strong> {bill.notes}
+                            </div>
+                          )}
+                          <div className="grid grid-cols-3 gap-1 pt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleLoadOpenBillToCart(bill.orderNumber)}
+                              className="text-xs h-8"
+                            >
+                              Load
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handlePayOpenBill(bill.orderNumber, 'cash')}
+                              className="text-xs h-8"
+                            >
+                              Bayar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteOpenBill(bill.orderNumber)}
+                              className="text-xs h-8"
+                            >
+                              Hapus
+                            </Button>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
+
+      {/* Payment Dialog for Cash */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pembayaran Tunai</DialogTitle>
+            <DialogDescription>
+              Masukkan jumlah uang yang diterima dari pelanggan
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Total Pembayaran</Label>
+              <Input
+                value={`Rp ${total.toLocaleString()}`}
+                disabled
+                className="text-lg font-bold"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="payment-amount">Jumlah Uang Diterima</Label>
+              <Input
+                id="payment-amount"
+                type="number"
+                placeholder="Masukkan jumlah uang"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="text-lg"
+              />
+            </div>
+            {paymentAmount && parseFloat(paymentAmount) >= total && (
+              <div className="rounded-lg bg-green-50 p-3 border border-green-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-green-900">Kembalian:</span>
+                  <span className="text-lg font-bold text-green-600">
+                    Rp {(parseFloat(paymentAmount) - total).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPaymentDialogOpen(false);
+                setPaymentAmount("");
+              }}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={() => {
+                const amount = parseFloat(paymentAmount);
+                if (amount >= total) {
+                  processTransaction('cash', amount);
+                } else {
+                  toast({
+                    title: "Jumlah Tidak Cukup",
+                    description: "Jumlah uang harus lebih besar atau sama dengan total",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              disabled={!paymentAmount || parseFloat(paymentAmount) < total}
+              className="flex-1"
+            >
+              Proses Pembayaran
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receipt Dialog */}
+      <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Struk Pembayaran</DialogTitle>
+            <DialogDescription>
+              Transaksi berhasil! Anda dapat mencetak struk atau menutup dialog ini.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {lastTransaction && (
+            <div className="space-y-4">
+              <div className="max-h-[500px] overflow-auto border rounded-lg">
+                <Receipt
+                  ref={receiptRef}
+                  transactionNumber={lastTransaction.transactionNumber}
+                  date={lastTransaction.date}
+                  items={lastTransaction.items.map(item => ({
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    subtotal: item.price * item.quantity,
+                  }))}
+                  subtotal={lastTransaction.subtotal}
+                  tax={lastTransaction.tax}
+                  taxRate={lastTransaction.taxRate}
+                  serviceCharge={lastTransaction.serviceCharge}
+                  total={lastTransaction.total}
+                  paymentMethod={lastTransaction.paymentMethod}
+                  paymentAmount={lastTransaction.paymentAmount}
+                  changeAmount={lastTransaction.changeAmount}
+                  customerName={lastTransaction.customerName}
+                  customerPoints={lastTransaction.customerPoints}
+                  earnedPoints={lastTransaction.earnedPoints}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setReceiptDialogOpen(false);
+                    setCustomerPhone("");
+                  }}
+                  className="flex-1"
+                >
+                  Tutup
+                </Button>
+                <Button
+                  onClick={handlePrint}
+                  className="flex-1"
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Cetak Struk
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Kitchen Receipt Dialog */}
+      <Dialog open={kitchenReceiptDialogOpen} onOpenChange={setKitchenReceiptDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Struk Dapur - Open Bill</DialogTitle>
+            <DialogDescription>
+              Order telah disimpan. Cetak struk untuk dapur atau tutup dialog ini.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {lastOpenBill && (
+            <div className="space-y-4">
+              <div className="max-h-[500px] overflow-auto border rounded-lg">
+                <KitchenReceipt
+                  ref={kitchenReceiptRef}
+                  orderNumber={lastOpenBill.orderNumber}
+                  date={lastOpenBill.date}
+                  items={lastOpenBill.items.map(item => ({
+                    name: item.name,
+                    quantity: item.quantity,
+                  }))}
+                  customerName={lastOpenBill.customerName}
+                  notes={lastOpenBill.notes}
+                />
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
+                <p className="text-sm font-medium text-yellow-800">
+                  ⚠️ Catatan: Order ini belum dibayar
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Simpan nomor order <strong>{lastOpenBill.orderNumber}</strong> untuk pembayaran nanti
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseOpenBill}
+                  className="flex-1"
+                >
+                  Tutup
+                </Button>
+                <Button
+                  onClick={handlePrintKitchen}
+                  className="flex-1"
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Cetak Struk Dapur
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

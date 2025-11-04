@@ -4,6 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MainLayout } from "./components/layouts/MainLayout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
 import Inventory from "./pages/Inventory";
@@ -11,78 +14,107 @@ import Reports from "./pages/Reports";
 import Customers from "./pages/Customers";
 import Employees from "./pages/Employees";
 import Settings from "./pages/Settings";
+import EmployeeLogin from "./pages/EmployeeLogin";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/employee-login" element={<EmployeeLogin />} />
+          
           <Route
             path="/"
             element={
-              <MainLayout>
-                <Dashboard />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <Dashboard />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/pos"
             element={
-              <MainLayout>
-                <POS />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <POS />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/inventory"
             element={
-              <MainLayout>
-                <Inventory />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <Inventory />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/reports"
             element={
-              <MainLayout>
-                <Reports />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <Reports />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/customers"
             element={
-              <MainLayout>
-                <Customers />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <Customers />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/employees"
             element={
-              <MainLayout>
-                <Employees />
-              </MainLayout>
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <MainLayout>
+                  <Employees />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/settings"
             element={
-              <MainLayout>
-                <Settings />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <Settings />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

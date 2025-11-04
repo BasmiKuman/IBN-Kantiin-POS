@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5,8 +6,155 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "@/hooks/use-toast";
+
+interface GeneralSettings {
+  businessName: string;
+  timezone: string;
+  language: string;
+  darkMode: boolean;
+  soundEnabled: boolean;
+}
+
+interface StoreSettings {
+  address: string;
+  city: string;
+  postalCode: string;
+  phone: string;
+  email: string;
+}
+
+interface PaymentSettings {
+  cashEnabled: boolean;
+  cardEnabled: boolean;
+  ewalletEnabled: boolean;
+  transferEnabled: boolean;
+  taxRate: number;
+  serviceCharge: number;
+  showTaxSeparately: boolean;
+}
+
+interface ReceiptSettings {
+  header: string;
+  tagline: string;
+  footer: string;
+  showLogo: boolean;
+  showCashierDetails: boolean;
+}
+
+interface NotificationSettings {
+  dailyReport: boolean;
+  lowStock: boolean;
+  largeTransaction: boolean;
+  whatsappNumber: string;
+  whatsappEnabled: boolean;
+}
 
 export default function Settings() {
+  const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
+    businessName: "BasmiKuman POS",
+    currency: "IDR",
+    timezone: "Asia/Jakarta",
+    language: "id",
+  });
+
+    const [storeSettings, setStoreSettings] = useState<StoreSettings>({
+    name: "Toko Pusat",
+    address: "Jl. Contoh No. 123",
+    city: "Jakarta",
+    phone: "(021) 12345678",
+    email: "info@basmikuman.com",
+  });
+
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
+    cashEnabled: true,
+    cardEnabled: false,
+    ewalletEnabled: true,
+    transferEnabled: true,
+    taxRate: 10,
+    serviceCharge: 0,
+    showTaxSeparately: true,
+  });
+
+  const [receiptSettings, setReceiptSettings] = useState<ReceiptSettings>({
+    header: "BASMIKUMAN POS",
+    tagline: "Makanan Enak, Harga Terjangkau",
+    footer: "Terima kasih atas kunjungan Anda!",
+    showLogo: true,
+    showCashierDetails: true,
+  });
+
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    dailyReport: true,
+    lowStock: true,
+    largeTransaction: true,
+    whatsappNumber: "08123456789",
+    whatsappEnabled: false,
+  });
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const loadSettings = () => {
+      const savedGeneral = localStorage.getItem("settings_general");
+      const savedStore = localStorage.getItem("settings_store");
+      const savedPayment = localStorage.getItem("settings_payment");
+      const savedReceipt = localStorage.getItem("settings_receipt");
+      const savedNotification = localStorage.getItem("settings_notification");
+
+      if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral));
+      if (savedStore) setStoreSettings(JSON.parse(savedStore));
+      if (savedPayment) setPaymentSettings(JSON.parse(savedPayment));
+      if (savedReceipt) setReceiptSettings(JSON.parse(savedReceipt));
+      if (savedNotification) setNotificationSettings(JSON.parse(savedNotification));
+    };
+
+    loadSettings();
+  }, []);
+
+  // Save general settings
+  const handleSaveGeneral = () => {
+    localStorage.setItem("settings_general", JSON.stringify(generalSettings));
+    toast({
+      title: "Pengaturan Disimpan",
+      description: "Pengaturan umum berhasil disimpan",
+    });
+  };
+
+  // Save store settings
+  const handleSaveStore = () => {
+    localStorage.setItem("settings_store", JSON.stringify(storeSettings));
+    toast({
+      title: "Pengaturan Disimpan",
+      description: "Informasi toko berhasil disimpan",
+    });
+  };
+
+  // Save payment settings
+  const handleSavePayment = () => {
+    localStorage.setItem("settings_payment", JSON.stringify(paymentSettings));
+    toast({
+      title: "Pengaturan Disimpan",
+      description: "Pengaturan pembayaran berhasil disimpan",
+    });
+  };
+
+  // Save receipt settings
+  const handleSaveReceipt = () => {
+    localStorage.setItem("settings_receipt", JSON.stringify(receiptSettings));
+    toast({
+      title: "Pengaturan Disimpan",
+      description: "Template struk berhasil disimpan",
+    });
+  };
+
+  // Save notification settings
+  const handleSaveNotification = () => {
+    localStorage.setItem("settings_notification", JSON.stringify(notificationSettings));
+    toast({
+      title: "Pengaturan Disimpan",
+      description: "Pengaturan notifikasi berhasil disimpan",
+    });
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -32,12 +180,18 @@ export default function Settings() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Nama Bisnis</Label>
-                <Input defaultValue="Warung Makan Sedap" />
+                <Input 
+                  value={generalSettings.businessName}
+                  onChange={(e) => setGeneralSettings({...generalSettings, businessName: e.target.value})}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Zona Waktu</Label>
-                  <Input defaultValue="Asia/Jakarta" />
+                  <Input 
+                    value={generalSettings.timezone}
+                    onChange={(e) => setGeneralSettings({...generalSettings, timezone: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Mata Uang</Label>
@@ -46,9 +200,12 @@ export default function Settings() {
               </div>
               <div className="space-y-2">
                 <Label>Bahasa</Label>
-                <Input defaultValue="Bahasa Indonesia" />
+                <Input 
+                  value={generalSettings.language}
+                  onChange={(e) => setGeneralSettings({...generalSettings, language: e.target.value})}
+                />
               </div>
-              <Button>Simpan Perubahan</Button>
+              <Button onClick={handleSaveGeneral}>Simpan Perubahan</Button>
             </CardContent>
           </Card>
 
@@ -62,7 +219,10 @@ export default function Settings() {
                   <Label>Mode Gelap</Label>
                   <p className="text-sm text-muted-foreground">Aktifkan tema gelap</p>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={generalSettings.darkMode}
+                  onCheckedChange={(checked) => setGeneralSettings({...generalSettings, darkMode: checked})}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -70,8 +230,12 @@ export default function Settings() {
                   <Label>Suara Notifikasi</Label>
                   <p className="text-sm text-muted-foreground">Bunyi saat transaksi selesai</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={generalSettings.soundEnabled}
+                  onCheckedChange={(checked) => setGeneralSettings({...generalSettings, soundEnabled: checked})}
+                />
               </div>
+              <Button onClick={handleSaveGeneral} className="mt-4">Simpan Preferensi</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -86,31 +250,44 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label>Alamat Lengkap</Label>
                 <Input
-                  defaultValue="Jl. Raya Sudirman No. 123"
+                  value={storeSettings.address}
+                  onChange={(e) => setStoreSettings({...storeSettings, address: e.target.value})}
                   placeholder="Alamat toko"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Kota</Label>
-                  <Input defaultValue="Jakarta" />
+                  <Input 
+                    value={storeSettings.city}
+                    onChange={(e) => setStoreSettings({...storeSettings, city: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Kode Pos</Label>
-                  <Input defaultValue="12345" />
+                  <Input 
+                    value={storeSettings.postalCode}
+                    onChange={(e) => setStoreSettings({...storeSettings, postalCode: e.target.value})}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Telepon</Label>
-                  <Input defaultValue="021-12345678" />
+                  <Input 
+                    value={storeSettings.phone}
+                    onChange={(e) => setStoreSettings({...storeSettings, phone: e.target.value})}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input defaultValue="info@warungmakan.com" />
+                  <Input 
+                    value={storeSettings.email}
+                    onChange={(e) => setStoreSettings({...storeSettings, email: e.target.value})}
+                  />
                 </div>
               </div>
-              <Button>Simpan Perubahan</Button>
+              <Button onClick={handleSaveStore}>Simpan Perubahan</Button>
             </CardContent>
           </Card>
 
@@ -119,6 +296,7 @@ export default function Settings() {
               <CardTitle>Jam Operasional</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">Fitur jam operasional akan segera hadir</p>
               {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map((day) => (
                 <div key={day} className="flex items-center gap-4">
                   <div className="w-24">
@@ -130,7 +308,7 @@ export default function Settings() {
                   <Switch defaultChecked />
                 </div>
               ))}
-              <Button className="mt-4">Simpan Jam Operasional</Button>
+              <Button className="mt-4" variant="outline" disabled>Simpan Jam Operasional (Coming Soon)</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -147,23 +325,21 @@ export default function Settings() {
                   <Label>Tunai</Label>
                   <p className="text-sm text-muted-foreground">Pembayaran cash</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={paymentSettings.cashEnabled}
+                  onCheckedChange={(checked) => setPaymentSettings({...paymentSettings, cashEnabled: checked})}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Kartu Debit/Kredit</Label>
-                  <p className="text-sm text-muted-foreground">EDC machine</p>
+                  <Label>QRIS / E-Wallet</Label>
+                  <p className="text-sm text-muted-foreground">GoPay, OVO, Dana, ShopeePay</p>
                 </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>E-Wallet (GoPay, OVO, Dana)</Label>
-                  <p className="text-sm text-muted-foreground">QRIS payment</p>
-                </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={paymentSettings.ewalletEnabled}
+                  onCheckedChange={(checked) => setPaymentSettings({...paymentSettings, ewalletEnabled: checked})}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -171,8 +347,12 @@ export default function Settings() {
                   <Label>Transfer Bank</Label>
                   <p className="text-sm text-muted-foreground">Virtual account</p>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={paymentSettings.transferEnabled}
+                  onCheckedChange={(checked) => setPaymentSettings({...paymentSettings, transferEnabled: checked})}
+                />
               </div>
+              <Button onClick={handleSavePayment} className="mt-4">Simpan Metode Pembayaran</Button>
             </CardContent>
           </Card>
 
@@ -184,11 +364,19 @@ export default function Settings() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Pajak (%)</Label>
-                  <Input type="number" defaultValue="10" />
+                  <Input 
+                    type="number" 
+                    value={paymentSettings.taxRate}
+                    onChange={(e) => setPaymentSettings({...paymentSettings, taxRate: parseFloat(e.target.value)})}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Service Charge (%)</Label>
-                  <Input type="number" defaultValue="5" />
+                  <Input 
+                    type="number" 
+                    value={paymentSettings.serviceCharge}
+                    onChange={(e) => setPaymentSettings({...paymentSettings, serviceCharge: parseFloat(e.target.value)})}
+                  />
                 </div>
               </div>
               <div className="flex items-center justify-between">
@@ -196,9 +384,12 @@ export default function Settings() {
                   <Label>Tampilkan Pajak Terpisah</Label>
                   <p className="text-sm text-muted-foreground">Di struk dan invoice</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={paymentSettings.showTaxSeparately}
+                  onCheckedChange={(checked) => setPaymentSettings({...paymentSettings, showTaxSeparately: checked})}
+                />
               </div>
-              <Button>Simpan Pengaturan</Button>
+              <Button onClick={handleSavePayment}>Simpan Pengaturan</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -212,15 +403,24 @@ export default function Settings() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Header Struk</Label>
-                <Input defaultValue="Warung Makan Sedap" />
+                <Input 
+                  value={receiptSettings.header}
+                  onChange={(e) => setReceiptSettings({...receiptSettings, header: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Tagline</Label>
-                <Input defaultValue="Makanan Enak, Harga Terjangkau" />
+                <Input 
+                  value={receiptSettings.tagline}
+                  onChange={(e) => setReceiptSettings({...receiptSettings, tagline: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Footer Message</Label>
-                <Input defaultValue="Terima kasih atas kunjungan Anda!" />
+                <Input 
+                  value={receiptSettings.footer}
+                  onChange={(e) => setReceiptSettings({...receiptSettings, footer: e.target.value})}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -228,7 +428,10 @@ export default function Settings() {
                   <Label>Tampilkan Logo</Label>
                   <p className="text-sm text-muted-foreground">Di bagian atas struk</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={receiptSettings.showLogo}
+                  onCheckedChange={(checked) => setReceiptSettings({...receiptSettings, showLogo: checked})}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -236,9 +439,12 @@ export default function Settings() {
                   <Label>Tampilkan Detail Kasir</Label>
                   <p className="text-sm text-muted-foreground">Nama dan ID kasir</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={receiptSettings.showCashierDetails}
+                  onCheckedChange={(checked) => setReceiptSettings({...receiptSettings, showCashierDetails: checked})}
+                />
               </div>
-              <Button>Simpan Template</Button>
+              <Button onClick={handleSaveReceipt}>Simpan Template</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -254,7 +460,10 @@ export default function Settings() {
                   <Label>Laporan Harian</Label>
                   <p className="text-sm text-muted-foreground">Kirim ringkasan penjualan harian</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={notificationSettings.dailyReport}
+                  onCheckedChange={(checked) => setNotificationSettings({...notificationSettings, dailyReport: checked})}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -262,7 +471,10 @@ export default function Settings() {
                   <Label>Stok Menipis</Label>
                   <p className="text-sm text-muted-foreground">Alert saat stok di bawah minimum</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={notificationSettings.lowStock}
+                  onCheckedChange={(checked) => setNotificationSettings({...notificationSettings, lowStock: checked})}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -270,8 +482,12 @@ export default function Settings() {
                   <Label>Transaksi Besar</Label>
                   <p className="text-sm text-muted-foreground">Notifikasi transaksi {">"} Rp 1 Jt</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={notificationSettings.largeTransaction}
+                  onCheckedChange={(checked) => setNotificationSettings({...notificationSettings, largeTransaction: checked})}
+                />
               </div>
+              <Button onClick={handleSaveNotification} className="mt-4">Simpan Pengaturan Email</Button>
             </CardContent>
           </Card>
 
@@ -282,16 +498,23 @@ export default function Settings() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Nomor WhatsApp Admin</Label>
-                <Input placeholder="08123456789" defaultValue="08123456789" />
+                <Input 
+                  placeholder="08123456789" 
+                  value={notificationSettings.whatsappNumber}
+                  onChange={(e) => setNotificationSettings({...notificationSettings, whatsappNumber: e.target.value})}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Aktifkan Notifikasi WA</Label>
                   <p className="text-sm text-muted-foreground">Kirim alert via WhatsApp</p>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={notificationSettings.whatsappEnabled}
+                  onCheckedChange={(checked) => setNotificationSettings({...notificationSettings, whatsappEnabled: checked})}
+                />
               </div>
-              <Button>Simpan Pengaturan</Button>
+              <Button onClick={handleSaveNotification}>Simpan Pengaturan</Button>
             </CardContent>
           </Card>
         </TabsContent>

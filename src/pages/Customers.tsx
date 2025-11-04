@@ -21,73 +21,98 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Search, Plus, Mail, Phone, Star, Gift, TrendingUp } from "lucide-react";
+import { useCustomers, useCreateCustomer, useUpdateCustomer, useUpdateCustomerPoints } from "@/hooks/supabase/useCustomers";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Customers() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    notes: "",
+  });
 
-  const customers = [
-    {
-      id: 1,
-      name: "Budi Santoso",
-      email: "budi@email.com",
-      phone: "08123456789",
-      totalSpent: 2450000,
-      visits: 24,
-      points: 245,
-      tier: "Gold",
-      lastVisit: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Siti Nurhaliza",
-      email: "siti@email.com",
-      phone: "08234567890",
-      totalSpent: 890000,
-      visits: 12,
-      points: 89,
-      tier: "Silver",
-      lastVisit: "2024-01-14",
-    },
-    {
-      id: 3,
-      name: "Ahmad Yani",
-      email: "ahmad@email.com",
-      phone: "08345678901",
-      totalSpent: 5230000,
-      visits: 48,
-      points: 523,
-      tier: "Platinum",
-      lastVisit: "2024-01-16",
-    },
-    {
-      id: 4,
-      name: "Dewi Lestari",
-      email: "dewi@email.com",
-      phone: "08456789012",
-      totalSpent: 450000,
-      visits: 6,
-      points: 45,
-      tier: "Bronze",
-      lastVisit: "2024-01-10",
-    },
-  ];
+  const { toast } = useToast();
+  const { data: customers = [], isLoading } = useCustomers();
+  const createCustomer = useCreateCustomer();
+
+  const handleCreateCustomer = async () => {
+    if (!formData.name || !formData.phone) {
+      toast({
+        title: "Error",
+        description: "Nama dan No. Telepon wajib diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createCustomer.mutate({
+      name: formData.name,
+      email: formData.email || null,
+      phone: formData.phone,
+      address: formData.address || null,
+      notes: formData.notes || null,
+    }, {
+      onSuccess: () => {
+        setIsAddDialogOpen(false);
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          address: "",
+          notes: "",
+        });
+      }
+    });
+  };
 
   const getTierBadge = (tier: string) => {
     const variants: Record<string, string> = {
-      Platinum: "bg-purple-500 text-white",
-      Gold: "bg-warning text-warning-foreground",
-      Silver: "bg-gray-400 text-white",
-      Bronze: "bg-orange-600 text-white",
+      platinum: "bg-purple-500 text-white",
+      gold: "bg-warning text-warning-foreground",
+      silver: "bg-gray-400 text-white",
+      bronze: "bg-orange-600 text-white",
     };
-    return <Badge className={variants[tier]}>{tier}</Badge>;
+    const tierName = tier.charAt(0).toUpperCase() + tier.slice(1);
+    return <Badge className={variants[tier] || variants.bronze}>{tierName}</Badge>;
   };
 
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+      (customer.email && customer.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      customer.phone.includes(searchQuery)
   );
+
+  const totalCustomers = customers.length;
+  const activeCustomers = customers.filter(c => c.last_purchase_date).length;
+  const avgSpending = customers.length > 0 
+    ? customers.reduce((sum, c) => sum + (c.total_purchases || 0), 0) / customers.length 
+    : 0;
+  const totalPoints = customers.reduce((sum, c) => sum + (c.points || 0), 0);
+
+  const tierCounts = {
+    platinum: customers.filter(c => c.tier === 'platinum').length,
+    gold: customers.filter(c => c.tier === 'gold').length,
+    silver: customers.filter(c => c.tier === 'silver').length,
+    bronze: customers.filter(c => c.tier === 'bronze').length,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Memuat data pelanggan...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -110,22 +135,53 @@ export default function Customers() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Nama Lengkap</Label>
-                <Input placeholder="Nama pelanggan" />
+                <Label>Nama Lengkap *</Label>
+                <Input 
+                  placeholder="Nama pelanggan" 
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input type="email" placeholder="email@example.com" />
+                <Input 
+                  type="email" 
+                  placeholder="email@example.com" 
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
-                <Label>No. Telepon</Label>
-                <Input placeholder="08123456789" />
+                <Label>No. Telepon *</Label>
+                <Input 
+                  placeholder="08123456789" 
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
-                <Label>Tanggal Lahir</Label>
-                <Input type="date" />
+                <Label>Alamat</Label>
+                <Textarea 
+                  placeholder="Alamat lengkap" 
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                />
               </div>
-              <Button className="w-full">Simpan Pelanggan</Button>
+              <div className="space-y-2">
+                <Label>Catatan</Label>
+                <Textarea 
+                  placeholder="Catatan tambahan" 
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                />
+              </div>
+              <Button 
+                className="w-full"
+                onClick={handleCreateCustomer}
+                disabled={createCustomer.isPending}
+              >
+                {createCustomer.isPending ? "Menyimpan..." : "Simpan Pelanggan"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -138,12 +194,8 @@ export default function Customers() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,248</div>
-            <div className="flex items-center text-xs">
-              <TrendingUp className="mr-1 h-3 w-3 text-success" />
-              <span className="text-success">+28</span>
-              <span className="ml-1 text-muted-foreground">bulan ini</span>
-            </div>
+            <div className="text-2xl font-bold">{totalCustomers}</div>
+            <p className="text-xs text-muted-foreground">Terdaftar di sistem</p>
           </CardContent>
         </Card>
 
@@ -153,8 +205,8 @@ export default function Customers() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">842</div>
-            <p className="text-xs text-muted-foreground">67% dari total</p>
+            <div className="text-2xl font-bold">{activeCustomers}</div>
+            <p className="text-xs text-muted-foreground">{totalCustomers > 0 ? Math.round((activeCustomers / totalCustomers) * 100) : 0}% dari total</p>
           </CardContent>
         </Card>
 
@@ -164,7 +216,7 @@ export default function Customers() {
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rp 425K</div>
+            <div className="text-2xl font-bold">Rp {(avgSpending / 1000).toFixed(0)}K</div>
             <p className="text-xs text-muted-foreground">Per pelanggan</p>
           </CardContent>
         </Card>
@@ -175,7 +227,7 @@ export default function Customers() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">45.2K</div>
+            <div className="text-2xl font-bold">{(totalPoints / 1000).toFixed(1)}K</div>
             <p className="text-xs text-muted-foreground">Total points aktif</p>
           </CardContent>
         </Card>
@@ -218,37 +270,47 @@ export default function Customers() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1 text-xs">
-                            <Mail className="h-3 w-3" />
-                            {customer.email}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs">
-                            <Phone className="h-3 w-3" />
-                            {customer.phone}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>Rp {customer.totalSpent.toLocaleString()}</TableCell>
-                      <TableCell>{customer.visits}x</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-warning text-warning" />
-                          {customer.points}
-                        </div>
-                      </TableCell>
-                      <TableCell>{getTierBadge(customer.tier)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="outline">
-                          Detail
-                        </Button>
+                  {filteredCustomers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        Tidak ada pelanggan. Klik "Tambah Pelanggan" untuk menambahkan pelanggan baru.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredCustomers.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-medium">{customer.name}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {customer.email && (
+                              <div className="flex items-center gap-1 text-xs">
+                                <Mail className="h-3 w-3" />
+                                {customer.email}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1 text-xs">
+                              <Phone className="h-3 w-3" />
+                              {customer.phone}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>Rp {(customer.total_purchases || 0).toLocaleString()}</TableCell>
+                        <TableCell>-</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-warning text-warning" />
+                            {customer.points || 0}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getTierBadge(customer.tier || 'bronze')}</TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="outline">
+                            Detail
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -264,28 +326,28 @@ export default function Customers() {
               <CardContent className="space-y-4">
                 {[
                   {
-                    tier: "Platinum",
+                    tier: "platinum",
                     min: "Rp 5 Jt",
                     benefits: "Diskon 20%, Birthday voucher Rp 200K",
-                    members: 45,
+                    members: tierCounts.platinum,
                   },
                   {
-                    tier: "Gold",
+                    tier: "gold",
                     min: "Rp 2 Jt",
                     benefits: "Diskon 15%, Birthday voucher Rp 100K",
-                    members: 128,
+                    members: tierCounts.gold,
                   },
                   {
-                    tier: "Silver",
+                    tier: "silver",
                     min: "Rp 500K",
                     benefits: "Diskon 10%, Birthday voucher Rp 50K",
-                    members: 342,
+                    members: tierCounts.silver,
                   },
                   {
-                    tier: "Bronze",
+                    tier: "bronze",
                     min: "< Rp 500K",
                     benefits: "Diskon 5%, Collect points",
-                    members: 733,
+                    members: tierCounts.bronze,
                   },
                 ].map((tier) => (
                   <div key={tier.tier} className="rounded-lg border p-4">
