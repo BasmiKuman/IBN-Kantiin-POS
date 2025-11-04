@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.basmikuman.pos',
-  appName: 'BasmiKuman POS',
+  appId: 'com.basmikuman.kantiin.pos',
+  appName: 'BasmiKuman Kantiin POS',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

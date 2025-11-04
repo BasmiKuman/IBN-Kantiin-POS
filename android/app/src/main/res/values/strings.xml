@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">BasmiKuman POS</string>
-    <string name="title_activity_main">BasmiKuman POS</string>
-    <string name="package_name">com.basmikuman.pos</string>
-    <string name="custom_url_scheme">com.basmikuman.pos</string>
+    <string name="app_name">BasmiKuman Kantiin POS</string>
+    <string name="title_activity_main">BasmiKuman Kantiin POS</string>
+    <string name="package_name">com.basmikuman.kantiin.pos</string>
+    <string name="custom_url_scheme">com.basmikuman.kantiin.pos</string>
 </resources>
