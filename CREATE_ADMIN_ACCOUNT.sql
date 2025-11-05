@@ -168,7 +168,11 @@ CREATE INDEX IF NOT EXISTS idx_employees_username ON public.employees(username);
 -- =====================================================
 -- ATTENDANCE TABLE (using employee_username)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS public.attendance (
+
+-- Drop old attendance table if exists with wrong structure
+DROP TABLE IF EXISTS public.attendance CASCADE;
+
+CREATE TABLE public.attendance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   employee_id UUID REFERENCES public.employees(id) ON DELETE CASCADE,
   employee_username TEXT NOT NULL,
