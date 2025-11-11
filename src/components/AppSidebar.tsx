@@ -131,14 +131,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r">
-      <SidebarHeader className="border-b p-4">
+      <SidebarHeader className="border-b p-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center">
-            <img src="/Images/logo.png" alt="BasmiKuman POS Logo" className="h-10 w-10 object-contain" />
+          <div className="flex h-8 w-8 items-center justify-center flex-shrink-0">
+            <img src="/Images/logo.png" alt="BasmiKuman POS Logo" className="h-8 w-8 object-contain" />
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-sidebar-foreground">BasmiKuman POS</h2>
-            <p className="text-xs text-sidebar-foreground/80">Point of Sale System</p>
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-sidebar-foreground truncate">BasmiKuman POS</h2>
+            <p className="text-[10px] text-sidebar-foreground/80 truncate">Point of Sale</p>
           </div>
         </div>
       </SidebarHeader>
@@ -171,32 +171,33 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4">
-        <div className="space-y-3">
+      <SidebarFooter className="border-t p-3">
+        <div className="space-y-2">
           {/* User Profile with Photo */}
-          <div className="flex items-center gap-3 px-2">
-            <Avatar className="h-10 w-10 border-2 border-primary/20">
+          <div className="flex items-center gap-2 px-1">
+            <Avatar className="h-8 w-8 border-2 border-primary/20 flex-shrink-0">
               <AvatarImage src={photoUrl || undefined} />
               <AvatarFallback className="bg-primary/10">
-                <User className="h-5 w-5 text-primary" />
+                <User className="h-4 w-4 text-primary" />
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
+              <p className="text-xs font-medium text-sidebar-foreground truncate">
                 {username}
               </p>
-              <p className="text-xs text-sidebar-foreground/60">
-                {userRole === "admin" ? "Administrator" : userRole === "manager" ? "Manager" : "Kasir"} • {loginTime}
+              <p className="text-[10px] text-sidebar-foreground/60 truncate">
+                {userRole === "admin" ? "Admin" : userRole === "manager" ? "Manager" : "Kasir"} • {loginTime}
               </p>
             </div>
           </div>
           {/* Logout Button with Black Text */}
           <Button 
             variant="outline" 
-            className="w-full justify-start gap-2 text-black hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors" 
+            size="sm"
+            className="w-full justify-start gap-2 text-black hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors text-xs h-8" 
             onClick={handleLogout}
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3 w-3" />
             Logout
           </Button>
         </div>

@@ -10,14 +10,14 @@ export function MainLayout({ children }: MainLayoutProps) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-card px-6">
+        <div className="flex flex-1 flex-col min-w-0">
+          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-card px-4">
             <SidebarTrigger />
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold">POS System</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-semibold truncate">POS System</h1>
             </div>
           </header>
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-3 md:p-4 lg:p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>

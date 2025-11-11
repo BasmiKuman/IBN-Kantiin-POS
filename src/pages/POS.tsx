@@ -280,9 +280,15 @@ export default function POS() {
 
   const removeFromCart = (id: string, variantId?: string) => {
     setCart(cart.filter((item) => {
-      const isMatch = item.id === id && 
-        (variantId ? item.variantId === variantId : !item.variantId);
-      return !isMatch;
+      // For products with variant: match by id AND variantId
+      // For products without variant: match by id only (both should be null/undefined)
+      if (variantId) {
+        // Removing variant item: both id and variantId must match
+        return !(item.id === id && item.variantId === variantId);
+      } else {
+        // Removing non-variant item: id must match AND variantId should be null/undefined
+        return !(item.id === id && !item.variantId);
+      }
     }));
   };
 
@@ -655,11 +661,11 @@ export default function POS() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-2 space-y-4">
+    <div className="grid gap-4 md:grid-cols-[1fr,400px] lg:grid-cols-[1fr,420px]">
+      <div className="space-y-4 min-w-0">
         <Card>
-          <CardHeader>
-            <CardTitle>Produk</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Produk</CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -670,31 +676,31 @@ export default function POS() {
               />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-3">
             <Tabs defaultValue="all">
-              <TabsList className="mb-4">
-                <TabsTrigger value="all">Semua</TabsTrigger>
-                <TabsTrigger value="makanan">Makanan</TabsTrigger>
-                <TabsTrigger value="minuman">Minuman</TabsTrigger>
+              <TabsList className="mb-3">
+                <TabsTrigger value="all" className="text-xs">Semua</TabsTrigger>
+                <TabsTrigger value="makanan" className="text-xs">Makanan</TabsTrigger>
+                <TabsTrigger value="minuman" className="text-xs">Minuman</TabsTrigger>
               </TabsList>
               <TabsContent value="all" className="space-y-0">
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
                   {filteredProducts.map((product) => (
                     <Card
                       key={product.id}
                       className="cursor-pointer transition-all hover:shadow-md"
                       onClick={() => addToCart(product)}
                     >
-                      <CardContent className="p-4">
+                      <CardContent className="p-3">
                         <div className="aspect-square mb-2 flex items-center justify-center rounded-lg bg-muted">
-                          <Package className="h-12 w-12 text-muted-foreground" />
+                          <Package className="h-10 w-10 text-muted-foreground" />
                         </div>
-                        <h3 className="font-medium">{product.name}</h3>
-                        <div className="flex items-center justify-between mt-2">
-                          <p className="text-sm font-semibold text-primary">
+                        <h3 className="font-medium text-xs line-clamp-2">{product.name}</h3>
+                        <div className="flex items-center justify-between mt-1.5 gap-1">
+                          <p className="text-xs font-semibold text-primary">
                             Rp {product.price.toLocaleString()}
                           </p>
-                          <Badge variant="secondary">{product.categories?.name || 'Lainnya'}</Badge>
+                          <Badge variant="secondary" className="text-[10px] h-4 px-1 whitespace-nowrap">{product.categories?.name || 'Lainnya'}</Badge>
                         </div>
                       </CardContent>
                     </Card>
@@ -702,7 +708,7 @@ export default function POS() {
                 </div>
               </TabsContent>
               <TabsContent value="makanan">
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
                   {filteredProducts
                     .filter((p) => p.categories?.name === "Makanan")
                     .map((product) => (
@@ -711,12 +717,12 @@ export default function POS() {
                         className="cursor-pointer transition-all hover:shadow-md"
                         onClick={() => addToCart(product)}
                       >
-                        <CardContent className="p-4">
+                        <CardContent className="p-3">
                           <div className="aspect-square mb-2 flex items-center justify-center rounded-lg bg-muted">
-                            <Package className="h-12 w-12 text-muted-foreground" />
+                            <Package className="h-10 w-10 text-muted-foreground" />
                           </div>
-                          <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-sm font-semibold text-primary mt-2">
+                          <h3 className="font-medium text-xs line-clamp-2">{product.name}</h3>
+                          <p className="text-xs font-semibold text-primary mt-1.5">
                             Rp {product.price.toLocaleString()}
                           </p>
                         </CardContent>
@@ -725,7 +731,7 @@ export default function POS() {
                 </div>
               </TabsContent>
               <TabsContent value="minuman">
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
                   {filteredProducts
                     .filter((p) => p.categories?.name === "Minuman")
                     .map((product) => (
@@ -734,12 +740,12 @@ export default function POS() {
                         className="cursor-pointer transition-all hover:shadow-md"
                         onClick={() => addToCart(product)}
                       >
-                        <CardContent className="p-4">
+                        <CardContent className="p-3">
                           <div className="aspect-square mb-2 flex items-center justify-center rounded-lg bg-muted">
-                            <Package className="h-12 w-12 text-muted-foreground" />
+                            <Package className="h-10 w-10 text-muted-foreground" />
                           </div>
-                          <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-sm font-semibold text-primary mt-2">
+                          <h3 className="font-medium text-xs line-clamp-2">{product.name}</h3>
+                          <p className="text-xs font-semibold text-primary mt-1.5">
                             Rp {product.price.toLocaleString()}
                           </p>
                         </CardContent>
@@ -752,58 +758,61 @@ export default function POS() {
         </Card>
       </div>
 
-      <div className="lg:col-span-1">
-        <Card className="sticky top-20">
-          <CardHeader>
-            <CardTitle>Keranjang & Open Bills</CardTitle>
+      <div>
+        <Card className="sticky top-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Keranjang & Open Bills</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <Tabs defaultValue="cart" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="cart">
+                <TabsTrigger value="cart" className="text-xs">
                   Keranjang
                   {cart.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">{cart.length}</Badge>
+                    <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1">{cart.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="openbills">
+                <TabsTrigger value="openbills" className="text-xs">
                   Open Bills
                   {openBills.length > 0 && (
-                    <Badge variant="destructive" className="ml-2">{openBills.length}</Badge>
+                    <Badge variant="destructive" className="ml-1 text-[10px] h-4 px-1">{openBills.length}</Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
 
               {/* Tab Keranjang */}
-              <TabsContent value="cart" className="space-y-4 mt-4">
-                <div className="max-h-[300px] space-y-2 overflow-auto">
+              <TabsContent value="cart" className="space-y-3 mt-3">
+                <div className="max-h-[250px] space-y-2 overflow-auto">
                   {cart.length === 0 ? (
-                    <p className="text-center text-sm text-muted-foreground py-8">
+                    <p className="text-center text-xs text-muted-foreground py-6">
                       Keranjang kosong
                     </p>
                   ) : (
                     cart.map((item) => (
-                      <div key={item.id} className="flex items-center gap-2 rounded-lg border p-3">
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">
+                      <div key={`${item.id}-${item.variantId || 'no-variant'}`} className="flex items-center gap-2 rounded-lg border p-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-xs truncate">
+                            {item.name}
+                            {item.variantName && <span className="text-muted-foreground"> - {item.variantName}</span>}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
                             Rp {item.price.toLocaleString()} x {item.quantity}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-7 w-7"
+                            className="h-6 w-6"
                             onClick={() => updateQuantity(item.id, -1, item.variantId)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-8 text-center text-sm">{item.quantity}</span>
+                          <span className="w-6 text-center text-xs">{item.quantity}</span>
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-7 w-7"
+                            className="h-6 w-6"
                             onClick={() => updateQuantity(item.id, 1, item.variantId)}
                           >
                             <Plus className="h-3 w-3" />
@@ -811,7 +820,7 @@ export default function POS() {
                           <Button
                             size="icon"
                             variant="destructive"
-                            className="h-7 w-7"
+                            className="h-6 w-6"
                             onClick={() => removeFromCart(item.id, item.variantId)}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -822,8 +831,8 @@ export default function POS() {
                   )}
                 </div>
 
-                <div className="space-y-2 border-t pt-4">
-                  <div className="space-y-2">
+                <div className="space-y-2 border-t pt-3">
+                  <div className="space-y-1.5">
                     <Label htmlFor="customerPhone" className="text-xs">Nomor Telepon Pelanggan (Opsional)</Label>
                     <Input
                       id="customerPhone"
@@ -833,28 +842,28 @@ export default function POS() {
                         setCustomerPhone(e.target.value);
                         setNewCustomerId(null); // Reset when phone changes
                       }}
-                      className="h-8 text-sm"
+                      className="h-8 text-xs"
                     />
                     {customer && (
-                      <div className="p-2 bg-primary/10 rounded-md text-xs space-y-1">
+                      <div className="p-2 bg-primary/10 rounded-md text-[10px] space-y-0.5">
                         <p className="font-semibold text-primary">✓ {customer.name}</p>
                         {loyaltySettings.enabled && (
                           <p className="flex items-center gap-1">
                             <Gift className="h-3 w-3" />
-                            <span className="font-medium">{customer.points || 0} poin tersedia</span>
+                            <span className="font-medium">{customer.points || 0} poin</span>
                           </p>
                         )}
                       </div>
                     )}
                     {!customer && customerPhone && customerPhone.length >= 10 && (
-                      <div className="p-2 bg-orange-50 border border-orange-200 rounded-md text-xs space-y-2">
+                      <div className="p-2 bg-orange-50 border border-orange-200 rounded-md text-[10px] space-y-1.5">
                         <p className="text-orange-700">
-                          ⚠️ Nomor ini belum terdaftar
+                          ⚠️ Nomor belum terdaftar
                         </p>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full h-7 text-xs"
+                          className="w-full h-6 text-[10px]"
                           onClick={async () => {
                             if (!customerName) {
                               toast({
@@ -894,47 +903,47 @@ export default function POS() {
                           }}
                           disabled={createCustomer.isPending}
                         >
-                          {createCustomer.isPending ? "Mendaftar..." : "Daftar Customer Baru"}
+                          {createCustomer.isPending ? "Mendaftar..." : "Daftar Baru"}
                         </Button>
                       </div>
                     )}
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="customerName" className="text-xs">Nama Customer (Opsional)</Label>
                     <Input
                       id="customerName"
                       placeholder="Nama untuk order"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="h-8 text-sm"
+                      className="h-8 text-xs"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <Label htmlFor="orderNotes" className="text-xs">Catatan Order (Opsional)</Label>
                     <Input
                       id="orderNotes"
                       placeholder="Catatan khusus"
                       value={orderNotes}
                       onChange={(e) => setOrderNotes(e.target.value)}
-                      className="h-8 text-sm"
+                      className="h-8 text-xs"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2 border-t pt-4">
-                  <div className="flex justify-between text-sm">
+                <div className="space-y-1.5 border-t pt-3">
+                  <div className="flex justify-between text-xs">
                     <span>Subtotal</span>
                     <span>Rp {subtotal.toLocaleString()}</span>
                   </div>
                   {paymentSettings.showTaxSeparately && paymentSettings.taxRate > 0 && (
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs">
                       <span>Pajak ({paymentSettings.taxRate}%)</span>
                       <span>Rp {tax.toLocaleString()}</span>
                     </div>
                   )}
                   {paymentSettings.serviceCharge > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span>Service Charge ({paymentSettings.serviceCharge}%)</span>
+                    <div className="flex justify-between text-xs">
+                      <span>Service ({paymentSettings.serviceCharge}%)</span>
                       <span>Rp {serviceCharge.toLocaleString()}</span>
                     </div>
                   )}
@@ -942,7 +951,7 @@ export default function POS() {
                   {/* Loyalty Points Section */}
                   {loyaltySettings.enabled && customer && (customer.points || 0) >= loyaltySettings.minimumPointsRedeem && (
                     <>
-                      <div className="border-t pt-2 pb-2 space-y-2">
+                      <div className="border-t pt-2 pb-1.5 space-y-1.5">
                         <div className="flex items-center space-x-2">
                           <Checkbox 
                             id="usePoints" 
@@ -961,13 +970,13 @@ export default function POS() {
                               }
                             }}
                           />
-                          <Label htmlFor="usePoints" className="text-sm font-medium cursor-pointer">
-                            Gunakan Poin Loyalty
+                          <Label htmlFor="usePoints" className="text-xs font-medium cursor-pointer">
+                            Gunakan Poin
                           </Label>
                         </div>
                         
                         {usePoints && (
-                          <div className="space-y-2 pl-6">
+                          <div className="space-y-1.5 pl-6">
                             <div className="flex items-center gap-2">
                               <Input
                                 type="number"
@@ -980,25 +989,25 @@ export default function POS() {
                                   );
                                   setPointsToRedeem(Math.min(val, maxRedeemable));
                                 }}
-                                className="h-8 text-sm w-24"
+                                className="h-6 text-[10px] w-20"
                                 min={0}
                                 max={Math.min(
                                   customer.points || 0,
                                   Math.floor((subtotal + tax + serviceCharge) / loyaltySettings.rupiahPerPoint)
                                 )}
                               />
-                              <span className="text-xs text-muted-foreground">
-                                poin (max: {Math.min(
+                              <span className="text-[10px] text-muted-foreground">
+                                max: {Math.min(
                                   customer.points || 0,
                                   Math.floor((subtotal + tax + serviceCharge) / loyaltySettings.rupiahPerPoint)
-                                )})
+                                )}
                               </span>
                             </div>
-                            <p className="text-xs text-primary font-medium">
+                            <p className="text-[10px] text-primary font-medium">
                               Diskon: Rp {pointsDiscount.toLocaleString()}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              Sisa poin: {((customer.points || 0) - pointsToRedeem).toLocaleString()} poin
+                            <p className="text-[10px] text-muted-foreground">
+                              Sisa: {((customer.points || 0) - pointsToRedeem).toLocaleString()} poin
                             </p>
                           </div>
                         )}
@@ -1007,13 +1016,13 @@ export default function POS() {
                   )}
                   
                   {pointsDiscount > 0 && (
-                    <div className="flex justify-between text-sm text-primary">
+                    <div className="flex justify-between text-xs text-primary">
                       <span>Diskon Poin</span>
                       <span>- Rp {pointsDiscount.toLocaleString()}</span>
                     </div>
                   )}
                   
-                  <div className="flex justify-between text-lg font-bold">
+                  <div className="flex justify-between text-base font-bold pt-1">
                     <span>Total</span>
                     <span className="text-primary">Rp {total.toLocaleString()}</span>
                   </div>
@@ -1024,19 +1033,17 @@ export default function POS() {
                     // Tombol Save saat edit open bill
                     <>
                       <Button
-                        className="w-full"
+                        className="w-full h-9 text-xs"
                         variant="default"
-                        size="lg"
                         disabled={cart.length === 0}
                         onClick={handleSaveOpenBillChanges}
                       >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Simpan Perubahan Open Bill
+                        <FileText className="mr-2 h-3 w-3" />
+                        Simpan Perubahan
                       </Button>
                       <Button
-                        className="w-full"
+                        className="w-full h-7 text-xs"
                         variant="outline"
-                        size="sm"
                         onClick={() => {
                           setCart([]);
                           setCustomerName("");
@@ -1051,17 +1058,16 @@ export default function POS() {
                     // Tombol Open Bill normal
                     <>
                       <Button
-                        className="w-full"
+                        className="w-full h-9 text-xs"
                         variant="outline"
-                        size="lg"
                         disabled={cart.length === 0}
                         onClick={handleOpenBill}
                       >
-                        <FileText className="mr-2 h-4 w-4" />
-                        Open Bill (Cetak Dapur)
+                        <FileText className="mr-2 h-3 w-3" />
+                        Open Bill
                       </Button>
                       
-                      <div className="text-xs text-center text-muted-foreground font-medium">
+                      <div className="text-[10px] text-center text-muted-foreground font-medium">
                         atau bayar sekarang
                       </div>
                     </>
@@ -1069,68 +1075,72 @@ export default function POS() {
 
                   {!editingOpenBillNumber && (
                     <Button 
-                      className="w-full" 
-                      size="lg" 
+                      className="w-full h-10 text-sm font-medium" 
                       disabled={cart.length === 0}
                       onClick={() => setPaymentMethodDialogOpen(true)}
                     >
                       <CreditCard className="mr-2 h-4 w-4" />
-                      Pilih Metode Pembayaran
+                      Pilih Pembayaran
                     </Button>
                   )}
                 </div>
               </TabsContent>
 
               {/* Tab Open Bills */}
-              <TabsContent value="openbills" className="space-y-2 mt-4">
-                <div className="max-h-[500px] space-y-2 overflow-auto">
+              <TabsContent value="openbills" className="space-y-2 mt-3">
+                <div className="max-h-[400px] space-y-2 overflow-auto">
                   {openBills.length === 0 ? (
-                    <p className="text-center text-sm text-muted-foreground py-8">
+                    <p className="text-center text-xs text-muted-foreground py-6">
                       Belum ada Open Bill
                     </p>
                   ) : (
                     openBills.map((bill, index) => (
                       <Collapsible key={bill.orderNumber} className="border rounded-lg">
-                        <CollapsibleTrigger className="w-full p-3 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <div className="text-left flex-1">
-                              <p className="font-medium text-sm">{bill.customerName || `Order #${index + 1}`}</p>
-                              <p className="text-xs text-muted-foreground">{bill.orderNumber}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(bill.date).toLocaleString('id-ID')}
+                        <CollapsibleTrigger className="w-full p-2 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-left flex-1 min-w-0">
+                              <p className="font-medium text-xs truncate">{bill.customerName || `Order #${index + 1}`}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{bill.orderNumber}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {new Date(bill.date).toLocaleString('id-ID', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
                               </p>
                             </div>
-                            <div className="text-right">
-                              <p className="font-bold text-sm text-primary">
+                            <div className="text-right flex-shrink-0">
+                              <p className="font-bold text-xs text-primary">
                                 Rp {bill.total.toLocaleString()}
                               </p>
-                              <Badge variant="outline" className="mt-1">
+                              <Badge variant="outline" className="mt-0.5 text-[10px] h-4">
                                 {bill.items.length} item
                               </Badge>
                             </div>
-                            <ChevronDown className="h-4 w-4 ml-2" />
+                            <ChevronDown className="h-3 w-3 flex-shrink-0" />
                           </div>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="px-3 pb-3 space-y-2">
-                          <div className="border-t pt-2 space-y-1">
+                        <CollapsibleContent className="px-2 pb-2 space-y-1.5">
+                          <div className="border-t pt-1.5 space-y-0.5">
                             {bill.items.map((item, idx) => (
-                              <div key={idx} className="flex justify-between text-xs">
-                                <span>{item.name} x{item.quantity}</span>
-                                <span>Rp {(item.price * item.quantity).toLocaleString()}</span>
+                              <div key={idx} className="flex justify-between text-[10px]">
+                                <span className="truncate mr-2">{item.name} x{item.quantity}</span>
+                                <span className="flex-shrink-0">Rp {(item.price * item.quantity).toLocaleString()}</span>
                               </div>
                             ))}
                           </div>
                           {bill.notes && (
-                            <div className="text-xs bg-yellow-50 p-2 rounded border border-yellow-200">
+                            <div className="text-[10px] bg-yellow-50 p-1.5 rounded border border-yellow-200">
                               <strong>Catatan:</strong> {bill.notes}
                             </div>
                           )}
-                          <div className="grid grid-cols-3 gap-1 pt-2">
+                          <div className="grid grid-cols-3 gap-1 pt-1.5">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleLoadOpenBillToCart(bill.orderNumber)}
-                              className="text-xs h-8"
+                              className="text-[10px] h-7"
                             >
                               Load
                             </Button>
@@ -1140,7 +1150,7 @@ export default function POS() {
                                 setSelectedOpenBillForPayment(bill.orderNumber);
                                 setOpenBillPaymentDialogOpen(true);
                               }}
-                              className="text-xs h-8"
+                              className="text-[10px] h-7"
                             >
                               Bayar
                             </Button>
@@ -1148,7 +1158,7 @@ export default function POS() {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleDeleteOpenBill(bill.orderNumber)}
-                              className="text-xs h-8"
+                              className="text-[10px] h-7"
                             >
                               Hapus
                             </Button>
