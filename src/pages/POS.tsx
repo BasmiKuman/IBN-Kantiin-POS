@@ -661,8 +661,8 @@ export default function POS() {
   };
 
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-[1fr,380px] md:grid-cols-[1fr,400px] lg:grid-cols-[1fr,420px]">
-      <div className="space-y-4 min-w-0 overflow-hidden">
+    <div className="flex flex-col sm:flex-row gap-4 w-full">
+      <div className="flex-1 space-y-4 min-w-0">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Produk</CardTitle>
@@ -758,14 +758,14 @@ export default function POS() {
         </Card>
       </div>
 
-      <div className="sm:block">
-        <Card className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
-          <CardHeader className="pb-3 flex-shrink-0">
+      <div className="w-full sm:w-[380px] md:w-[400px] lg:w-[420px] flex-shrink-0">
+        <Card className="sticky top-4">
+          <CardHeader className="pb-3">
             <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 overflow-auto flex-1">
-            <Tabs defaultValue="cart" className="w-full h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+          <CardContent className="space-y-3">
+            <Tabs defaultValue="cart" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="cart" className="text-sm">
                   Keranjang
                   {cart.length > 0 && (
@@ -782,7 +782,7 @@ export default function POS() {
 
               {/* Tab Keranjang */}
               <TabsContent value="cart" className="space-y-3 mt-3">
-                <div className="max-h-[280px] space-y-2 overflow-auto">
+                <div className="max-h-[calc(100vh-28rem)] sm:max-h-[280px] space-y-2 overflow-auto">
                   {cart.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground py-8">
                       Keranjang kosong
@@ -1088,7 +1088,7 @@ export default function POS() {
 
               {/* Tab Open Bills */}
               <TabsContent value="openbills" className="space-y-2 mt-3">
-                <div className="max-h-[450px] space-y-2 overflow-auto">
+                <div className="max-h-[calc(100vh-28rem)] sm:max-h-[450px] space-y-2 overflow-auto">
                   {openBills.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground py-8">
                       Belum ada Open Bill
