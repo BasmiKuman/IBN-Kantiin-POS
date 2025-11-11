@@ -764,11 +764,35 @@ export default function Settings() {
               <CardDescription>Cetak struk langsung ke printer Bluetooth</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Platform Info */}
+              {bluetoothPrinterService.getPlatformType() === 'web' && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800 font-medium mb-1">
+                    🖥️ Mode Web Bluetooth (Desktop)
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Anda menggunakan browser desktop dengan Web Bluetooth API. 
+                    Pastikan printer Bluetooth sudah dalam mode pairing dan terdeteksi oleh sistem.
+                  </p>
+                </div>
+              )}
+
+              {bluetoothPrinterService.getPlatformType() === 'native' && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm text-green-800 font-medium mb-1">
+                    📱 Mode Native (Android/iOS)
+                  </p>
+                  <p className="text-sm text-green-700">
+                    Anda menggunakan aplikasi mobile dengan native Bluetooth plugin.
+                  </p>
+                </div>
+              )}
+
               {!bluetoothPrinterService.isAvailable() && (
                 <div className="p-4 bg-orange-50 border border-orange-200 rounded-md">
                   <p className="text-sm text-orange-800">
-                    ⚠️ Fitur Bluetooth printer hanya tersedia di aplikasi Android/iOS. 
-                    Fitur ini tidak berfungsi di browser web.
+                    ⚠️ Bluetooth printer tidak tersedia. 
+                    Pastikan Anda menggunakan Chrome/Edge desktop (Web Bluetooth) atau aplikasi Android/iOS.
                   </p>
                 </div>
               )}
