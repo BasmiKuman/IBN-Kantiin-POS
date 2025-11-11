@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Plus, Pencil, Trash2, AlertCircle, Settings } from "lucide-react";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/supabase/useProducts";
 import { useCategories, useCreateCategory } from "@/hooks/supabase/useCategories";
@@ -789,15 +790,16 @@ export default function Inventory() {
 
           <div className="space-y-6">
             {/* Toggle Has Variants */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+            <div className="flex items-center space-x-3 p-4 border rounded-lg bg-muted/30">
+              <Checkbox
                 id="has-variants"
                 checked={managingVariantsProduct?.has_variants || false}
-                onChange={(e) => handleToggleHasVariants(e.target.checked)}
-                className="h-4 w-4"
+                onCheckedChange={(checked) => handleToggleHasVariants(checked as boolean)}
               />
-              <Label htmlFor="has-variants" className="text-sm font-medium">
+              <Label 
+                htmlFor="has-variants" 
+                className="text-sm font-medium cursor-pointer flex-1"
+              >
                 Produk ini memiliki varian
               </Label>
             </div>
