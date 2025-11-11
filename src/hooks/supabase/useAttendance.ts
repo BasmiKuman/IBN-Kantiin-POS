@@ -117,9 +117,15 @@ export function useAttendanceSummary() {
         .select('*')
         .order('employee_name');
 
-      if (error) throw error;
+      // If view doesn't exist, return empty array instead of throwing
+      if (error) {
+        console.warn('Attendance summary view not available:', error.message);
+        return [] as AttendanceSummary[];
+      }
       return data as AttendanceSummary[];
     },
+    // Don't retry if view doesn't exist
+    retry: false,
   });
 }
 
