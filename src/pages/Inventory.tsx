@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -74,9 +75,11 @@ export default function Inventory() {
   const deleteVariant = useDeleteVariant();
   const toggleProductVariants = useToggleProductVariants();
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || product.category_id === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const handleCreateProduct = async () => {
     if (!formData.name || !formData.category_id || !formData.price) {
@@ -620,20 +623,62 @@ export default function Inventory() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <CardTitle>Daftar Produk</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Cari produk..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex items-center gap-3">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Semua Kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kategori</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Cari produk..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
+          {/* Filter Info */}
+          {(selectedCategory !== "all" || searchQuery) && (
+            <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Menampilkan {filteredProducts.length} dari {products.length} produk</span>
+              {selectedCategory !== "all" && (
+                <Badge variant="secondary" className="gap-1">
+                  {categories.find(c => c.id === selectedCategory)?.name}
+                  <button 
+                    onClick={() => setSelectedCategory("all")}
+                    className="ml-1 hover:bg-muted rounded-full"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {searchQuery && (
+                <Badge variant="secondary" className="gap-1">
+                  "{searchQuery}"
+                  <button 
+                    onClick={() => setSearchQuery("")}
+                    className="ml-1 hover:bg-muted rounded-full"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
+
           {lowStockCount > 0 && (
             <div className="mb-4 rounded-lg border border-warning bg-warning/10 p-4">
               <div className="flex items-start gap-3">
