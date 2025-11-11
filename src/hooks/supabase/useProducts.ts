@@ -98,12 +98,12 @@ export function useCreateProduct() {
       if (error.code === '23505') {
         // Unique constraint violation
         if (error.message.includes('sku')) {
-          errorMessage = 'SKU sudah digunakan. Gunakan SKU yang berbeda.';
+          errorMessage = 'SKU sudah digunakan (mungkin oleh produk yang sudah dihapus). Gunakan SKU yang berbeda atau kosongkan untuk auto-generate.';
         } else {
           errorMessage = 'Data duplikat terdeteksi. Periksa kembali input Anda.';
         }
       } else if (error.message.includes('409')) {
-        errorMessage = 'Terjadi konflik data. SKU mungkin sudah digunakan.';
+        errorMessage = 'SKU sudah digunakan (mungkin oleh produk yang dihapus). Kosongkan SKU untuk auto-generate atau gunakan SKU lain.';
       }
 
       toast({

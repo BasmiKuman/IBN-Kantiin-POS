@@ -80,16 +80,19 @@ export default function Inventory() {
       sku = `SKU-${timestamp}-${randomNum}`;
     }
 
-    // Cek apakah SKU sudah ada
+    // Cek apakah SKU sudah ada di produk yang AKTIF
     const skuExists = products.some(p => p.sku.toLowerCase() === sku.toLowerCase());
     if (skuExists) {
       toast({
         title: "Error",
-        description: `SKU "${sku}" sudah digunakan. Mohon gunakan SKU yang berbeda.`,
+        description: `SKU "${sku}" sudah digunakan oleh produk aktif. Mohon gunakan SKU yang berbeda.`,
         variant: "destructive",
       });
       return;
     }
+    
+    // Note: Tetap bisa error jika SKU ada di produk yang sudah dihapus (is_active=false)
+    // Database akan menolak dengan error 409, yang akan ditangani di useCreateProduct
 
     createProduct.mutate({
       name: formData.name,
