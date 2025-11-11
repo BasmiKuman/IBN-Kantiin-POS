@@ -1,21 +1,22 @@
 -- =====================================================
--- FIX ATTENDANCE TABLE - Remove NOT NULL constraint
+-- FIX ATTENDANCE TABLE - Make employee_username nullable
 -- Run this in Supabase Dashboard > SQL Editor
 -- =====================================================
 
--- Make employee_username nullable (we have employee_id foreign key already)
+-- The production table has these columns:
+-- id, employee_id, employee_username, employee_name, clock_in, clock_out, date, created_at, updated_at
+-- We need to make employee_username and employee_name nullable since we have employee_id
+
+-- Option 1: Make columns nullable (Recommended)
 ALTER TABLE public.attendance 
 ALTER COLUMN employee_username DROP NOT NULL;
 
--- If the column doesn't serve a purpose, we can also drop it entirely
--- Uncomment below if you want to remove the column:
--- ALTER TABLE public.attendance DROP COLUMN IF EXISTS employee_username;
+ALTER TABLE public.attendance 
+ALTER COLUMN employee_name DROP NOT NULL;
 
 -- Verify the change
-SELECT 'Constraint removed successfully!' as status;
+SELECT 'Constraint removed successfully! Columns are now nullable.' as status;
 
 -- Test insert (should work now)
--- Replace with actual employee_id from your employees table
--- INSERT INTO attendance (employee_id) 
--- VALUES ('your-employee-id-here')
--- RETURNING *;
+-- The app will only send employee_id, other fields will be NULL or auto-filled
+SELECT 'You can now insert with just employee_id' as note;

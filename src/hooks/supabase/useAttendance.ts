@@ -1,19 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 import { toast } from '@/hooks/use-toast';
 
-type AttendanceInsert = Database['public']['Tables']['attendance']['Insert'];
-type AttendanceUpdate = Database['public']['Tables']['attendance']['Update'];
-
+// Actual table structure in production:
+// id, employee_id, employee_username, employee_name, clock_in, clock_out, date, created_at, updated_at
 export interface Attendance {
   id: string;
   employee_id: string;
+  employee_username?: string | null;
+  employee_name?: string | null;
   clock_in: string;
   clock_out: string | null;
-  work_duration: number | null;
-  status: 'present' | 'late' | 'half_day' | 'absent';
-  notes: string | null;
+  date?: string;
   created_at: string;
   updated_at: string;
   employees?: {
@@ -135,13 +133,11 @@ export function useClockIn() {
 
   return useMutation({
     mutationFn: async (employeeId: string) => {
-      const insertData: AttendanceInsert = {
-        employee_id: employeeId,
-      };
-      
       const { data, error } = await supabase
         .from('attendance')
-        .insert(insertData as any)
+        .insert({
+          employee_id: employeeId,
+        })
         .select()
         .single();
 
@@ -171,13 +167,11 @@ export function useClockOut() {
 
   return useMutation({
     mutationFn: async (attendanceId: string) => {
-      const updateData: AttendanceUpdate = {
-        clock_out: new Date().toISOString(),
-      };
-      
       const { data, error } = await supabase
         .from('attendance')
-        .update(updateData as any)
+        .update({
+          clock_out: new Date().toISOString(),
+        })
         .eq('id', attendanceId)
         .select()
         .single();
@@ -224,22 +218,15 @@ export function useActiveAttendance(employeeId: string) {
 }
 
 // Update attendance notes
+// Note: This function is disabled because the production table doesn't have 'notes' column
 export function useUpdateAttendanceNotes() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
-      const updateData: AttendanceUpdate = { notes };
-      
-      const { data, error } = await supabase
-        .from('attendance')
-        .update(updateData as any)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      // Notes column doesn't exist in production table
+      console.warn('Notes column not available in attendance table');
+      throw new Error('Notes feature is not available');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
@@ -251,7 +238,7 @@ export function useUpdateAttendanceNotes() {
     onError: (error: any) => {
       toast({
         title: "Gagal Update",
-        description: error.message,
+        description: error.message || 'Fitur catatan tidak tersedia',
         variant: "destructive",
       });
     },
