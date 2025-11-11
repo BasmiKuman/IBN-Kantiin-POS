@@ -27,9 +27,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, AlertCircle, Settings } from "lucide-react";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/supabase/useProducts";
 import { useCategories, useCreateCategory } from "@/hooks/supabase/useCategories";
+import { useProductVariants, useCreateVariant, useUpdateVariant, useDeleteVariant, useToggleProductVariants } from "@/hooks/supabase/useProductVariants";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Inventory() {
@@ -37,8 +38,18 @@ export default function Inventory() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isVariantsDialogOpen, setIsVariantsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [managingVariantsProduct, setManagingVariantsProduct] = useState<any>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [variantFormData, setVariantFormData] = useState({
+    name: "",
+    price: "",
+    cost: "",
+    sku_suffix: "",
+    sort_order: "0",
+  });
+  const [editingVariant, setEditingVariant] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
     category_id: "",
@@ -57,6 +68,11 @@ export default function Inventory() {
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
   const createCategory = useCreateCategory();
+  const { data: variants = [] } = useProductVariants(managingVariantsProduct?.id || "");
+  const createVariant = useCreateVariant();
+  const updateVariant = useUpdateVariant();
+  const deleteVariant = useDeleteVariant();
+  const toggleProductVariants = useToggleProductVariants();
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -99,10 +115,13 @@ export default function Inventory() {
       category_id: formData.category_id,
       sku: sku,
       price: parseFloat(formData.price),
-      cost: formData.cost ? parseFloat(formData.cost) : 0,
+      cost: formData.cost ? parseFloat(formData.cost) : null,
       stock: formData.stock ? parseInt(formData.stock) : 0,
-      min_stock: formData.min_stock ? parseInt(formData.min_stock) : 0,
+      min_stock: formData.min_stock ? parseInt(formData.min_stock) : null,
       description: formData.description || null,
+      is_active: true,
+      image_url: null,
+      has_variants: false,
     }, {
       onSuccess: () => {
         setIsAddDialogOpen(false);
@@ -199,6 +218,58 @@ export default function Inventory() {
         },
       }
     );
+  };
+
+  const handleManageVariants = (product: any) => {
+    setManagingVariantsProduct(product);
+    setIsVariantsDialogOpen(true);
+  };
+
+  const handleCreateVariant = () => {
+    if (!variantFormData.name || !variantFormData.price) {
+      toast({
+        title: "Error",
+        description: "Nama dan Harga varian wajib diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createVariant.mutate(
+      {
+        product_id: managingVariantsProduct.id,
+        name: variantFormData.name,
+        price: parseFloat(variantFormData.price),
+        cost: variantFormData.cost ? parseFloat(variantFormData.cost) : null,
+        sku_suffix: variantFormData.sku_suffix || null,
+        sort_order: parseInt(variantFormData.sort_order) || 0,
+        stock: null,
+        is_active: true,
+      },
+      {
+        onSuccess: () => {
+          setVariantFormData({ name: "", price: "", cost: "", sku_suffix: "", sort_order: "0" });
+        },
+      }
+    );
+  };
+
+  const handleToggleHasVariants = (checked: boolean) => {
+    if (!managingVariantsProduct) return;
+    
+    toggleProductVariants.mutate({
+      productId: managingVariantsProduct.id,
+      hasVariants: checked,
+    });
+  };
+
+  const handleDeleteVariant = (variantId: string) => {
+    if (!confirm("Yakin ingin menghapus varian ini?")) return;
+    
+    deleteVariant.mutate({
+      id: variantId,
+      productId: managingVariantsProduct.id,
+    });
   };
 
   const totalProducts = products.length;
@@ -607,6 +678,14 @@ export default function Inventory() {
                     <TableCell>{getStatusBadge(product)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button 
+                          size="icon" 
+                          variant="outline" 
+                          onClick={() => handleManageVariants(product)}
+                          title="Kelola Varian"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="outline" onClick={() => handleEditClick(product)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -627,6 +706,110 @@ export default function Inventory() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Variants Management Dialog */}
+      <Dialog open={isVariantsDialogOpen} onOpenChange={setIsVariantsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Kelola Varian - {managingVariantsProduct?.name}</DialogTitle>
+            <DialogDescription>
+              Tambah dan kelola varian produk (ukuran, rasa, dll)
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Toggle Has Variants */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="has-variants"
+                checked={managingVariantsProduct?.has_variants || false}
+                onChange={(e) => handleToggleHasVariants(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="has-variants" className="text-sm font-medium">
+                Produk ini memiliki varian
+              </Label>
+            </div>
+
+            {/* Existing Variants List */}
+            {variants.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Daftar Varian:</Label>
+                <div className="border rounded-lg divide-y">
+                  {variants.map((variant) => (
+                    <div key={variant.id} className="p-3 flex items-center justify-between hover:bg-accent">
+                      <div>
+                        <p className="font-medium">{variant.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Rp {variant.price.toLocaleString()}
+                          {variant.sku_suffix && ` • SKU: ${variant.sku_suffix}`}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteVariant(variant.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add New Variant Form */}
+            <div className="space-y-4 border-t pt-4">
+              <Label className="text-sm font-medium">Tambah Varian Baru:</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nama Varian *</Label>
+                  <Input
+                    placeholder="Small, Medium, Large"
+                    value={variantFormData.name}
+                    onChange={(e) => setVariantFormData({ ...variantFormData, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Harga *</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={variantFormData.price}
+                    onChange={(e) => setVariantFormData({ ...variantFormData, price: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Harga Modal</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={variantFormData.cost}
+                    onChange={(e) => setVariantFormData({ ...variantFormData, cost: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>SKU Suffix</Label>
+                  <Input
+                    placeholder="-S, -M, -L"
+                    value={variantFormData.sku_suffix}
+                    onChange={(e) => setVariantFormData({ ...variantFormData, sku_suffix: e.target.value })}
+                  />
+                </div>
+              </div>
+              <Button
+                onClick={handleCreateVariant}
+                disabled={createVariant.isPending}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {createVariant.isPending ? "Menyimpan..." : "Tambah Varian"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

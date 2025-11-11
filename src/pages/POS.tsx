@@ -11,11 +11,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Checkbox } from "@/components/ui/checkbox";
 import { useProducts } from "@/hooks/supabase/useProducts";
 import { useCategories } from "@/hooks/supabase/useCategories";
+import { useProductVariants } from "@/hooks/supabase/useProductVariants";
 import { useCreateTransaction, generateTransactionNumber } from "@/hooks/supabase/useTransactions";
 import { useSearchCustomer, useUpdateCustomerPoints, useCreateCustomer } from "@/hooks/supabase/useCustomers";
 import { toast } from "@/hooks/use-toast";
 import { Receipt } from "@/components/Receipt";
 import { KitchenReceipt } from "@/components/KitchenReceipt";
+import { VariantSelector } from "@/components/VariantSelector";
 import { useReactToPrint } from "react-to-print";
 
 interface CartItem {
@@ -24,6 +26,8 @@ interface CartItem {
   price: number;
   quantity: number;
   category: string;
+  variantId?: string;
+  variantName?: string;
 }
 
 interface PaymentSettings {
@@ -62,6 +66,11 @@ export default function POS() {
   const [paymentMethodDialogOpen, setPaymentMethodDialogOpen] = useState(false);
   const [qrisDialogOpen, setQrisDialogOpen] = useState(false);
   const [qrisTransactionTotal, setQrisTransactionTotal] = useState(0);
+  
+  // Variant selector state
+  const [variantSelectorOpen, setVariantSelectorOpen] = useState(false);
+  const [selectedProductForVariant, setSelectedProductForVariant] = useState<any>(null);
+  
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
     cashEnabled: true,
     cardEnabled: false,
@@ -136,6 +145,7 @@ export default function POS() {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: categories = [] } = useCategories();
   const { data: customer } = useSearchCustomer(customerPhone);
+  const { data: productVariants = [] } = useProductVariants(selectedProductForVariant?.id || "");
   const createTransaction = useCreateTransaction();
   const updateCustomerPoints = useUpdateCustomerPoints();
   const createCustomer = useCreateCustomer();
@@ -193,11 +203,21 @@ export default function POS() {
   }, []);
 
   const addToCart = (product: typeof products[0]) => {
-    const existingItem = cart.find((item) => item.id === product.id);
+    // Check if product has variants
+    if (product.has_variants) {
+      setSelectedProductForVariant(product);
+      setVariantSelectorOpen(true);
+      return;
+    }
+
+    // No variants - add directly to cart
+    const existingItem = cart.find((item) => item.id === product.id && !item.variantId);
     if (existingItem) {
       setCart(
         cart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === product.id && !item.variantId
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         )
       );
     } else {
@@ -211,18 +231,59 @@ export default function POS() {
     }
   };
 
-  const updateQuantity = (id: string, change: number) => {
+  const addVariantToCart = (variant: any) => {
+    const product = selectedProductForVariant;
+    if (!product) return;
+
+    // Create unique ID for cart item with variant
+    const cartItemId = `${product.id}-${variant.id}`;
+    const existingItem = cart.find((item) => 
+      item.id === product.id && item.variantId === variant.id
+    );
+
+    if (existingItem) {
+      setCart(
+        cart.map((item) =>
+          item.id === product.id && item.variantId === variant.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
+    } else {
+      setCart([...cart, {
+        id: product.id,
+        name: `${product.name} - ${variant.name}`,
+        price: Number(variant.price),
+        quantity: 1,
+        category: product.categories?.name || 'Lainnya',
+        variantId: variant.id,
+        variantName: variant.name,
+      }]);
+    }
+  };
+
+  const updateQuantity = (id: string, change: number, variantId?: string) => {
     setCart(
       cart
-        .map((item) =>
-          item.id === id ? { ...item, quantity: Math.max(0, item.quantity + change) } : item
-        )
+        .map((item) => {
+          // Match by id and variantId (if exists)
+          const isMatch = item.id === id && 
+            (variantId ? item.variantId === variantId : !item.variantId);
+          
+          return isMatch
+            ? { ...item, quantity: Math.max(0, item.quantity + change) }
+            : item;
+        })
         .filter((item) => item.quantity > 0)
     );
   };
 
-  const removeFromCart = (id: string) => {
-    setCart(cart.filter((item) => item.id !== id));
+  const removeFromCart = (id: string, variantId?: string) => {
+    setCart(cart.filter((item) => {
+      const isMatch = item.id === id && 
+        (variantId ? item.variantId === variantId : !item.variantId);
+      return !isMatch;
+    }));
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -732,7 +793,7 @@ export default function POS() {
                             size="icon"
                             variant="outline"
                             className="h-7 w-7"
-                            onClick={() => updateQuantity(item.id, -1)}
+                            onClick={() => updateQuantity(item.id, -1, item.variantId)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
@@ -741,7 +802,7 @@ export default function POS() {
                             size="icon"
                             variant="outline"
                             className="h-7 w-7"
-                            onClick={() => updateQuantity(item.id, 1)}
+                            onClick={() => updateQuantity(item.id, 1, item.variantId)}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -749,7 +810,7 @@ export default function POS() {
                             size="icon"
                             variant="destructive"
                             className="h-7 w-7"
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeFromCart(item.id, item.variantId)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -1594,6 +1655,18 @@ export default function POS() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Variant Selector Dialog */}
+      <VariantSelector
+        open={variantSelectorOpen}
+        onClose={() => {
+          setVariantSelectorOpen(false);
+          setSelectedProductForVariant(null);
+        }}
+        productName={selectedProductForVariant?.name || ""}
+        variants={productVariants}
+        onSelect={addVariantToCart}
+      />
     </div>
   );
 }
