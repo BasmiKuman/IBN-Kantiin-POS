@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useProducts } from "@/hooks/supabase/useProducts";
 import { useCategories } from "@/hooks/supabase/useCategories";
 import { useCreateTransaction, generateTransactionNumber } from "@/hooks/supabase/useTransactions";
-import { useSearchCustomer, useUpdateCustomerPoints } from "@/hooks/supabase/useCustomers";
+import { useSearchCustomer, useUpdateCustomerPoints, useCreateCustomer } from "@/hooks/supabase/useCustomers";
 import { toast } from "@/hooks/use-toast";
 import { Receipt } from "@/components/Receipt";
 import { KitchenReceipt } from "@/components/KitchenReceipt";
@@ -50,6 +50,7 @@ export default function POS() {
   const [searchQuery, setSearchQuery] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [newCustomerId, setNewCustomerId] = useState<string | null>(null);
   const [orderNotes, setOrderNotes] = useState("");
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
@@ -137,6 +138,7 @@ export default function POS() {
   const { data: customer } = useSearchCustomer(customerPhone);
   const createTransaction = useCreateTransaction();
   const updateCustomerPoints = useUpdateCustomerPoints();
+  const createCustomer = useCreateCustomer();
 
   // Load open bills from localStorage on mount
   useEffect(() => {
@@ -258,6 +260,9 @@ export default function POS() {
       const paymentAmountNum = paidAmount || total;
       const changeAmount = method === 'cash' ? Math.max(0, paymentAmountNum - total) : 0;
 
+      // Determine customer ID (existing customer or newly created)
+      const customerId = customer?.id || newCustomerId || null;
+
       // Calculate earned points only if loyalty enabled and meets minimum purchase
       const earnedPoints = loyaltySettings.enabled && subtotal >= loyaltySettings.minimumPurchaseEarn 
         ? Math.floor(subtotal / loyaltySettings.pointsPerRupiah)
@@ -269,7 +274,7 @@ export default function POS() {
       await createTransaction.mutateAsync({
         transaction: {
           transaction_number: transactionNumber,
-          customer_id: customer?.id || null,
+          customer_id: customerId,
           cashier_id: null, // TODO: Get from auth
           subtotal,
           discount: pointsDiscount,
@@ -290,16 +295,17 @@ export default function POS() {
         })),
       });
 
-      // Update customer points if customer selected
+      // Update customer points if customer selected (existing or newly created)
       let updatedCustomerPoints = customer?.points || 0;
-      if (customer) {
+      if (customerId) {
         // New points = current points - redeemed + earned
-        const newPoints = (customer.points || 0) - redeemedPoints + earnedPoints;
-        const newTotalPurchases = (customer.total_purchases || 0) + total;
+        const currentPoints = customer?.points || 0;
+        const newPoints = currentPoints - redeemedPoints + earnedPoints;
+        const newTotalPurchases = (customer?.total_purchases || 0) + total;
         updatedCustomerPoints = newPoints;
 
         await updateCustomerPoints.mutateAsync({
-          id: customer.id,
+          id: customerId,
           points: newPoints,
           totalPurchases: newTotalPurchases,
         });
@@ -335,6 +341,7 @@ export default function POS() {
       setPaymentAmount("");
       setCustomerPhone("");
       setCustomerName("");
+      setNewCustomerId(null);
       setUsePoints(false);
       setPointsToRedeem(0);
 
@@ -759,7 +766,10 @@ export default function POS() {
                       id="customerPhone"
                       placeholder="08123456789"
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      onChange={(e) => {
+                        setCustomerPhone(e.target.value);
+                        setNewCustomerId(null); // Reset when phone changes
+                      }}
                       className="h-8 text-sm"
                     />
                     {customer && (
@@ -771,6 +781,58 @@ export default function POS() {
                             <span className="font-medium">{customer.points || 0} poin tersedia</span>
                           </p>
                         )}
+                      </div>
+                    )}
+                    {!customer && customerPhone && customerPhone.length >= 10 && (
+                      <div className="p-2 bg-orange-50 border border-orange-200 rounded-md text-xs space-y-2">
+                        <p className="text-orange-700">
+                          ⚠️ Nomor ini belum terdaftar
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full h-7 text-xs"
+                          onClick={async () => {
+                            if (!customerName) {
+                              toast({
+                                title: "Nama Diperlukan",
+                                description: "Mohon isi Nama Customer terlebih dahulu",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            
+                            createCustomer.mutate({
+                              name: customerName,
+                              phone: customerPhone,
+                              email: null,
+                              address: null,
+                              notes: null,
+                              points: 0,
+                              tier: 'bronze',
+                              total_purchases: 0,
+                              last_purchase_date: null,
+                            }, {
+                              onSuccess: (data) => {
+                                setNewCustomerId(data.id);
+                                toast({
+                                  title: "Berhasil!",
+                                  description: `Customer ${customerName} berhasil didaftarkan`,
+                                });
+                              },
+                              onError: () => {
+                                toast({
+                                  title: "Error",
+                                  description: "Gagal mendaftarkan customer",
+                                  variant: "destructive",
+                                });
+                              }
+                            });
+                          }}
+                          disabled={createCustomer.isPending}
+                        >
+                          {createCustomer.isPending ? "Mendaftar..." : "Daftar Customer Baru"}
+                        </Button>
                       </div>
                     )}
                   </div>
