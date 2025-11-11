@@ -1,25 +1,34 @@
 -- =====================================================
 -- JALANKAN SQL INI DI SUPABASE DASHBOARD
 -- =====================================================
--- Cara:
--- 1. Buka Supabase Dashboard
--- 2. Pilih project Anda
--- 3. Klik "SQL Editor" di sidebar kiri
--- 4. Klik "New Query"
--- 5. Copy-paste SQL di bawah ini
--- 6. Klik "Run" untuk menjalankan
+-- FIX: SKU conflict dengan produk yang sudah dihapus
 -- =====================================================
 
--- Tambah kolom username dan password ke tabel employees
-ALTER TABLE employees
-ADD COLUMN IF NOT EXISTS username TEXT UNIQUE,
-ADD COLUMN IF NOT EXISTS password TEXT;
+-- STEP 1: Drop index jika sudah ada (fix error 42P07)
+DROP INDEX IF EXISTS products_sku_active_unique;
 
--- Buat index untuk mempercepat pencarian username
-CREATE INDEX IF NOT EXISTS idx_employees_username ON employees(username);
+-- STEP 2: Drop constraint lama
+ALTER TABLE products DROP CONSTRAINT IF EXISTS products_sku_key;
 
--- Verifikasi kolom sudah ditambahkan
-SELECT column_name, data_type, is_nullable
-FROM information_schema.columns
-WHERE table_name = 'employees'
-ORDER BY ordinal_position;
+-- STEP 3: Create PARTIAL UNIQUE INDEX
+-- SKU hanya unique untuk produk aktif (is_active = true)
+CREATE UNIQUE INDEX products_sku_active_unique 
+ON products (sku) 
+WHERE is_active = true;
+
+-- STEP 4: Update SKU produk inactive (fix foreign key issue)
+-- Tambah suffix "_DELETED_" + timestamp ke SKU
+UPDATE products 
+SET sku = sku || '_DELETED_' || EXTRACT(EPOCH FROM NOW())::BIGINT::TEXT
+WHERE is_active = false 
+  AND sku NOT LIKE '%_DELETED_%';
+
+-- STEP 5: Verify
+SELECT 
+    COUNT(*) FILTER (WHERE is_active = true) as active_count,
+    COUNT(*) FILTER (WHERE is_active = false AND sku LIKE '%_DELETED_%') as cleaned_count
+FROM products;
+
+-- =====================================================
+-- SELESAI! Refresh browser dan coba tambah produk lagi
+-- =====================================================
