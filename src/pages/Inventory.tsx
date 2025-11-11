@@ -63,10 +63,29 @@ export default function Inventory() {
   );
 
   const handleCreateProduct = async () => {
-    if (!formData.name || !formData.category_id || !formData.sku || !formData.price) {
+    if (!formData.name || !formData.category_id || !formData.price) {
       toast({
         title: "Error",
-        description: "Mohon isi semua field yang wajib",
+        description: "Mohon isi Nama, Kategori, dan Harga",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Auto-generate SKU jika kosong
+    let sku = formData.sku;
+    if (!sku || sku.trim() === "") {
+      const timestamp = Date.now();
+      const randomNum = Math.floor(Math.random() * 1000);
+      sku = `SKU-${timestamp}-${randomNum}`;
+    }
+
+    // Cek apakah SKU sudah ada
+    const skuExists = products.some(p => p.sku.toLowerCase() === sku.toLowerCase());
+    if (skuExists) {
+      toast({
+        title: "Error",
+        description: `SKU "${sku}" sudah digunakan. Mohon gunakan SKU yang berbeda.`,
         variant: "destructive",
       });
       return;
@@ -75,7 +94,7 @@ export default function Inventory() {
     createProduct.mutate({
       name: formData.name,
       category_id: formData.category_id,
-      sku: formData.sku,
+      sku: sku,
       price: parseFloat(formData.price),
       cost: formData.cost ? parseFloat(formData.cost) : 0,
       stock: formData.stock ? parseInt(formData.stock) : 0,
@@ -425,12 +444,15 @@ export default function Inventory() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>SKU *</Label>
+                <Label>SKU (Opsional)</Label>
                 <Input 
-                  placeholder="FOOD-001" 
+                  placeholder="Kosongkan untuk auto-generate" 
                   value={formData.sku}
                   onChange={(e) => setFormData({...formData, sku: e.target.value})}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Biarkan kosong untuk SKU otomatis
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

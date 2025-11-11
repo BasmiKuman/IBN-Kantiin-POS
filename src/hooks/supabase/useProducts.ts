@@ -91,10 +91,24 @@ export function useCreateProduct() {
         description: 'Produk berhasil ditambahkan',
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      let errorMessage = error.message;
+      
+      // Handle specific error codes
+      if (error.code === '23505') {
+        // Unique constraint violation
+        if (error.message.includes('sku')) {
+          errorMessage = 'SKU sudah digunakan. Gunakan SKU yang berbeda.';
+        } else {
+          errorMessage = 'Data duplikat terdeteksi. Periksa kembali input Anda.';
+        }
+      } else if (error.message.includes('409')) {
+        errorMessage = 'Terjadi konflik data. SKU mungkin sudah digunakan.';
+      }
+
       toast({
         title: 'Gagal',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     },
