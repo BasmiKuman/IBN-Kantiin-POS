@@ -29,6 +29,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function Customers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -304,7 +306,14 @@ export default function Customers() {
                         </TableCell>
                         <TableCell>{getTierBadge(customer.tier || 'bronze')}</TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setIsDetailDialogOpen(true);
+                            }}
+                          >
                             Detail
                           </Button>
                         </TableCell>
@@ -439,6 +448,145 @@ export default function Customers() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Customer Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detail Pelanggan</DialogTitle>
+            <DialogDescription>
+              Informasi lengkap dan riwayat transaksi pelanggan
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCustomer && (
+            <div className="space-y-6">
+              {/* Customer Info */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-muted-foreground">Nama Lengkap</Label>
+                    <p className="text-lg font-semibold">{selectedCustomer.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">No. Telepon</Label>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <p className="font-medium">{selectedCustomer.phone}</p>
+                    </div>
+                  </div>
+                  {selectedCustomer.email && (
+                    <div>
+                      <Label className="text-muted-foreground">Email</Label>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-medium">{selectedCustomer.email}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-muted-foreground">Tier Membership</Label>
+                    <div className="mt-2">
+                      {getTierBadge(selectedCustomer.tier || 'bronze')}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Loyalty Points</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Star className="h-5 w-5 fill-warning text-warning" />
+                      <p className="text-xl font-bold">{selectedCustomer.points || 0}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Bergabung Sejak</Label>
+                    <p className="font-medium">
+                      {new Date(selectedCustomer.created_at).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-primary">
+                        Rp {(selectedCustomer.total_purchases || 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Total Belanja</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-primary">-</p>
+                      <p className="text-xs text-muted-foreground mt-1">Total Kunjungan</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-primary">
+                        {selectedCustomer.last_purchase_date 
+                          ? new Date(selectedCustomer.last_purchase_date).toLocaleDateString('id-ID')
+                          : 'Belum ada'
+                        }
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Kunjungan Terakhir</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Address & Notes */}
+              {(selectedCustomer.address || selectedCustomer.notes) && (
+                <div className="space-y-3">
+                  {selectedCustomer.address && (
+                    <div>
+                      <Label className="text-muted-foreground">Alamat</Label>
+                      <p className="text-sm mt-1 p-3 bg-muted rounded-md">
+                        {selectedCustomer.address}
+                      </p>
+                    </div>
+                  )}
+                  {selectedCustomer.notes && (
+                    <div>
+                      <Label className="text-muted-foreground">Catatan</Label>
+                      <p className="text-sm mt-1 p-3 bg-muted rounded-md">
+                        {selectedCustomer.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button 
+                  className="flex-1" 
+                  variant="outline"
+                  onClick={() => setIsDetailDialogOpen(false)}
+                >
+                  Tutup
+                </Button>
+                <Button className="flex-1">
+                  Edit Pelanggan
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
