@@ -13,6 +13,7 @@ export interface Product {
   min_stock: number | null;
   image_url: string | null;
   is_active: boolean | null;
+  has_variants: boolean | null;
   category_id: string | null;
   created_at: string;
   updated_at: string;
