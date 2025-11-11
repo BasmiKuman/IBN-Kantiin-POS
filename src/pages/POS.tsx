@@ -759,13 +759,13 @@ export default function POS() {
       </div>
 
       <div className="w-full sm:w-[380px] md:w-[400px] lg:w-[420px] flex-shrink-0">
-        <Card className="sticky top-4">
-          <CardHeader className="pb-3">
+        <Card className="sticky top-4 max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+          <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Tabs defaultValue="cart" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+          <CardContent className="flex-1 overflow-hidden flex flex-col">
+            <Tabs defaultValue="cart" className="w-full flex-1 flex flex-col">
+              <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="cart" className="text-sm">
                   Keranjang
                   {cart.length > 0 && (
@@ -781,8 +781,8 @@ export default function POS() {
               </TabsList>
 
               {/* Tab Keranjang */}
-              <TabsContent value="cart" className="space-y-3 mt-3">
-                <div className="max-h-[calc(100vh-28rem)] sm:max-h-[280px] space-y-2 overflow-auto">
+              <TabsContent value="cart" className="flex-1 flex flex-col mt-3 space-y-3 overflow-hidden">
+                <div className="flex-1 space-y-2 overflow-auto">
                   {cart.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground py-8">
                       Keranjang kosong
@@ -831,7 +831,7 @@ export default function POS() {
                   )}
                 </div>
 
-                <div className="space-y-2 border-t pt-3">
+                <div className="space-y-2 border-t pt-3 flex-shrink-0">
                   <div className="space-y-1.5">
                     <Label htmlFor="customerPhone" className="text-sm">Nomor Telepon Pelanggan (Opsional)</Label>
                     <Input
@@ -1028,7 +1028,7 @@ export default function POS() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 flex-shrink-0">
                   {editingOpenBillNumber ? (
                     // Tombol Save saat edit open bill
                     <>
@@ -1087,8 +1087,8 @@ export default function POS() {
               </TabsContent>
 
               {/* Tab Open Bills */}
-              <TabsContent value="openbills" className="space-y-2 mt-3">
-                <div className="max-h-[calc(100vh-28rem)] sm:max-h-[450px] space-y-2 overflow-auto">
+              <TabsContent value="openbills" className="flex-1 flex flex-col mt-3 overflow-hidden">
+                <div className="flex-1 space-y-2 overflow-auto">
                   {openBills.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground py-8">
                       Belum ada Open Bill
