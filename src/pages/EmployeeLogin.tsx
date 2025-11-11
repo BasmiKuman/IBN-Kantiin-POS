@@ -11,7 +11,7 @@ import { useClockIn, useActiveAttendance } from "@/hooks/supabase/useAttendance"
 import { useToast } from "@/hooks/use-toast";
 
 export default function EmployeeLogin() {
-  const [employeeCode, setEmployeeCode] = useState("");
+  const [username, setUsername] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -26,12 +26,9 @@ export default function EmployeeLogin() {
   const handleSearch = () => {
     setIsSearching(true);
     
-    // Search by phone or email
+    // Search by username
     const employee = employees.find(
-      (e) => 
-        e.phone === employeeCode || 
-        e.email === employeeCode ||
-        e.id === employeeCode
+      (e) => e.username?.toLowerCase() === username.toLowerCase()
     );
 
     if (employee) {
@@ -48,7 +45,7 @@ export default function EmployeeLogin() {
     } else {
       toast({
         title: "Karyawan Tidak Ditemukan",
-        description: "Periksa kembali nomor telepon atau email Anda",
+        description: "Periksa kembali username Anda",
         variant: "destructive",
       });
     }
@@ -93,7 +90,7 @@ export default function EmployeeLogin() {
           </div>
           <CardTitle className="text-2xl font-bold">Absensi Karyawan</CardTitle>
           <CardDescription>
-            Masukkan nomor telepon atau email untuk absen
+            Masukkan username untuk absen
           </CardDescription>
         </CardHeader>
 
@@ -101,28 +98,29 @@ export default function EmployeeLogin() {
           {!selectedEmployee ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="employeeCode">Nomor Telepon / Email</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="employeeCode"
-                  placeholder="08123456789 atau email@example.com"
-                  value={employeeCode}
-                  onChange={(e) => setEmployeeCode(e.target.value)}
+                  id="username"
+                  placeholder="Masukkan username Anda"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   autoFocus
+                  autoComplete="off"
                 />
               </div>
 
               <Button 
                 className="w-full" 
                 onClick={handleSearch}
-                disabled={!employeeCode || isSearching}
+                disabled={!username || isSearching}
               >
                 {isSearching ? "Mencari..." : "Cari Karyawan"}
               </Button>
 
               <div className="pt-4 border-t">
                 <p className="text-xs text-muted-foreground text-center">
-                  Gunakan nomor telepon atau email yang terdaftar di sistem
+                  Gunakan username yang terdaftar di sistem
                 </p>
               </div>
             </>
@@ -195,7 +193,7 @@ export default function EmployeeLogin() {
                   className="w-full"
                   onClick={() => {
                     setSelectedEmployee(null);
-                    setEmployeeCode("");
+                    setUsername("");
                   }}
                 >
                   Ganti Karyawan
