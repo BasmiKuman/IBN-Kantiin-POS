@@ -113,6 +113,36 @@ export default function POS() {
   const createTransaction = useCreateTransaction();
   const updateCustomerPoints = useUpdateCustomerPoints();
 
+  // Load open bills from localStorage on mount
+  useEffect(() => {
+    const loadOpenBills = () => {
+      const saved = localStorage.getItem("open_bills");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Convert date strings back to Date objects
+          const billsWithDates = parsed.map((bill: any) => ({
+            ...bill,
+            date: new Date(bill.date),
+          }));
+          setOpenBills(billsWithDates);
+        } catch (error) {
+          console.error("Error loading open bills:", error);
+        }
+      }
+    };
+    loadOpenBills();
+  }, []);
+
+  // Save open bills to localStorage whenever it changes
+  useEffect(() => {
+    if (openBills.length > 0) {
+      localStorage.setItem("open_bills", JSON.stringify(openBills));
+    } else {
+      localStorage.removeItem("open_bills");
+    }
+  }, [openBills]);
+
   // Load payment settings from localStorage
   useEffect(() => {
     const loadPaymentSettings = () => {
