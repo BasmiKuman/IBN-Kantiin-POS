@@ -46,6 +46,8 @@ export default function POS() {
   const [kitchenReceiptDialogOpen, setKitchenReceiptDialogOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash' | 'qris' | 'transfer'>('cash');
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [openBillPaymentDialogOpen, setOpenBillPaymentDialogOpen] = useState(false);
+  const [selectedOpenBillForPayment, setSelectedOpenBillForPayment] = useState<string | null>(null);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
     cashEnabled: true,
     cardEnabled: false,
@@ -883,7 +885,10 @@ export default function POS() {
                             </Button>
                             <Button
                               size="sm"
-                              onClick={() => handlePayOpenBill(bill.orderNumber, 'cash')}
+                              onClick={() => {
+                                setSelectedOpenBillForPayment(bill.orderNumber);
+                                setOpenBillPaymentDialogOpen(true);
+                              }}
                               className="text-xs h-8"
                             >
                               Bayar
@@ -921,7 +926,10 @@ export default function POS() {
             <div className="space-y-2">
               <Label>Total Pembayaran</Label>
               <Input
-                value={`Rp ${total.toLocaleString()}`}
+                value={`Rp ${(selectedOpenBillForPayment 
+                  ? openBills.find(b => b.orderNumber === selectedOpenBillForPayment)?.total || 0
+                  : total
+                ).toLocaleString()}`}
                 disabled
                 className="text-lg font-bold"
               />
@@ -937,12 +945,18 @@ export default function POS() {
                 className="text-lg"
               />
             </div>
-            {paymentAmount && parseFloat(paymentAmount) >= total && (
+            {paymentAmount && parseFloat(paymentAmount) >= (selectedOpenBillForPayment 
+              ? openBills.find(b => b.orderNumber === selectedOpenBillForPayment)?.total || 0
+              : total
+            ) && (
               <div className="rounded-lg bg-green-50 p-3 border border-green-200">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-green-900">Kembalian:</span>
                   <span className="text-lg font-bold text-green-600">
-                    Rp {(parseFloat(paymentAmount) - total).toLocaleString()}
+                    Rp {(parseFloat(paymentAmount) - (selectedOpenBillForPayment 
+                      ? openBills.find(b => b.orderNumber === selectedOpenBillForPayment)?.total || 0
+                      : total
+                    )).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -954,6 +968,7 @@ export default function POS() {
               onClick={() => {
                 setPaymentDialogOpen(false);
                 setPaymentAmount("");
+                setSelectedOpenBillForPayment(null);
               }}
               className="flex-1"
             >
@@ -962,8 +977,21 @@ export default function POS() {
             <Button
               onClick={() => {
                 const amount = parseFloat(paymentAmount);
-                if (amount >= total) {
-                  processTransaction('cash', amount);
+                const requiredAmount = selectedOpenBillForPayment 
+                  ? openBills.find(b => b.orderNumber === selectedOpenBillForPayment)?.total || 0
+                  : total;
+                
+                if (amount >= requiredAmount) {
+                  if (selectedOpenBillForPayment) {
+                    // Proses pembayaran open bill
+                    handlePayOpenBill(selectedOpenBillForPayment, 'cash');
+                    setPaymentDialogOpen(false);
+                    setPaymentAmount("");
+                    setSelectedOpenBillForPayment(null);
+                  } else {
+                    // Proses pembayaran normal
+                    processTransaction('cash', amount);
+                  }
                 } else {
                   toast({
                     title: "Jumlah Tidak Cukup",
@@ -972,7 +1000,10 @@ export default function POS() {
                   });
                 }
               }}
-              disabled={!paymentAmount || parseFloat(paymentAmount) < total}
+              disabled={!paymentAmount || parseFloat(paymentAmount) < (selectedOpenBillForPayment 
+                ? openBills.find(b => b.orderNumber === selectedOpenBillForPayment)?.total || 0
+                : total
+              )}
               className="flex-1"
             >
               Proses Pembayaran
@@ -1039,6 +1070,111 @@ export default function POS() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Open Bill Payment Method Selection Dialog */}
+      <Dialog open={openBillPaymentDialogOpen} onOpenChange={setOpenBillPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pilih Metode Pembayaran</DialogTitle>
+            <DialogDescription>
+              Pilih metode pembayaran untuk open bill ini
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedOpenBillForPayment && (() => {
+              const bill = openBills.find(b => b.orderNumber === selectedOpenBillForPayment);
+              if (!bill) return null;
+              
+              return (
+                <>
+                  <div className="space-y-2">
+                    <Label>Informasi Order</Label>
+                    <div className="rounded-lg border p-3 bg-muted">
+                      <p className="text-sm font-medium">Order: {bill.orderNumber}</p>
+                      <p className="text-sm">Customer: {bill.customerName || '-'}</p>
+                      <p className="text-lg font-bold text-primary mt-2">
+                        Total: Rp {bill.total.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Metode Pembayaran</Label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {paymentSettings.cashEnabled && (
+                        <Button
+                          variant="outline"
+                          className="h-auto py-4 justify-start"
+                          onClick={() => {
+                            setOpenBillPaymentDialogOpen(false);
+                            setSelectedPaymentMethod('cash');
+                            setPaymentAmount("");
+                            setPaymentDialogOpen(true);
+                          }}
+                        >
+                          <Banknote className="mr-3 h-5 w-5" />
+                          <div className="text-left">
+                            <div className="font-semibold">Tunai / Cash</div>
+                            <div className="text-xs text-muted-foreground">Pembayaran dengan uang tunai</div>
+                          </div>
+                        </Button>
+                      )}
+
+                      {paymentSettings.ewalletEnabled && (
+                        <Button
+                          variant="outline"
+                          className="h-auto py-4 justify-start"
+                          onClick={() => {
+                            handlePayOpenBill(selectedOpenBillForPayment, 'qris');
+                            setOpenBillPaymentDialogOpen(false);
+                            setSelectedOpenBillForPayment(null);
+                          }}
+                        >
+                          <Smartphone className="mr-3 h-5 w-5" />
+                          <div className="text-left">
+                            <div className="font-semibold">QRIS / E-Wallet</div>
+                            <div className="text-xs text-muted-foreground">Pembayaran digital</div>
+                          </div>
+                        </Button>
+                      )}
+
+                      {paymentSettings.transferEnabled && (
+                        <Button
+                          variant="outline"
+                          className="h-auto py-4 justify-start"
+                          onClick={() => {
+                            handlePayOpenBill(selectedOpenBillForPayment, 'transfer');
+                            setOpenBillPaymentDialogOpen(false);
+                            setSelectedOpenBillForPayment(null);
+                          }}
+                        >
+                          <CreditCard className="mr-3 h-5 w-5" />
+                          <div className="text-left">
+                            <div className="font-semibold">Transfer Bank</div>
+                            <div className="text-xs text-muted-foreground">Transfer ke rekening</div>
+                          </div>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpenBillPaymentDialogOpen(false);
+                setSelectedOpenBillForPayment(null);
+              }}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
