@@ -275,6 +275,13 @@ export default function Inventory() {
   const handleToggleHasVariants = (checked: boolean) => {
     if (!managingVariantsProduct) return;
     
+    // Update state lokal dulu untuk feedback visual langsung
+    setManagingVariantsProduct({
+      ...managingVariantsProduct,
+      has_variants: checked,
+    });
+    
+    // Kemudian update database
     toggleProductVariants.mutate({
       productId: managingVariantsProduct.id,
       hasVariants: checked,
