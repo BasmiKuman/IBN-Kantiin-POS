@@ -18,6 +18,7 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { toast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 
 export default function Reports() {
@@ -103,17 +104,17 @@ export default function Reports() {
     // Summary metrics
     doc.setFontSize(12);
     doc.text('Ringkasan', 14, 50);
-    doc.setFontSize(9);
-    doc.text(`Total Pendapatan: Rp ${totalRevenue.toLocaleString()}`, 14, 58);
-    doc.text(`Total Transaksi: ${totalTransactions}`, 14, 64);
-    doc.text(`Rata-rata Transaksi: Rp ${avgTransaction.toLocaleString()}`, 14, 70);
+  doc.setFontSize(9);
+  doc.text(`Total Pendapatan: Rp ${formatCurrency(totalRevenue)}`, 14, 58);
+  doc.text(`Total Transaksi: ${totalTransactions}`, 14, 64);
+  doc.text(`Rata-rata Transaksi: Rp ${formatCurrency(Math.round(avgTransaction))}`, 14, 70);
     
     // Transactions table
     const tableData = filteredTransactions.slice(0, 50).map(t => [
       t.transaction_number || '-',
       new Date(t.created_at || '').toLocaleDateString('id-ID'),
       t.payment_method?.toUpperCase() || '-',
-      `Rp ${(t.total || 0).toLocaleString()}`,
+      `Rp ${formatCurrency(t.total || 0)}`,
       t.status || '-',
     ]);
     
@@ -145,16 +146,16 @@ export default function Reports() {
       [`Tanggal: ${date}`],
       ...(dateFilter === 'custom' && startDate && endDate ? [[`Periode: ${startDate} s/d ${endDate}`]] : []),
       [''],
-      ['RINGKASAN'],
-      ['Total Pendapatan', `Rp ${totalRevenue.toLocaleString()}`],
-      ['Total Transaksi', totalTransactions],
-      ['Rata-rata Transaksi', `Rp ${avgTransaction.toLocaleString()}`],
+  ['RINGKASAN'],
+  ['Total Pendapatan', `Rp ${formatCurrency(totalRevenue)}`],
+  ['Total Transaksi', totalTransactions],
+  ['Rata-rata Transaksi', `Rp ${formatCurrency(Math.round(avgTransaction))}`],
       ['Produk Terjual', totalItems],
       [''],
       ['METODE PEMBAYARAN'],
-      ['Tunai', `Rp ${cashTotal.toLocaleString()}`],
-      ['E-Wallet/QRIS', `Rp ${ewalletTotal.toLocaleString()}`],
-      ['Transfer', `Rp ${(paymentMethods.transfer || 0).toLocaleString()}`],
+  ['Tunai', `Rp ${formatCurrency(cashTotal)}`],
+  ['E-Wallet/QRIS', `Rp ${formatCurrency(ewalletTotal)}`],
+  ['Transfer', `Rp ${formatCurrency(paymentMethods.transfer || 0)}`],
       [''],
       ['DETAIL TRANSAKSI'],
       ['No. Transaksi', 'Tanggal', 'Waktu', 'Metode Pembayaran', 'Subtotal', 'Pajak', 'Total', 'Status'],
@@ -300,7 +301,7 @@ export default function Reports() {
                   `Menampilkan data dari ${startDate} s/d ${endDate}`}
               </div>
               <div className="text-sm font-medium mt-1">
-                {totalTransactions} transaksi • Rp {totalRevenue.toLocaleString()}
+                {totalTransactions} transaksi • Rp {formatCurrency(totalRevenue)}
               </div>
             </div>
           </div>
@@ -314,7 +315,7 @@ export default function Reports() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rp {(totalRevenue / 1000000).toFixed(1)} Jt</div>
+            <div className="text-2xl font-bold">Rp {formatCurrency(totalRevenue)}</div>
             <p className="text-xs text-muted-foreground">Total penjualan</p>
           </CardContent>
         </Card>
@@ -347,7 +348,7 @@ export default function Reports() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rp {(avgTransaction / 1000).toFixed(1)}K</div>
+            <div className="text-2xl font-bold">Rp {formatCurrency(Math.round(avgTransaction))}</div>
             <p className="text-xs text-muted-foreground">Per transaksi</p>
           </CardContent>
         </Card>
@@ -482,7 +483,7 @@ export default function Reports() {
                 <CardTitle className="text-sm">Gross Profit</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">Rp {(totalRevenue * 0.6 / 1000000).toFixed(1)} Jt</div>
+                <div className="text-2xl font-bold">Rp {formatCurrency(Math.round(totalRevenue * 0.6))}</div>
                 <p className="text-xs text-muted-foreground">Estimasi 60% margin</p>
               </CardContent>
             </Card>
@@ -500,7 +501,7 @@ export default function Reports() {
                 <CardTitle className="text-sm">Net Profit</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-success">Rp {(totalRevenue * 0.6 / 1000000).toFixed(1)} Jt</div>
+                <div className="text-2xl font-bold text-success">Rp {formatCurrency(Math.round(totalRevenue * 0.6))}</div>
                 <p className="text-xs text-muted-foreground">Estimasi</p>
               </CardContent>
             </Card>
