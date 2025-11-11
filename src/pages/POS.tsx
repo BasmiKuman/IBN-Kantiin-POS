@@ -93,6 +93,9 @@ export default function POS() {
     total: number;
   }>>([]);
 
+  // State untuk track open bill yang sedang diedit
+  const [editingOpenBillNumber, setEditingOpenBillNumber] = useState<string | null>(null);
+
   const receiptRef = useRef<HTMLDivElement>(null);
   const kitchenReceiptRef = useRef<HTMLDivElement>(null);
 
@@ -436,10 +439,62 @@ export default function POS() {
     setCart(bill.items);
     setCustomerName(bill.customerName || "");
     setOrderNotes(bill.notes || "");
+    setEditingOpenBillNumber(orderNumber); // Track yang sedang diedit
     
     toast({
       title: "Open Bill Dimuat",
-      description: `Order ${orderNumber} dimuat ke keranjang`,
+      description: `Order ${orderNumber} dimuat ke keranjang untuk diedit`,
+    });
+  };
+
+  const handleSaveOpenBillChanges = () => {
+    if (!editingOpenBillNumber) return;
+    
+    if (cart.length === 0) {
+      toast({
+        title: "Keranjang Kosong",
+        description: "Tidak ada item untuk disimpan",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const billSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const billTax = paymentSettings.showTaxSeparately ? (billSubtotal * paymentSettings.taxRate / 100) : 0;
+    const billServiceCharge = billSubtotal * paymentSettings.serviceCharge / 100;
+    const billTotal = billSubtotal + billTax + billServiceCharge;
+
+    // Update open bill yang ada
+    setOpenBills(prev => prev.map(bill => 
+      bill.orderNumber === editingOpenBillNumber
+        ? {
+            ...bill,
+            items: cart.map(item => ({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              category: item.category,
+            })),
+            customerName: customerName || undefined,
+            notes: orderNotes || undefined,
+            subtotal: billSubtotal,
+            tax: billTax,
+            serviceCharge: billServiceCharge,
+            total: billTotal,
+          }
+        : bill
+    ));
+
+    // Reset state
+    setCart([]);
+    setCustomerName("");
+    setOrderNotes("");
+    setEditingOpenBillNumber(null);
+
+    toast({
+      title: "Open Bill Diupdate!",
+      description: `Order ${editingOpenBillNumber} telah disimpan`,
     });
   };
 
@@ -658,22 +713,54 @@ export default function POS() {
                 </div>
 
                 <div className="space-y-2">
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    size="lg"
-                    disabled={cart.length === 0}
-                    onClick={handleOpenBill}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Open Bill (Cetak Dapur)
-                  </Button>
-                  
-                  <div className="text-xs text-center text-muted-foreground font-medium">
-                    atau bayar sekarang
-                  </div>
+                  {editingOpenBillNumber ? (
+                    // Tombol Save saat edit open bill
+                    <>
+                      <Button
+                        className="w-full"
+                        variant="default"
+                        size="lg"
+                        disabled={cart.length === 0}
+                        onClick={handleSaveOpenBillChanges}
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        Simpan Perubahan Open Bill
+                      </Button>
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setCart([]);
+                          setCustomerName("");
+                          setOrderNotes("");
+                          setEditingOpenBillNumber(null);
+                        }}
+                      >
+                        Batal
+                      </Button>
+                    </>
+                  ) : (
+                    // Tombol Open Bill normal
+                    <>
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        size="lg"
+                        disabled={cart.length === 0}
+                        onClick={handleOpenBill}
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        Open Bill (Cetak Dapur)
+                      </Button>
+                      
+                      <div className="text-xs text-center text-muted-foreground font-medium">
+                        atau bayar sekarang
+                      </div>
+                    </>
+                  )}
 
-                  {paymentSettings.cashEnabled && (
+                  {!editingOpenBillNumber && paymentSettings.cashEnabled && (
                     <Button 
                       className="w-full" 
                       size="lg" 
@@ -684,7 +771,7 @@ export default function POS() {
                       Tunai
                     </Button>
                   )}
-                  {paymentSettings.ewalletEnabled && (
+                  {!editingOpenBillNumber && paymentSettings.ewalletEnabled && (
                     <Button
                       className="w-full"
                       variant="secondary"
@@ -696,7 +783,7 @@ export default function POS() {
                       QRIS
                     </Button>
                   )}
-                  {paymentSettings.transferEnabled && (
+                  {!editingOpenBillNumber && paymentSettings.transferEnabled && (
                     <Button
                       className="w-full"
                       variant="outline"
