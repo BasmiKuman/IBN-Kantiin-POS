@@ -661,8 +661,8 @@ export default function POS() {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-[1fr,400px] lg:grid-cols-[1fr,420px]">
-      <div className="space-y-4 min-w-0">
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-[1fr,380px] md:grid-cols-[1fr,400px] lg:grid-cols-[1fr,420px]">
+      <div className="space-y-4 min-w-0 overflow-hidden">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Produk</CardTitle>
@@ -758,14 +758,14 @@ export default function POS() {
         </Card>
       </div>
 
-      <div>
-        <Card className="sticky top-4">
-          <CardHeader className="pb-3">
+      <div className="sm:block">
+        <Card className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
+          <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Tabs defaultValue="cart" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+          <CardContent className="space-y-3 overflow-auto flex-1">
+            <Tabs defaultValue="cart" className="w-full h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="cart" className="text-sm">
                   Keranjang
                   {cart.length > 0 && (
