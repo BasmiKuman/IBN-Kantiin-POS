@@ -28,6 +28,8 @@ export interface TransactionItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  variant_id?: string | null;
+  variant_name?: string | null;
   created_at: string;
 }
 

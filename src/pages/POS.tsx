@@ -353,6 +353,8 @@ export default function POS() {
           quantity: item.quantity,
           unit_price: item.price,
           subtotal: item.price * item.quantity,
+          variant_id: item.variantId || null,
+          variant_name: item.variantName || null,
         })),
       });
 
