@@ -59,6 +59,10 @@ export default function Customers() {
       phone: formData.phone,
       address: formData.address || null,
       notes: formData.notes || null,
+      points: 0,
+      tier: 'bronze',
+      total_purchases: 0,
+      last_purchase_date: null,
     }, {
       onSuccess: () => {
         setIsAddDialogOpen(false);

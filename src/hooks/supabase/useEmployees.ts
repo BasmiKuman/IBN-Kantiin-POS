@@ -12,6 +12,9 @@ export interface Employee {
   salary: number | null;
   hire_date: string | null;
   is_active: boolean | null;
+  username?: string | null;
+  password?: string | null;
+  photo_url?: string | null;
   created_at: string;
   updated_at: string;
 }
