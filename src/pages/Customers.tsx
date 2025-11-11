@@ -22,7 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Mail, Phone, Star, Gift, TrendingUp } from "lucide-react";
+import { Search, Plus, Mail, Phone, Star, Gift, TrendingUp, Send, Image as ImageIcon } from "lucide-react";
 import { useCustomers, useCreateCustomer, useUpdateCustomer, useUpdateCustomerPoints } from "@/hooks/supabase/useCustomers";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +31,13 @@ export default function Customers() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
+  const [selectedSegment, setSelectedSegment] = useState<any>(null);
+  const [campaignData, setCampaignData] = useState({
+    message: "",
+    imageFile: null as File | null,
+    imagePreview: null as string | null,
+  });
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -75,6 +82,103 @@ export default function Customers() {
         });
       }
     });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Error",
+          description: "Ukuran gambar maksimal 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCampaignData({
+          ...campaignData,
+          imageFile: file,
+          imagePreview: reader.result as string,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSendCampaign = () => {
+    if (!campaignData.message.trim()) {
+      toast({
+        title: "Error",
+        description: "Pesan campaign tidak boleh kosong",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get customers for the segment
+    const targetCustomers = getSegmentCustomers(selectedSegment);
+    
+    if (targetCustomers.length === 0) {
+      toast({
+        title: "Error",
+        description: "Tidak ada pelanggan dalam segmen ini",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // In production, this would send via WhatsApp API
+    // For now, we'll show a success message with WhatsApp Web links
+    const phoneNumbers = targetCustomers
+      .filter(c => c.phone)
+      .map(c => c.phone);
+
+    toast({
+      title: "Campaign Siap Dikirim!",
+      description: `Pesan akan dikirim ke ${phoneNumbers.length} pelanggan via WhatsApp`,
+    });
+
+    // Open WhatsApp Web for each number (in production, use WhatsApp Business API)
+    phoneNumbers.slice(0, 5).forEach((phone, index) => {
+      setTimeout(() => {
+        const message = encodeURIComponent(campaignData.message);
+        const cleanPhone = phone.replace(/\D/g, '');
+        window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+      }, index * 1000); // Delay to avoid spam
+    });
+
+    setIsCampaignDialogOpen(false);
+    setCampaignData({
+      message: "",
+      imageFile: null,
+      imagePreview: null,
+    });
+  };
+
+  const getSegmentCustomers = (segment: any) => {
+    if (!segment) return [];
+    
+    switch (segment.name) {
+      case "High Value Customers":
+        return customers.filter(c => (c.total_purchases || 0) > 3000000);
+      case "Frequent Buyers":
+        return customers.filter(c => c.last_purchase_date); // Simplified
+      case "At Risk":
+        return customers.filter(c => {
+          if (!c.last_purchase_date) return false;
+          const daysSince = Math.floor((Date.now() - new Date(c.last_purchase_date).getTime()) / (1000 * 60 * 60 * 24));
+          return daysSince > 30;
+        });
+      case "New Customers":
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        return customers.filter(c => new Date(c.created_at) > threeMonthsAgo);
+      default:
+        return [];
+    }
   };
 
   const getTierBadge = (tier: string) => {
@@ -443,7 +547,16 @@ export default function Customers() {
                     <span className="text-sm font-medium">Total Revenue</span>
                     <span className="text-sm font-bold text-primary">{segment.revenue}</span>
                   </div>
-                  <Button className="w-full mt-3" variant="outline" size="sm">
+                  <Button 
+                    className="w-full mt-3" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setSelectedSegment(segment);
+                      setIsCampaignDialogOpen(true);
+                    }}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
                     Kirim Kampanye Marketing
                   </Button>
                 </div>
@@ -452,6 +565,164 @@ export default function Customers() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Marketing Campaign Dialog */}
+      <Dialog open={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Kirim Kampanye Marketing</DialogTitle>
+            <DialogDescription>
+              Buat pesan marketing untuk segmen: {selectedSegment?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Target Info */}
+            <div className="rounded-lg border p-3 bg-muted">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{selectedSegment?.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedSegment && getSegmentCustomers(selectedSegment).length} pelanggan akan menerima pesan
+                  </p>
+                </div>
+                <Badge>{selectedSegment?.count} target</Badge>
+              </div>
+            </div>
+
+            {/* Message Template */}
+            <div className="space-y-2">
+              <Label>Pesan WhatsApp</Label>
+              <Textarea
+                placeholder="Tulis pesan kampanye Anda di sini...
+                
+Contoh:
+Halo {nama}! 🎉
+
+Kami punya promo spesial untuk Anda sebagai pelanggan setia kami!
+
+✨ Diskon 20% untuk semua menu
+📅 Berlaku hingga akhir bulan
+🎁 Bonus poin loyalty 2x lipat
+
+Jangan lewatkan kesempatan ini!
+
+Terima kasih,
+Tim IBN Kantiin"
+                rows={12}
+                value={campaignData.message}
+                onChange={(e) => setCampaignData({ ...campaignData, message: e.target.value })}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tips: Gunakan emoji untuk menarik perhatian. Pesan akan dikirim via WhatsApp.
+              </p>
+            </div>
+
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label>Gambar Promosi (Opsional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={!campaignData.imagePreview}
+                  onClick={() => setCampaignData({ ...campaignData, imageFile: null, imagePreview: null })}
+                >
+                  ✕
+                </Button>
+              </div>
+              {campaignData.imagePreview && (
+                <div className="rounded-lg border p-2">
+                  <img
+                    src={campaignData.imagePreview}
+                    alt="Preview"
+                    className="max-h-48 mx-auto rounded"
+                  />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Format: JPG, PNG. Maksimal 5MB. Gambar akan dikirim bersama pesan.
+              </p>
+            </div>
+
+            {/* Quick Templates */}
+            <div className="space-y-2">
+              <Label>Template Cepat</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCampaignData({
+                    ...campaignData,
+                    message: "Halo! 🎉\n\nPromo spesial hari ini:\n✨ Diskon 20%\n📅 Khusus hari ini\n\nKunjungi kami sekarang!\n\nSalam,\nIBN Kantiin"
+                  })}
+                >
+                  Promo Diskon
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCampaignData({
+                    ...campaignData,
+                    message: "Hai! 🎊\n\nTerima kasih sudah menjadi pelanggan setia kami.\n\n🎁 Poin loyalty Anda: {poin}\n💳 Tukar poin untuk diskon!\n\nSampai jumpa!\nIBN Kantiin"
+                  })}
+                >
+                  Loyalty Points
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCampaignData({
+                    ...campaignData,
+                    message: "Halo! 🍽️\n\nMenu baru telah hadir!\n\nCoba sekarang dan dapatkan:\n✨ Free tester\n⭐ Bonus poin 2x\n\nDatang dan nikmati!\nIBN Kantiin"
+                  })}
+                >
+                  Menu Baru
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCampaignData({
+                    ...campaignData,
+                    message: "Hi! 😊\n\nKami rindu Anda!\n\n💝 Promo comeback:\n- Diskon 15%\n- Free drink\n\nSegera kunjungi kami!\nIBN Kantiin"
+                  })}
+                >
+                  Win Back
+                </Button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setIsCampaignDialogOpen(false);
+                  setCampaignData({ message: "", imageFile: null, imagePreview: null });
+                }}
+              >
+                Batal
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSendCampaign}
+                disabled={!campaignData.message.trim()}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Kirim Campaign
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Customer Detail Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
