@@ -120,4 +120,32 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Force responsive behavior */
+  html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* Responsive utilities - Force media query evaluation */
+@layer utilities {
+  @media (max-width: 639px) {
+    .force-mobile {
+      display: block !important;
+    }
+  }
+  
+  @media (min-width: 640px) {
+    .force-tablet {
+      display: block !important;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .force-desktop {
+      display: block !important;
+    }
+  }
 }
