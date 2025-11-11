@@ -761,58 +761,58 @@ export default function POS() {
       <div>
         <Card className="sticky top-4">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Keranjang & Open Bills</CardTitle>
+            <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Tabs defaultValue="cart" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="cart" className="text-xs">
+                <TabsTrigger value="cart" className="text-sm">
                   Keranjang
                   {cart.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1">{cart.length}</Badge>
+                    <Badge variant="secondary" className="ml-1.5 text-xs h-5 px-1.5">{cart.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="openbills" className="text-xs">
+                <TabsTrigger value="openbills" className="text-sm">
                   Open Bills
                   {openBills.length > 0 && (
-                    <Badge variant="destructive" className="ml-1 text-[10px] h-4 px-1">{openBills.length}</Badge>
+                    <Badge variant="destructive" className="ml-1.5 text-xs h-5 px-1.5">{openBills.length}</Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
 
               {/* Tab Keranjang */}
               <TabsContent value="cart" className="space-y-3 mt-3">
-                <div className="max-h-[250px] space-y-2 overflow-auto">
+                <div className="max-h-[280px] space-y-2 overflow-auto">
                   {cart.length === 0 ? (
-                    <p className="text-center text-xs text-muted-foreground py-6">
+                    <p className="text-center text-sm text-muted-foreground py-8">
                       Keranjang kosong
                     </p>
                   ) : (
                     cart.map((item) => (
-                      <div key={`${item.id}-${item.variantId || 'no-variant'}`} className="flex items-center gap-2 rounded-lg border p-2">
+                      <div key={`${item.id}-${item.variantId || 'no-variant'}`} className="flex items-center gap-2 rounded-lg border p-2.5">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-xs truncate">
+                          <p className="font-medium text-sm truncate">
                             {item.name}
                             {item.variantName && <span className="text-muted-foreground"> - {item.variantName}</span>}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             Rp {item.price.toLocaleString()} x {item.quantity}
                           </p>
                         </div>
-                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-6 w-6"
+                            className="h-7 w-7"
                             onClick={() => updateQuantity(item.id, -1, item.variantId)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-6 text-center text-xs">{item.quantity}</span>
+                          <span className="w-7 text-center text-sm font-medium">{item.quantity}</span>
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-6 w-6"
+                            className="h-7 w-7"
                             onClick={() => updateQuantity(item.id, 1, item.variantId)}
                           >
                             <Plus className="h-3 w-3" />
@@ -820,7 +820,7 @@ export default function POS() {
                           <Button
                             size="icon"
                             variant="destructive"
-                            className="h-6 w-6"
+                            className="h-7 w-7 ml-0.5"
                             onClick={() => removeFromCart(item.id, item.variantId)}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -833,7 +833,7 @@ export default function POS() {
 
                 <div className="space-y-2 border-t pt-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="customerPhone" className="text-xs">Nomor Telepon Pelanggan (Opsional)</Label>
+                    <Label htmlFor="customerPhone" className="text-sm">Nomor Telepon Pelanggan (Opsional)</Label>
                     <Input
                       id="customerPhone"
                       placeholder="08123456789"
@@ -842,10 +842,10 @@ export default function POS() {
                         setCustomerPhone(e.target.value);
                         setNewCustomerId(null); // Reset when phone changes
                       }}
-                      className="h-8 text-xs"
+                      className="h-9 text-sm"
                     />
                     {customer && (
-                      <div className="p-2 bg-primary/10 rounded-md text-[10px] space-y-0.5">
+                      <div className="p-2 bg-primary/10 rounded-md text-xs space-y-0.5">
                         <p className="font-semibold text-primary">✓ {customer.name}</p>
                         {loyaltySettings.enabled && (
                           <p className="flex items-center gap-1">
@@ -856,14 +856,14 @@ export default function POS() {
                       </div>
                     )}
                     {!customer && customerPhone && customerPhone.length >= 10 && (
-                      <div className="p-2 bg-orange-50 border border-orange-200 rounded-md text-[10px] space-y-1.5">
+                      <div className="p-2 bg-orange-50 border border-orange-200 rounded-md text-xs space-y-1.5">
                         <p className="text-orange-700">
                           ⚠️ Nomor belum terdaftar
                         </p>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full h-6 text-[10px]"
+                          className="w-full h-7 text-xs"
                           onClick={async () => {
                             if (!customerName) {
                               toast({
@@ -909,49 +909,49 @@ export default function POS() {
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="customerName" className="text-xs">Nama Customer (Opsional)</Label>
+                    <Label htmlFor="customerName" className="text-sm">Nama Customer (Opsional)</Label>
                     <Input
                       id="customerName"
                       placeholder="Nama untuk order"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="h-8 text-xs"
+                      className="h-9 text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="orderNotes" className="text-xs">Catatan Order (Opsional)</Label>
+                    <Label htmlFor="orderNotes" className="text-sm">Catatan Order (Opsional)</Label>
                     <Input
                       id="orderNotes"
                       placeholder="Catatan khusus"
                       value={orderNotes}
                       onChange={(e) => setOrderNotes(e.target.value)}
-                      className="h-8 text-xs"
+                      className="h-9 text-sm"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1.5 border-t pt-3">
-                  <div className="flex justify-between text-xs">
+                <div className="space-y-2 border-t pt-3">
+                  <div className="flex justify-between text-sm">
                     <span>Subtotal</span>
-                    <span>Rp {subtotal.toLocaleString()}</span>
+                    <span className="font-medium">Rp {subtotal.toLocaleString()}</span>
                   </div>
                   {paymentSettings.showTaxSeparately && paymentSettings.taxRate > 0 && (
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between text-sm">
                       <span>Pajak ({paymentSettings.taxRate}%)</span>
-                      <span>Rp {tax.toLocaleString()}</span>
+                      <span className="font-medium">Rp {tax.toLocaleString()}</span>
                     </div>
                   )}
                   {paymentSettings.serviceCharge > 0 && (
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between text-sm">
                       <span>Service ({paymentSettings.serviceCharge}%)</span>
-                      <span>Rp {serviceCharge.toLocaleString()}</span>
+                      <span className="font-medium">Rp {serviceCharge.toLocaleString()}</span>
                     </div>
                   )}
                   
                   {/* Loyalty Points Section */}
                   {loyaltySettings.enabled && customer && (customer.points || 0) >= loyaltySettings.minimumPointsRedeem && (
                     <>
-                      <div className="border-t pt-2 pb-1.5 space-y-1.5">
+                      <div className="border-t pt-2 pb-1.5 space-y-2">
                         <div className="flex items-center space-x-2">
                           <Checkbox 
                             id="usePoints" 
@@ -970,7 +970,7 @@ export default function POS() {
                               }
                             }}
                           />
-                          <Label htmlFor="usePoints" className="text-xs font-medium cursor-pointer">
+                          <Label htmlFor="usePoints" className="text-sm font-medium cursor-pointer">
                             Gunakan Poin
                           </Label>
                         </div>
@@ -989,24 +989,24 @@ export default function POS() {
                                   );
                                   setPointsToRedeem(Math.min(val, maxRedeemable));
                                 }}
-                                className="h-6 text-[10px] w-20"
+                                className="h-8 text-xs w-20"
                                 min={0}
                                 max={Math.min(
                                   customer.points || 0,
                                   Math.floor((subtotal + tax + serviceCharge) / loyaltySettings.rupiahPerPoint)
                                 )}
                               />
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-xs text-muted-foreground">
                                 max: {Math.min(
                                   customer.points || 0,
                                   Math.floor((subtotal + tax + serviceCharge) / loyaltySettings.rupiahPerPoint)
                                 )}
                               </span>
                             </div>
-                            <p className="text-[10px] text-primary font-medium">
+                            <p className="text-xs text-primary font-medium">
                               Diskon: Rp {pointsDiscount.toLocaleString()}
                             </p>
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                               Sisa: {((customer.points || 0) - pointsToRedeem).toLocaleString()} poin
                             </p>
                           </div>
@@ -1016,13 +1016,13 @@ export default function POS() {
                   )}
                   
                   {pointsDiscount > 0 && (
-                    <div className="flex justify-between text-xs text-primary">
+                    <div className="flex justify-between text-sm text-primary">
                       <span>Diskon Poin</span>
-                      <span>- Rp {pointsDiscount.toLocaleString()}</span>
+                      <span className="font-medium">- Rp {pointsDiscount.toLocaleString()}</span>
                     </div>
                   )}
                   
-                  <div className="flex justify-between text-base font-bold pt-1">
+                  <div className="flex justify-between text-lg font-bold pt-1.5 border-t">
                     <span>Total</span>
                     <span className="text-primary">Rp {total.toLocaleString()}</span>
                   </div>
@@ -1033,16 +1033,16 @@ export default function POS() {
                     // Tombol Save saat edit open bill
                     <>
                       <Button
-                        className="w-full h-9 text-xs"
+                        className="w-full h-10 text-sm"
                         variant="default"
                         disabled={cart.length === 0}
                         onClick={handleSaveOpenBillChanges}
                       >
-                        <FileText className="mr-2 h-3 w-3" />
+                        <FileText className="mr-2 h-4 w-4" />
                         Simpan Perubahan
                       </Button>
                       <Button
-                        className="w-full h-7 text-xs"
+                        className="w-full h-8 text-sm"
                         variant="outline"
                         onClick={() => {
                           setCart([]);
@@ -1058,16 +1058,16 @@ export default function POS() {
                     // Tombol Open Bill normal
                     <>
                       <Button
-                        className="w-full h-9 text-xs"
+                        className="w-full h-10 text-sm"
                         variant="outline"
                         disabled={cart.length === 0}
                         onClick={handleOpenBill}
                       >
-                        <FileText className="mr-2 h-3 w-3" />
+                        <FileText className="mr-2 h-4 w-4" />
                         Open Bill
                       </Button>
                       
-                      <div className="text-[10px] text-center text-muted-foreground font-medium">
+                      <div className="text-xs text-center text-muted-foreground font-medium py-0.5">
                         atau bayar sekarang
                       </div>
                     </>
@@ -1075,7 +1075,7 @@ export default function POS() {
 
                   {!editingOpenBillNumber && (
                     <Button 
-                      className="w-full h-10 text-sm font-medium" 
+                      className="w-full h-11 text-sm font-semibold" 
                       disabled={cart.length === 0}
                       onClick={() => setPaymentMethodDialogOpen(true)}
                     >
@@ -1088,20 +1088,20 @@ export default function POS() {
 
               {/* Tab Open Bills */}
               <TabsContent value="openbills" className="space-y-2 mt-3">
-                <div className="max-h-[400px] space-y-2 overflow-auto">
+                <div className="max-h-[450px] space-y-2 overflow-auto">
                   {openBills.length === 0 ? (
-                    <p className="text-center text-xs text-muted-foreground py-6">
+                    <p className="text-center text-sm text-muted-foreground py-8">
                       Belum ada Open Bill
                     </p>
                   ) : (
                     openBills.map((bill, index) => (
                       <Collapsible key={bill.orderNumber} className="border rounded-lg">
-                        <CollapsibleTrigger className="w-full p-2 hover:bg-muted/50 transition-colors">
+                        <CollapsibleTrigger className="w-full p-2.5 hover:bg-muted/50 transition-colors">
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-left flex-1 min-w-0">
-                              <p className="font-medium text-xs truncate">{bill.customerName || `Order #${index + 1}`}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{bill.orderNumber}</p>
-                              <p className="text-[10px] text-muted-foreground">
+                              <p className="font-medium text-sm truncate">{bill.customerName || `Order #${index + 1}`}</p>
+                              <p className="text-xs text-muted-foreground truncate">{bill.orderNumber}</p>
+                              <p className="text-xs text-muted-foreground">
                                 {new Date(bill.date).toLocaleString('id-ID', {
                                   day: '2-digit',
                                   month: 'short',
@@ -1111,36 +1111,36 @@ export default function POS() {
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className="font-bold text-xs text-primary">
+                              <p className="font-bold text-sm text-primary">
                                 Rp {bill.total.toLocaleString()}
                               </p>
-                              <Badge variant="outline" className="mt-0.5 text-[10px] h-4">
+                              <Badge variant="outline" className="mt-0.5 text-xs h-5">
                                 {bill.items.length} item
                               </Badge>
                             </div>
-                            <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                            <ChevronDown className="h-4 w-4 flex-shrink-0" />
                           </div>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="px-2 pb-2 space-y-1.5">
-                          <div className="border-t pt-1.5 space-y-0.5">
+                        <CollapsibleContent className="px-2.5 pb-2.5 space-y-2">
+                          <div className="border-t pt-2 space-y-1">
                             {bill.items.map((item, idx) => (
-                              <div key={idx} className="flex justify-between text-[10px]">
+                              <div key={idx} className="flex justify-between text-xs">
                                 <span className="truncate mr-2">{item.name} x{item.quantity}</span>
-                                <span className="flex-shrink-0">Rp {(item.price * item.quantity).toLocaleString()}</span>
+                                <span className="flex-shrink-0 font-medium">Rp {(item.price * item.quantity).toLocaleString()}</span>
                               </div>
                             ))}
                           </div>
                           {bill.notes && (
-                            <div className="text-[10px] bg-yellow-50 p-1.5 rounded border border-yellow-200">
+                            <div className="text-xs bg-yellow-50 p-2 rounded border border-yellow-200">
                               <strong>Catatan:</strong> {bill.notes}
                             </div>
                           )}
-                          <div className="grid grid-cols-3 gap-1 pt-1.5">
+                          <div className="grid grid-cols-3 gap-1.5 pt-2">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleLoadOpenBillToCart(bill.orderNumber)}
-                              className="text-[10px] h-7"
+                              className="text-xs h-8"
                             >
                               Load
                             </Button>
@@ -1150,7 +1150,7 @@ export default function POS() {
                                 setSelectedOpenBillForPayment(bill.orderNumber);
                                 setOpenBillPaymentDialogOpen(true);
                               }}
-                              className="text-[10px] h-7"
+                              className="text-xs h-8"
                             >
                               Bayar
                             </Button>
@@ -1158,7 +1158,7 @@ export default function POS() {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleDeleteOpenBill(bill.orderNumber)}
-                              className="text-[10px] h-7"
+                              className="text-xs h-8"
                             >
                               Hapus
                             </Button>
