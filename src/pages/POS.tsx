@@ -678,10 +678,13 @@ export default function POS() {
           </CardHeader>
           <CardContent className="pb-3">
             <Tabs defaultValue="all">
-              <TabsList className="mb-3">
+              <TabsList className="mb-3 grid grid-cols-3 lg:grid-cols-4">
                 <TabsTrigger value="all" className="text-xs">Semua</TabsTrigger>
-                <TabsTrigger value="makanan" className="text-xs">Makanan</TabsTrigger>
-                <TabsTrigger value="minuman" className="text-xs">Minuman</TabsTrigger>
+                {categories.slice(0, 3).map((cat) => (
+                  <TabsTrigger key={cat.id} value={cat.id} className="text-xs truncate">
+                    {cat.name}
+                  </TabsTrigger>
+                ))}
               </TabsList>
               <TabsContent value="all" className="space-y-0">
                 <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
@@ -707,52 +710,31 @@ export default function POS() {
                   ))}
                 </div>
               </TabsContent>
-              <TabsContent value="makanan">
-                <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
-                  {filteredProducts
-                    .filter((p) => p.categories?.name === "Makanan")
-                    .map((product) => (
-                      <Card
-                        key={product.id}
-                        className="cursor-pointer transition-all hover:shadow-md"
-                        onClick={() => addToCart(product)}
-                      >
-                        <CardContent className="p-3">
-                          <div className="aspect-square mb-2 flex items-center justify-center rounded-lg bg-muted">
-                            <Package className="h-10 w-10 text-muted-foreground" />
-                          </div>
-                          <h3 className="font-medium text-xs line-clamp-2">{product.name}</h3>
-                          <p className="text-xs font-semibold text-primary mt-1.5">
-                            Rp {product.price.toLocaleString()}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
-              <TabsContent value="minuman">
-                <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
-                  {filteredProducts
-                    .filter((p) => p.categories?.name === "Minuman")
-                    .map((product) => (
-                      <Card
-                        key={product.id}
-                        className="cursor-pointer transition-all hover:shadow-md"
-                        onClick={() => addToCart(product)}
-                      >
-                        <CardContent className="p-3">
-                          <div className="aspect-square mb-2 flex items-center justify-center rounded-lg bg-muted">
-                            <Package className="h-10 w-10 text-muted-foreground" />
-                          </div>
-                          <h3 className="font-medium text-xs line-clamp-2">{product.name}</h3>
-                          <p className="text-xs font-semibold text-primary mt-1.5">
-                            Rp {product.price.toLocaleString()}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
+              {categories.map((cat) => (
+                <TabsContent key={cat.id} value={cat.id} className="space-y-0">
+                  <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
+                    {filteredProducts
+                      .filter((p) => p.category_id === cat.id)
+                      .map((product) => (
+                        <Card
+                          key={product.id}
+                          className="cursor-pointer transition-all hover:shadow-md"
+                          onClick={() => addToCart(product)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="aspect-square mb-2 flex items-center justify-center rounded-lg bg-muted">
+                              <Package className="h-10 w-10 text-muted-foreground" />
+                            </div>
+                            <h3 className="font-medium text-xs line-clamp-2">{product.name}</h3>
+                            <p className="text-xs font-semibold text-primary mt-1.5">
+                              Rp {product.price.toLocaleString()}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                </TabsContent>
+              ))}
             </Tabs>
           </CardContent>
         </Card>

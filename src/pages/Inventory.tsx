@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<string>("name-asc");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -79,6 +80,19 @@ export default function Inventory() {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || product.category_id === selectedCategory;
     return matchesSearch && matchesCategory;
+  }).sort((a, b) => {
+    switch (sortOrder) {
+      case "name-asc":
+        return a.name.localeCompare(b.name);
+      case "name-desc":
+        return b.name.localeCompare(a.name);
+      case "price-asc":
+        return a.price - b.price;
+      case "price-desc":
+        return b.price - a.price;
+      default:
+        return 0;
+    }
   });
 
   const handleCreateProduct = async () => {
@@ -626,8 +640,19 @@ export default function Inventory() {
           <div className="flex items-center justify-between gap-4">
             <CardTitle>Daftar Produk</CardTitle>
             <div className="flex items-center gap-3">
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Urutkan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name-asc">Nama A-Z</SelectItem>
+                  <SelectItem value="name-desc">Nama Z-A</SelectItem>
+                  <SelectItem value="price-asc">Harga Terendah</SelectItem>
+                  <SelectItem value="price-desc">Harga Tertinggi</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Semua Kategori" />
                 </SelectTrigger>
                 <SelectContent>
