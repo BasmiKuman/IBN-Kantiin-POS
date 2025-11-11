@@ -271,6 +271,19 @@ export default function Settings() {
 
     setScanningPrinters(true);
     try {
+      // Request Bluetooth permissions first
+      const hasPermissions = await bluetoothPrinterService.requestPermissions();
+      
+      if (!hasPermissions) {
+        toast({
+          title: "Izin Diperlukan",
+          description: "Aplikasi memerlukan izin Bluetooth untuk scan printer. Silakan aktifkan di Settings.",
+          variant: "destructive",
+        });
+        setScanningPrinters(false);
+        return;
+      }
+
       const printers = await bluetoothPrinterService.listPrinters();
       setAvailablePrinters(printers);
       toast({
@@ -278,9 +291,10 @@ export default function Settings() {
         description: `Ditemukan ${printers.length} printer`,
       });
     } catch (error) {
+      console.error('Scan error:', error);
       toast({
         title: "Error",
-        description: "Gagal mencari printer. Pastikan Bluetooth aktif.",
+        description: "Gagal mencari printer. Pastikan Bluetooth aktif dan izin diberikan.",
         variant: "destructive",
       });
     } finally {

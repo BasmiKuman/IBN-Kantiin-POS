@@ -1,4 +1,19 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+// Import Capacitor Permissions API
+declare global {
+  interface Window {
+    CapacitorThermalPrinter?: ThermalPrinter;
+  }
+}
+
+// Define our custom Bluetooth Permissions plugin
+interface BluetoothPermissionsPlugin {
+  checkPermissions(): Promise<{ [key: string]: 'granted' | 'denied' }>;
+  requestPermissions(): Promise<{ [key: string]: 'granted' | 'denied' }>;
+}
+
+const BluetoothPermissions = registerPlugin<BluetoothPermissionsPlugin>('BluetoothPermissions');
 
 // Type definitions for the thermal printer plugin
 interface ThermalPrinter {
@@ -22,7 +37,6 @@ const getThermalPrinter = (): ThermalPrinter | null => {
   }
   
   try {
-    // @ts-ignore - Plugin might not have types
     return window.CapacitorThermalPrinter || null;
   } catch (error) {
     console.error('Thermal printer plugin not found:', error);
@@ -35,12 +49,50 @@ export interface BluetoothPrinter {
   address: string;
 }
 
+/**
+ * Request Bluetooth permissions on Android
+ */
+async function requestBluetoothPermissions(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
+    return true; // Not Android, assume granted
+  }
+
+  try {
+    // Use our custom permissions plugin
+    const result = await BluetoothPermissions.requestPermissions();
+    console.log('Bluetooth permissions result:', result);
+    
+    // Check if critical permissions are granted
+    if (result.bluetoothScan === 'granted' && result.bluetoothConnect === 'granted') {
+      return true;
+    }
+    
+    // For older Android, check legacy permissions
+    if (result.bluetooth === 'granted' && result.location === 'granted') {
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error requesting Bluetooth permissions:', error);
+    // If plugin not available, assume permissions will be handled by system
+    return true;
+  }
+}
+
 export const bluetoothPrinterService = {
   /**
    * Check if Bluetooth printing is available
    */
   isAvailable: (): boolean => {
     return Capacitor.isNativePlatform() && getThermalPrinter() !== null;
+  },
+
+  /**
+   * Request Bluetooth permissions (Android 12+)
+   */
+  requestPermissions: async (): Promise<boolean> => {
+    return await requestBluetoothPermissions();
   },
 
   /**
