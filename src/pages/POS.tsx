@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { Receipt } from "@/components/Receipt";
 import { KitchenReceipt } from "@/components/KitchenReceipt";
 import { useReactToPrint } from "react-to-print";
+import { bluetoothPrinterService } from "@/lib/bluetoothPrinter";
 
 interface CartItem {
   id: string;
@@ -192,6 +193,27 @@ export default function POS() {
     loadLoyaltySettings();
   }, []);
 
+  // Load printer settings from localStorage
+  const [printerSettings, setPrinterSettings] = useState<{
+    autoPrint: boolean;
+    bluetoothEnabled: boolean;
+    connectedPrinter: string | null;
+  }>({
+    autoPrint: false,
+    bluetoothEnabled: false,
+    connectedPrinter: null,
+  });
+
+  useEffect(() => {
+    const loadPrinterSettings = () => {
+      const saved = localStorage.getItem("settings_printer");
+      if (saved) {
+        setPrinterSettings(JSON.parse(saved));
+      }
+    };
+    loadPrinterSettings();
+  }, []);
+
   const addToCart = (product: typeof products[0]) => {
     const existingItem = cart.find((item) => item.id === product.id);
     if (existingItem) {
@@ -344,6 +366,45 @@ export default function POS() {
       setNewCustomerId(null);
       setUsePoints(false);
       setPointsToRedeem(0);
+
+      // Auto-print to Bluetooth printer if enabled
+      if (printerSettings.bluetoothEnabled && printerSettings.autoPrint && bluetoothPrinterService.isAvailable()) {
+        try {
+          await bluetoothPrinterService.printReceipt({
+            transactionNumber,
+            date: new Date(),
+            items: cart.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              subtotal: item.price * item.quantity,
+            })),
+            subtotal,
+            tax,
+            taxRate: paymentSettings.taxRate,
+            serviceCharge: subtotal * paymentSettings.serviceCharge / 100,
+            total,
+            paymentMethod: method,
+            paymentAmount: paymentAmountNum,
+            changeAmount,
+            customerName: customer?.name || customerName,
+            customerPoints: updatedCustomerPoints,
+            earnedPoints,
+          });
+          
+          toast({
+            title: "Struk Tercetak!",
+            description: "Struk berhasil dicetak ke printer Bluetooth",
+          });
+        } catch (error) {
+          console.error('Bluetooth print error:', error);
+          toast({
+            title: "Gagal Cetak",
+            description: "Tidak dapat mencetak ke printer Bluetooth",
+            variant: "destructive",
+          });
+        }
+      }
 
       // Show receipt dialog
       setReceiptDialogOpen(true);
@@ -1328,6 +1389,50 @@ export default function POS() {
                 >
                   Tutup
                 </Button>
+                {printerSettings.bluetoothEnabled && bluetoothPrinterService.isAvailable() && (
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await bluetoothPrinterService.printReceipt({
+                          transactionNumber: lastTransaction.transactionNumber,
+                          date: lastTransaction.date,
+                          items: lastTransaction.items.map(item => ({
+                            name: item.name,
+                            quantity: item.quantity,
+                            price: item.price,
+                            subtotal: item.price * item.quantity,
+                          })),
+                          subtotal: lastTransaction.subtotal,
+                          tax: lastTransaction.tax,
+                          taxRate: lastTransaction.taxRate,
+                          serviceCharge: lastTransaction.serviceCharge,
+                          total: lastTransaction.total,
+                          paymentMethod: lastTransaction.paymentMethod,
+                          paymentAmount: lastTransaction.paymentAmount,
+                          changeAmount: lastTransaction.changeAmount,
+                          customerName: lastTransaction.customerName,
+                          customerPoints: lastTransaction.customerPoints,
+                          earnedPoints: lastTransaction.earnedPoints,
+                        });
+                        toast({
+                          title: "Berhasil!",
+                          description: "Struk berhasil dicetak ke printer Bluetooth",
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "Gagal Cetak",
+                          description: "Tidak dapat mencetak ke printer Bluetooth",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    className="flex-1"
+                  >
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print Bluetooth
+                  </Button>
+                )}
                 <Button
                   onClick={handlePrint}
                   className="flex-1"

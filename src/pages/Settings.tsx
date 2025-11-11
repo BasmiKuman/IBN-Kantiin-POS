@@ -7,6 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
+import { bluetoothPrinterService, BluetoothPrinter } from "@/lib/bluetoothPrinter";
+import { Bluetooth, Printer, RefreshCw } from "lucide-react";
 
 interface GeneralSettings {
   businessName: string;
@@ -59,6 +61,12 @@ interface LoyaltySettings {
   rupiahPerPoint: number;
   minimumPointsRedeem: number;
   minimumPurchaseEarn: number;
+}
+
+interface PrinterSettings {
+  autoPrint: boolean;
+  bluetoothEnabled: boolean;
+  connectedPrinter: string | null;
 }
 
 export default function Settings() {
@@ -114,6 +122,17 @@ export default function Settings() {
     minimumPurchaseEarn: 10000, // minimum purchase to earn points
   });
 
+  const [printerSettings, setPrinterSettings] = useState<PrinterSettings>({
+    autoPrint: false,
+    bluetoothEnabled: false,
+    connectedPrinter: null,
+  });
+
+  const [availablePrinters, setAvailablePrinters] = useState<BluetoothPrinter[]>([]);
+  const [scanningPrinters, setScanningPrinters] = useState(false);
+  const [testingPrint, setTestingPrint] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+
   // Load settings from localStorage on mount
   useEffect(() => {
     const loadSettings = () => {
@@ -123,6 +142,7 @@ export default function Settings() {
       const savedReceipt = localStorage.getItem("settings_receipt");
       const savedNotification = localStorage.getItem("settings_notification");
       const savedLoyalty = localStorage.getItem("settings_loyalty");
+      const savedPrinter = localStorage.getItem("settings_printer");
 
       if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral));
       if (savedStore) setStoreSettings(JSON.parse(savedStore));
@@ -136,6 +156,7 @@ export default function Settings() {
       if (savedReceipt) setReceiptSettings(JSON.parse(savedReceipt));
       if (savedNotification) setNotificationSettings(JSON.parse(savedNotification));
       if (savedLoyalty) setLoyaltySettings(JSON.parse(savedLoyalty));
+      if (savedPrinter) setPrinterSettings(JSON.parse(savedPrinter));
     };
 
     loadSettings();
@@ -236,6 +257,152 @@ export default function Settings() {
       description: "Pengaturan program loyalty berhasil disimpan",
     });
   };
+
+  // Printer functions
+  const handleScanPrinters = async () => {
+    if (!bluetoothPrinterService.isAvailable()) {
+      toast({
+        title: "Tidak Tersedia",
+        description: "Bluetooth printer hanya tersedia di aplikasi Android/iOS",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setScanningPrinters(true);
+    try {
+      const printers = await bluetoothPrinterService.listPrinters();
+      setAvailablePrinters(printers);
+      toast({
+        title: "Scan Selesai",
+        description: `Ditemukan ${printers.length} printer`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mencari printer. Pastikan Bluetooth aktif.",
+        variant: "destructive",
+      });
+    } finally {
+      setScanningPrinters(false);
+    }
+  };
+
+  const handleConnectPrinter = async (address: string, name: string) => {
+    setIsConnecting(true);
+    try {
+      await bluetoothPrinterService.connect(address);
+      setPrinterSettings({
+        ...printerSettings,
+        connectedPrinter: name,
+      });
+      // Save immediately after connecting
+      const updatedSettings = {
+        ...printerSettings,
+        connectedPrinter: name,
+      };
+      localStorage.setItem("settings_printer", JSON.stringify(updatedSettings));
+      
+      toast({
+        title: "Berhasil Terhubung",
+        description: `Terhubung ke ${name}`,
+      });
+    } catch (error) {
+      console.error('Connection error:', error);
+      toast({
+        title: "Gagal Terhubung",
+        description: "Tidak dapat terhubung ke printer. Pastikan printer dalam mode pairing.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnectPrinter = async () => {
+    try {
+      await bluetoothPrinterService.disconnect();
+      setPrinterSettings({
+        ...printerSettings,
+        connectedPrinter: null,
+      });
+      // Save immediately after disconnecting
+      const updatedSettings = {
+        ...printerSettings,
+        connectedPrinter: null,
+      };
+      localStorage.setItem("settings_printer", JSON.stringify(updatedSettings));
+      
+      toast({
+        title: "Terputus",
+        description: "Printer telah diputus",
+      });
+    } catch (error) {
+      console.error('Disconnection error:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memutus koneksi printer",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTestPrint = async () => {
+    if (!printerSettings.connectedPrinter) {
+      toast({
+        title: "Tidak Terhubung",
+        description: "Hubungkan printer terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTestingPrint(true);
+    try {
+      await bluetoothPrinterService.printReceipt({
+        transactionNumber: "TEST-" + Date.now(),
+        date: new Date(),
+        items: [
+          { name: "Nasi Goreng", quantity: 2, price: 25000, subtotal: 50000 },
+          { name: "Es Teh Manis", quantity: 2, price: 5000, subtotal: 10000 },
+        ],
+        subtotal: 60000,
+        tax: 6000,
+        taxRate: 10,
+        serviceCharge: 0,
+        total: 66000,
+        paymentMethod: "cash",
+        paymentAmount: 70000,
+        changeAmount: 4000,
+        customerName: "Test Customer",
+        customerPoints: 100,
+        earnedPoints: 60,
+      });
+      
+      toast({
+        title: "Test Print Berhasil!",
+        description: "Struk test berhasil dicetak",
+      });
+    } catch (error) {
+      console.error('Test print error:', error);
+      toast({
+        title: "Test Print Gagal",
+        description: "Tidak dapat mencetak. Periksa koneksi printer.",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingPrint(false);
+    }
+  };
+
+  const handleSavePrinter = () => {
+    localStorage.setItem("settings_printer", JSON.stringify(printerSettings));
+    toast({
+      title: "Pengaturan Disimpan",
+      description: "Pengaturan printer berhasil disimpan",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -249,6 +416,7 @@ export default function Settings() {
           <TabsTrigger value="store">Toko</TabsTrigger>
           <TabsTrigger value="payment">Pembayaran</TabsTrigger>
           <TabsTrigger value="receipt">Struk</TabsTrigger>
+          <TabsTrigger value="printer">Printer</TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
           <TabsTrigger value="loyalty">Program Loyalty</TabsTrigger>
         </TabsList>
@@ -573,6 +741,227 @@ export default function Settings() {
               <Button onClick={handleSaveReceipt}>Simpan Template</Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="printer" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Bluetooth Printer</CardTitle>
+              <CardDescription>Cetak struk langsung ke printer Bluetooth</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!bluetoothPrinterService.isAvailable() && (
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-md">
+                  <p className="text-sm text-orange-800">
+                    ⚠️ Fitur Bluetooth printer hanya tersedia di aplikasi Android/iOS. 
+                    Fitur ini tidak berfungsi di browser web.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base font-semibold">Aktifkan Bluetooth Printing</Label>
+                  <p className="text-sm text-muted-foreground">Cetak struk otomatis ke printer Bluetooth</p>
+                </div>
+                <Switch 
+                  checked={printerSettings.bluetoothEnabled}
+                  onCheckedChange={(checked) => setPrinterSettings({...printerSettings, bluetoothEnabled: checked})}
+                  disabled={!bluetoothPrinterService.isAvailable()}
+                />
+              </div>
+
+              {printerSettings.bluetoothEnabled && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Cetak Otomatis</Label>
+                      <p className="text-sm text-muted-foreground">Cetak struk langsung setelah transaksi selesai</p>
+                    </div>
+                    <Switch 
+                      checked={printerSettings.autoPrint}
+                      onCheckedChange={(checked) => setPrinterSettings({...printerSettings, autoPrint: checked})}
+                    />
+                  </div>
+
+                  <Separator />
+                  
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <Label className="text-base">Status Koneksi</Label>
+                        {printerSettings.connectedPrinter ? (
+                          <div className="mt-1">
+                            <p className="text-sm text-green-600 font-medium flex items-center gap-2">
+                              <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+                              Terhubung: {printerSettings.connectedPrinter}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                            <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            Belum terhubung
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        {printerSettings.connectedPrinter && (
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={handleTestPrint}
+                              disabled={testingPrint}
+                            >
+                              {testingPrint ? (
+                                <>
+                                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                  Testing...
+                                </>
+                              ) : (
+                                <>
+                                  <Printer className="mr-2 h-4 w-4" />
+                                  Test Print
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleDisconnectPrinter}
+                            >
+                              Putuskan
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Cari Printer Bluetooth</Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleScanPrinters}
+                          disabled={scanningPrinters || isConnecting}
+                        >
+                          {scanningPrinters ? (
+                            <>
+                              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                              Mencari...
+                            </>
+                          ) : (
+                            <>
+                              <Bluetooth className="mr-2 h-4 w-4" />
+                              Scan Printer
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {availablePrinters.length > 0 && (
+                        <div className="space-y-2 mt-3">
+                          <Label className="text-sm">Printer Ditemukan ({availablePrinters.length}):</Label>
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {availablePrinters.map((printer) => (
+                              <div
+                                key={printer.address}
+                                className="flex items-center justify-between p-3 border rounded-md bg-white hover:bg-gray-50 transition-colors"
+                              >
+                                <div className="flex items-center gap-2 flex-1">
+                                  <Printer className="h-4 w-4 text-primary" />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium">{printer.name}</p>
+                                    <p className="text-xs text-muted-foreground">{printer.address}</p>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleConnectPrinter(printer.address, printer.name)}
+                                  disabled={printerSettings.connectedPrinter === printer.name || isConnecting}
+                                >
+                                  {isConnecting ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                  ) : printerSettings.connectedPrinter === printer.name ? (
+                                    '✓ Terhubung'
+                                  ) : (
+                                    'Hubungkan'
+                                  )}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {scanningPrinters && availablePrinters.length === 0 && (
+                        <div className="text-center py-4 text-sm text-muted-foreground">
+                          <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+                          Mencari printer Bluetooth...
+                        </div>
+                      )}
+
+                      {!scanningPrinters && availablePrinters.length === 0 && (
+                        <div className="text-center py-4 text-sm text-muted-foreground border-2 border-dashed rounded-lg">
+                          Belum ada printer yang ditemukan.<br />
+                          Klik "Scan Printer" untuk mencari.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <Button onClick={handleSavePrinter} className="mt-4">
+                Simpan Pengaturan Printer
+              </Button>
+            </CardContent>
+          </Card>
+
+          {printerSettings.bluetoothEnabled && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Info Printer Bluetooth</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                  <p className="font-semibold text-blue-900 flex items-center gap-2">
+                    <Printer className="h-4 w-4" />
+                    Cara Menggunakan:
+                  </p>
+                  <ul className="text-sm space-y-1 ml-4 list-disc text-blue-800">
+                    <li>Nyalakan printer Bluetooth dan pastikan dalam mode pairing</li>
+                    <li>Pastikan Bluetooth di HP Android sudah aktif</li>
+                    <li>Klik <strong>"Scan Printer"</strong> untuk mencari printer yang tersedia</li>
+                    <li>Pilih printer dari daftar dan klik <strong>"Hubungkan"</strong></li>
+                    <li>Gunakan tombol <strong>"Test Print"</strong> untuk test cetak struk contoh</li>
+                    <li>Aktifkan <strong>"Cetak Otomatis"</strong> untuk cetak struk langsung setelah transaksi</li>
+                    <li>Atau gunakan tombol <strong>"Print Bluetooth"</strong> di dialog struk untuk cetak manual</li>
+                  </ul>
+                </div>
+                <div className="p-4 border rounded-lg space-y-2">
+                  <p className="font-semibold">Printer yang Didukung:</p>
+                  <div className="text-sm space-y-1">
+                    <p>• Thermal printer 58mm / 80mm</p>
+                    <p>• ESC/POS compatible printer</p>
+                    <p>• Bluetooth printer untuk struk/nota</p>
+                    <p className="text-muted-foreground mt-2">Contoh: Zjiang, Epson TM-series, iMin, Sunmi, dll</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="font-semibold text-orange-900 mb-1">⚠️ Catatan Penting:</p>
+                  <p className="text-sm text-orange-800">
+                    Fitur Bluetooth printer hanya berfungsi di aplikasi Android/iOS yang sudah terinstall. 
+                    Tidak akan berfungsi di web browser.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
