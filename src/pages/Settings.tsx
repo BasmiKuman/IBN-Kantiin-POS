@@ -10,16 +10,18 @@ import { toast } from "@/hooks/use-toast";
 
 interface GeneralSettings {
   businessName: string;
+  currency: string;
   timezone: string;
   language: string;
-  darkMode: boolean;
-  soundEnabled: boolean;
+  darkMode?: boolean;
+  soundEnabled?: boolean;
 }
 
 interface StoreSettings {
+  name: string;
   address: string;
   city: string;
-  postalCode: string;
+  postalCode?: string;
   phone: string;
   email: string;
 }
@@ -32,6 +34,7 @@ interface PaymentSettings {
   taxRate: number;
   serviceCharge: number;
   showTaxSeparately: boolean;
+  qrisImageUrl?: string;
 }
 
 interface ReceiptSettings {
@@ -74,7 +77,10 @@ export default function Settings() {
     taxRate: 10,
     serviceCharge: 0,
     showTaxSeparately: true,
+    qrisImageUrl: undefined,
   });
+
+  const [qrisImagePreview, setQrisImagePreview] = useState<string | null>(null);
 
   const [receiptSettings, setReceiptSettings] = useState<ReceiptSettings>({
     header: "BASMIKUMAN POS",
@@ -103,13 +109,61 @@ export default function Settings() {
 
       if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral));
       if (savedStore) setStoreSettings(JSON.parse(savedStore));
-      if (savedPayment) setPaymentSettings(JSON.parse(savedPayment));
+      if (savedPayment) {
+        const parsed = JSON.parse(savedPayment);
+        setPaymentSettings(parsed);
+        if (parsed.qrisImageUrl) {
+          setQrisImagePreview(parsed.qrisImageUrl);
+        }
+      }
       if (savedReceipt) setReceiptSettings(JSON.parse(savedReceipt));
       if (savedNotification) setNotificationSettings(JSON.parse(savedNotification));
     };
 
     loadSettings();
   }, []);
+
+  // Handle QRIS image upload
+  const handleQrisImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "File Tidak Valid",
+          description: "Hanya file gambar yang diperbolehkan",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "File Terlalu Besar",
+          description: "Ukuran file maksimal 2MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Convert to base64 and save
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setQrisImagePreview(base64String);
+        setPaymentSettings({
+          ...paymentSettings,
+          qrisImageUrl: base64String,
+        });
+        toast({
+          title: "Gambar QRIS Dipilih",
+          description: "Jangan lupa klik 'Simpan Metode Pembayaran' untuk menyimpan perubahan",
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Save general settings
   const handleSaveGeneral = () => {
@@ -341,6 +395,50 @@ export default function Settings() {
                   onCheckedChange={(checked) => setPaymentSettings({...paymentSettings, ewalletEnabled: checked})}
                 />
               </div>
+              
+              {/* QRIS Image Upload */}
+              {paymentSettings.ewalletEnabled && (
+                <div className="ml-6 space-y-3 p-4 border rounded-lg bg-muted/50">
+                  <div className="space-y-2">
+                    <Label>Gambar QRIS</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Upload gambar QRIS Anda (max 2MB)
+                    </p>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleQrisImageUpload}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                  
+                  {qrisImagePreview && (
+                    <div className="space-y-2">
+                      <Label>Preview QRIS:</Label>
+                      <div className="border rounded-lg p-4 bg-white flex justify-center">
+                        <img 
+                          src={qrisImagePreview} 
+                          alt="QRIS Preview" 
+                          className="max-w-[200px] h-auto"
+                        />
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setQrisImagePreview(null);
+                          setPaymentSettings({
+                            ...paymentSettings,
+                            qrisImageUrl: undefined,
+                          });
+                        }}
+                      >
+                        Hapus Gambar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">

@@ -48,6 +48,9 @@ export default function POS() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [openBillPaymentDialogOpen, setOpenBillPaymentDialogOpen] = useState(false);
   const [selectedOpenBillForPayment, setSelectedOpenBillForPayment] = useState<string | null>(null);
+  const [paymentMethodDialogOpen, setPaymentMethodDialogOpen] = useState(false);
+  const [qrisDialogOpen, setQrisDialogOpen] = useState(false);
+  const [qrisTransactionTotal, setQrisTransactionTotal] = useState(0);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
     cashEnabled: true,
     cardEnabled: false,
@@ -203,6 +206,9 @@ export default function POS() {
     
     if (method === 'cash') {
       setPaymentDialogOpen(true);
+    } else if (method === 'qris') {
+      setQrisTransactionTotal(total);
+      setQrisDialogOpen(true);
     } else {
       await processTransaction(method, total);
     }
@@ -792,39 +798,15 @@ export default function POS() {
                     </>
                   )}
 
-                  {!editingOpenBillNumber && paymentSettings.cashEnabled && (
+                  {!editingOpenBillNumber && (
                     <Button 
                       className="w-full" 
                       size="lg" 
                       disabled={cart.length === 0}
-                      onClick={() => handlePayment('cash')}
-                    >
-                      <Banknote className="mr-2 h-4 w-4" />
-                      Tunai
-                    </Button>
-                  )}
-                  {!editingOpenBillNumber && paymentSettings.ewalletEnabled && (
-                    <Button
-                      className="w-full"
-                      variant="secondary"
-                      size="lg"
-                      disabled={cart.length === 0}
-                      onClick={() => handlePayment('qris')}
-                    >
-                      <Smartphone className="mr-2 h-4 w-4" />
-                      QRIS
-                    </Button>
-                  )}
-                  {!editingOpenBillNumber && paymentSettings.transferEnabled && (
-                    <Button
-                      className="w-full"
-                      variant="outline"
-                      size="lg"
-                      disabled={cart.length === 0}
-                      onClick={() => handlePayment('transfer')}
+                      onClick={() => setPaymentMethodDialogOpen(true)}
                     >
                       <CreditCard className="mr-2 h-4 w-4" />
-                      Transfer Bank
+                      Pilih Metode Pembayaran
                     </Button>
                   )}
                 </div>
@@ -1012,6 +994,86 @@ export default function POS() {
         </DialogContent>
       </Dialog>
 
+      {/* QRIS Payment Dialog */}
+      <Dialog open={qrisDialogOpen} onOpenChange={setQrisDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pembayaran QRIS</DialogTitle>
+            <DialogDescription>
+              Scan kode QR untuk melakukan pembayaran
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Total Pembayaran</Label>
+              <div className="rounded-lg border p-3 bg-muted">
+                <p className="text-2xl font-bold text-primary text-center">
+                  Rp {qrisTransactionTotal.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Kode QR</Label>
+              <div className="flex justify-center items-center rounded-lg border-2 border-dashed p-6 bg-muted/50">
+                {paymentSettings.qrisImageUrl ? (
+                  <img 
+                    src={paymentSettings.qrisImageUrl} 
+                    alt="QRIS Code"
+                    className="max-w-full max-h-[300px] object-contain"
+                  />
+                ) : (
+                  <div className="text-center space-y-2">
+                    <Smartphone className="h-12 w-12 mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      Kode QR belum diatur
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Silakan upload kode QRIS di Pengaturan
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-blue-50 p-3 border border-blue-200">
+              <p className="text-xs text-blue-900">
+                Pastikan pelanggan telah melakukan pembayaran sebelum mengkonfirmasi
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setQrisDialogOpen(false);
+                setQrisTransactionTotal(0);
+              }}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedOpenBillForPayment) {
+                  // Proses pembayaran open bill dengan QRIS
+                  handlePayOpenBill(selectedOpenBillForPayment, 'qris');
+                  setQrisDialogOpen(false);
+                  setSelectedOpenBillForPayment(null);
+                } else {
+                  // Proses pembayaran normal dengan QRIS
+                  processTransaction('qris', qrisTransactionTotal);
+                }
+                setQrisTransactionTotal(0);
+              }}
+              className="flex-1"
+            >
+              Konfirmasi Pembayaran
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Receipt Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
         <DialogContent className="max-w-md">
@@ -1073,6 +1135,96 @@ export default function POS() {
         </DialogContent>
       </Dialog>
 
+      {/* Normal Payment Method Selection Dialog */}
+      <Dialog open={paymentMethodDialogOpen} onOpenChange={setPaymentMethodDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pilih Metode Pembayaran</DialogTitle>
+            <DialogDescription>
+              Pilih metode pembayaran untuk transaksi ini
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Informasi Pembayaran</Label>
+              <div className="rounded-lg border p-3 bg-muted">
+                <p className="text-sm">Customer: {customerName || '-'}</p>
+                <p className="text-lg font-bold text-primary mt-2">
+                  Total: Rp {total.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Metode Pembayaran</Label>
+              <div className="grid grid-cols-1 gap-2">
+                {paymentSettings.cashEnabled && (
+                  <Button
+                    variant="outline"
+                    className="h-auto py-4 justify-start"
+                    onClick={() => {
+                      setPaymentMethodDialogOpen(false);
+                      setSelectedPaymentMethod('cash');
+                      setPaymentAmount("");
+                      setPaymentDialogOpen(true);
+                    }}
+                  >
+                    <Banknote className="mr-3 h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Tunai / Cash</div>
+                      <div className="text-xs text-muted-foreground">Pembayaran dengan uang tunai</div>
+                    </div>
+                  </Button>
+                )}
+
+                {paymentSettings.ewalletEnabled && (
+                  <Button
+                    variant="outline"
+                    className="h-auto py-4 justify-start"
+                    onClick={() => {
+                      setPaymentMethodDialogOpen(false);
+                      handlePayment('qris');
+                    }}
+                  >
+                    <Smartphone className="mr-3 h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">QRIS / E-Wallet</div>
+                      <div className="text-xs text-muted-foreground">Pembayaran digital</div>
+                    </div>
+                  </Button>
+                )}
+
+                {paymentSettings.transferEnabled && (
+                  <Button
+                    variant="outline"
+                    className="h-auto py-4 justify-start"
+                    onClick={() => {
+                      setPaymentMethodDialogOpen(false);
+                      handlePayment('transfer');
+                    }}
+                  >
+                    <CreditCard className="mr-3 h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-semibold">Transfer Bank</div>
+                      <div className="text-xs text-muted-foreground">Transfer ke rekening</div>
+                    </div>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setPaymentMethodDialogOpen(false)}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Open Bill Payment Method Selection Dialog */}
       <Dialog open={openBillPaymentDialogOpen} onOpenChange={setOpenBillPaymentDialogOpen}>
         <DialogContent>
@@ -1127,9 +1279,12 @@ export default function POS() {
                           variant="outline"
                           className="h-auto py-4 justify-start"
                           onClick={() => {
-                            handlePayOpenBill(selectedOpenBillForPayment, 'qris');
-                            setOpenBillPaymentDialogOpen(false);
-                            setSelectedOpenBillForPayment(null);
+                            const bill = openBills.find(b => b.orderNumber === selectedOpenBillForPayment);
+                            if (bill) {
+                              setQrisTransactionTotal(bill.total);
+                              setQrisDialogOpen(true);
+                              setOpenBillPaymentDialogOpen(false);
+                            }
                           }}
                         >
                           <Smartphone className="mr-3 h-5 w-5" />
