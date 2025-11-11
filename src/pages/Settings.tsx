@@ -53,6 +53,14 @@ interface NotificationSettings {
   whatsappEnabled: boolean;
 }
 
+interface LoyaltySettings {
+  enabled: boolean;
+  pointsPerRupiah: number;
+  rupiahPerPoint: number;
+  minimumPointsRedeem: number;
+  minimumPurchaseEarn: number;
+}
+
 export default function Settings() {
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
     businessName: "BasmiKuman POS",
@@ -98,6 +106,14 @@ export default function Settings() {
     whatsappEnabled: false,
   });
 
+  const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings>({
+    enabled: false,
+    pointsPerRupiah: 1000, // 1 point per 1000 rupiah
+    rupiahPerPoint: 1000, // 1 point = 1000 rupiah when redeemed
+    minimumPointsRedeem: 10,
+    minimumPurchaseEarn: 10000, // minimum purchase to earn points
+  });
+
   // Load settings from localStorage on mount
   useEffect(() => {
     const loadSettings = () => {
@@ -106,6 +122,7 @@ export default function Settings() {
       const savedPayment = localStorage.getItem("settings_payment");
       const savedReceipt = localStorage.getItem("settings_receipt");
       const savedNotification = localStorage.getItem("settings_notification");
+      const savedLoyalty = localStorage.getItem("settings_loyalty");
 
       if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral));
       if (savedStore) setStoreSettings(JSON.parse(savedStore));
@@ -118,6 +135,7 @@ export default function Settings() {
       }
       if (savedReceipt) setReceiptSettings(JSON.parse(savedReceipt));
       if (savedNotification) setNotificationSettings(JSON.parse(savedNotification));
+      if (savedLoyalty) setLoyaltySettings(JSON.parse(savedLoyalty));
     };
 
     loadSettings();
@@ -209,6 +227,15 @@ export default function Settings() {
       description: "Pengaturan notifikasi berhasil disimpan",
     });
   };
+
+  // Save loyalty settings
+  const handleSaveLoyalty = () => {
+    localStorage.setItem("settings_loyalty", JSON.stringify(loyaltySettings));
+    toast({
+      title: "Pengaturan Disimpan",
+      description: "Pengaturan program loyalty berhasil disimpan",
+    });
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -223,6 +250,7 @@ export default function Settings() {
           <TabsTrigger value="payment">Pembayaran</TabsTrigger>
           <TabsTrigger value="receipt">Struk</TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
+          <TabsTrigger value="loyalty">Program Loyalty</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -615,6 +643,122 @@ export default function Settings() {
               <Button onClick={handleSaveNotification}>Simpan Pengaturan</Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="loyalty" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Program Loyalty Points</CardTitle>
+              <CardDescription>Kelola sistem poin untuk pelanggan setia Anda</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base font-semibold">Aktifkan Program Loyalty</Label>
+                  <p className="text-sm text-muted-foreground">Pelanggan dapat mengumpulkan dan menukar poin</p>
+                </div>
+                <Switch 
+                  checked={loyaltySettings.enabled}
+                  onCheckedChange={(checked) => setLoyaltySettings({...loyaltySettings, enabled: checked})}
+                />
+              </div>
+
+              {loyaltySettings.enabled && (
+                <>
+                  <Separator />
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                    <div className="space-y-2">
+                      <Label>Dapatkan Poin</Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">1 poin untuk setiap Rp</span>
+                        <Input 
+                          type="number" 
+                          value={loyaltySettings.pointsPerRupiah}
+                          onChange={(e) => setLoyaltySettings({...loyaltySettings, pointsPerRupiah: parseInt(e.target.value) || 1000})}
+                          className="w-32"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Contoh: Belanja Rp 50,000 = {Math.floor(50000 / loyaltySettings.pointsPerRupiah)} poin
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Nilai Tukar Poin</Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">1 poin = Rp</span>
+                        <Input 
+                          type="number" 
+                          value={loyaltySettings.rupiahPerPoint}
+                          onChange={(e) => setLoyaltySettings({...loyaltySettings, rupiahPerPoint: parseInt(e.target.value) || 1000})}
+                          className="w-32"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Contoh: 10 poin = Rp {(10 * loyaltySettings.rupiahPerPoint).toLocaleString('id-ID')} diskon
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Minimum Poin untuk Ditukar</Label>
+                      <Input 
+                        type="number" 
+                        value={loyaltySettings.minimumPointsRedeem}
+                        onChange={(e) => setLoyaltySettings({...loyaltySettings, minimumPointsRedeem: parseInt(e.target.value) || 10})}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Pelanggan harus memiliki minimal {loyaltySettings.minimumPointsRedeem} poin untuk menukar
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Minimum Belanja untuk Dapat Poin</Label>
+                      <Input 
+                        type="number" 
+                        value={loyaltySettings.minimumPurchaseEarn}
+                        onChange={(e) => setLoyaltySettings({...loyaltySettings, minimumPurchaseEarn: parseInt(e.target.value) || 10000})}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Transaksi harus minimal Rp {loyaltySettings.minimumPurchaseEarn.toLocaleString('id-ID')} untuk mendapat poin
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <Button onClick={handleSaveLoyalty} className="mt-4">
+                Simpan Pengaturan Loyalty
+              </Button>
+            </CardContent>
+          </Card>
+
+          {loyaltySettings.enabled && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Info Program Loyalty</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-4 bg-primary/10 rounded-lg space-y-2">
+                  <p className="font-semibold text-primary">Cara Kerja Program:</p>
+                  <ul className="text-sm space-y-1 ml-4 list-disc">
+                    <li>Pelanggan mendapat poin otomatis setiap transaksi</li>
+                    <li>Poin dapat ditukar menjadi diskon di transaksi berikutnya</li>
+                    <li>Pilih "Gunakan Poin" di halaman POS untuk menukar poin</li>
+                    <li>Sisa poin akan dikembalikan ke akun pelanggan</li>
+                  </ul>
+                </div>
+                <div className="p-4 border rounded-lg space-y-2">
+                  <p className="font-semibold">Contoh Perhitungan:</p>
+                  <div className="text-sm space-y-1">
+                    <p>• Belanja Rp 100,000 → dapat {Math.floor(100000 / loyaltySettings.pointsPerRupiah)} poin</p>
+                    <p>• Tukar 50 poin → diskon Rp {(50 * loyaltySettings.rupiahPerPoint).toLocaleString('id-ID')}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

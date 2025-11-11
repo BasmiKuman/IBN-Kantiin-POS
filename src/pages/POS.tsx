@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Loader2, Printer, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Loader2, Printer, FileText, ChevronDown, ChevronUp, Gift } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useProducts } from "@/hooks/supabase/useProducts";
 import { useCategories } from "@/hooks/supabase/useCategories";
 import { useCreateTransaction, generateTransactionNumber } from "@/hooks/supabase/useTransactions";
@@ -33,6 +34,15 @@ interface PaymentSettings {
   taxRate: number;
   serviceCharge: number;
   showTaxSeparately: boolean;
+  qrisImageUrl?: string;
+}
+
+interface LoyaltySettings {
+  enabled: boolean;
+  pointsPerRupiah: number;
+  rupiahPerPoint: number;
+  minimumPointsRedeem: number;
+  minimumPurchaseEarn: number;
 }
 
 export default function POS() {
@@ -60,6 +70,16 @@ export default function POS() {
     serviceCharge: 0,
     showTaxSeparately: true,
   });
+  const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings>({
+    enabled: false,
+    pointsPerRupiah: 1000,
+    rupiahPerPoint: 1000,
+    minimumPointsRedeem: 10,
+    minimumPurchaseEarn: 10000,
+  });
+  const [usePoints, setUsePoints] = useState(false);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  
   const [lastTransaction, setLastTransaction] = useState<{
     transactionNumber: string;
     date: Date;
@@ -159,6 +179,17 @@ export default function POS() {
     loadPaymentSettings();
   }, []);
 
+  // Load loyalty settings from localStorage
+  useEffect(() => {
+    const loadLoyaltySettings = () => {
+      const saved = localStorage.getItem("settings_loyalty");
+      if (saved) {
+        setLoyaltySettings(JSON.parse(saved));
+      }
+    };
+    loadLoyaltySettings();
+  }, []);
+
   const addToCart = (product: typeof products[0]) => {
     const existingItem = cart.find((item) => item.id === product.id);
     if (existingItem) {
@@ -195,7 +226,14 @@ export default function POS() {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = paymentSettings.showTaxSeparately ? (subtotal * paymentSettings.taxRate / 100) : 0;
   const serviceCharge = subtotal * paymentSettings.serviceCharge / 100;
-  const total = subtotal + tax + serviceCharge;
+  
+  // Calculate points discount
+  const pointsDiscount = usePoints && customer ? Math.min(
+    pointsToRedeem * loyaltySettings.rupiahPerPoint,
+    subtotal + tax + serviceCharge
+  ) : 0;
+  
+  const total = subtotal + tax + serviceCharge - pointsDiscount;
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -220,8 +258,13 @@ export default function POS() {
       const paymentAmountNum = paidAmount || total;
       const changeAmount = method === 'cash' ? Math.max(0, paymentAmountNum - total) : 0;
 
-      // Calculate points (1 point per 1000 rupiah)
-      const earnedPoints = Math.floor(total / 1000);
+      // Calculate earned points only if loyalty enabled and meets minimum purchase
+      const earnedPoints = loyaltySettings.enabled && subtotal >= loyaltySettings.minimumPurchaseEarn 
+        ? Math.floor(subtotal / loyaltySettings.pointsPerRupiah)
+        : 0;
+
+      // Calculate redeemed points
+      const redeemedPoints = usePoints && customer ? pointsToRedeem : 0;
 
       await createTransaction.mutateAsync({
         transaction: {
@@ -229,7 +272,7 @@ export default function POS() {
           customer_id: customer?.id || null,
           cashier_id: null, // TODO: Get from auth
           subtotal,
-          discount: 0,
+          discount: pointsDiscount,
           tax,
           total,
           payment_method: method,
@@ -250,7 +293,8 @@ export default function POS() {
       // Update customer points if customer selected
       let updatedCustomerPoints = customer?.points || 0;
       if (customer) {
-        const newPoints = (customer.points || 0) + earnedPoints;
+        // New points = current points - redeemed + earned
+        const newPoints = (customer.points || 0) - redeemedPoints + earnedPoints;
         const newTotalPurchases = (customer.total_purchases || 0) + total;
         updatedCustomerPoints = newPoints;
 
@@ -289,6 +333,10 @@ export default function POS() {
       setCart([]);
       setPaymentDialogOpen(false);
       setPaymentAmount("");
+      setCustomerPhone("");
+      setCustomerName("");
+      setUsePoints(false);
+      setPointsToRedeem(0);
 
       // Show receipt dialog
       setReceiptDialogOpen(true);
@@ -706,6 +754,27 @@ export default function POS() {
 
                 <div className="space-y-2 border-t pt-4">
                   <div className="space-y-2">
+                    <Label htmlFor="customerPhone" className="text-xs">Nomor Telepon Pelanggan (Opsional)</Label>
+                    <Input
+                      id="customerPhone"
+                      placeholder="08123456789"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                    {customer && (
+                      <div className="p-2 bg-primary/10 rounded-md text-xs space-y-1">
+                        <p className="font-semibold text-primary">✓ {customer.name}</p>
+                        {loyaltySettings.enabled && (
+                          <p className="flex items-center gap-1">
+                            <Gift className="h-3 w-3" />
+                            <span className="font-medium">{customer.points || 0} poin tersedia</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="customerName" className="text-xs">Nama Customer (Opsional)</Label>
                     <Input
                       id="customerName"
@@ -744,6 +813,81 @@ export default function POS() {
                       <span>Rp {serviceCharge.toLocaleString()}</span>
                     </div>
                   )}
+                  
+                  {/* Loyalty Points Section */}
+                  {loyaltySettings.enabled && customer && (customer.points || 0) >= loyaltySettings.minimumPointsRedeem && (
+                    <>
+                      <div className="border-t pt-2 pb-2 space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="usePoints" 
+                            checked={usePoints}
+                            onCheckedChange={(checked) => {
+                              setUsePoints(checked as boolean);
+                              if (checked) {
+                                // Auto-set maximum redeemable points
+                                const maxRedeemable = Math.min(
+                                  customer.points || 0,
+                                  Math.floor((subtotal + tax + serviceCharge) / loyaltySettings.rupiahPerPoint)
+                                );
+                                setPointsToRedeem(maxRedeemable);
+                              } else {
+                                setPointsToRedeem(0);
+                              }
+                            }}
+                          />
+                          <Label htmlFor="usePoints" className="text-sm font-medium cursor-pointer">
+                            Gunakan Poin Loyalty
+                          </Label>
+                        </div>
+                        
+                        {usePoints && (
+                          <div className="space-y-2 pl-6">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={pointsToRedeem}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  const maxRedeemable = Math.min(
+                                    customer.points || 0,
+                                    Math.floor((subtotal + tax + serviceCharge) / loyaltySettings.rupiahPerPoint)
+                                  );
+                                  setPointsToRedeem(Math.min(val, maxRedeemable));
+                                }}
+                                className="h-8 text-sm w-24"
+                                min={0}
+                                max={Math.min(
+                                  customer.points || 0,
+                                  Math.floor((subtotal + tax + serviceCharge) / loyaltySettings.rupiahPerPoint)
+                                )}
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                poin (max: {Math.min(
+                                  customer.points || 0,
+                                  Math.floor((subtotal + tax + serviceCharge) / loyaltySettings.rupiahPerPoint)
+                                )})
+                              </span>
+                            </div>
+                            <p className="text-xs text-primary font-medium">
+                              Diskon: Rp {pointsDiscount.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Sisa poin: {((customer.points || 0) - pointsToRedeem).toLocaleString()} poin
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  
+                  {pointsDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-primary">
+                      <span>Diskon Poin</span>
+                      <span>- Rp {pointsDiscount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
                     <span className="text-primary">Rp {total.toLocaleString()}</span>
