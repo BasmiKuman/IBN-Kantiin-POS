@@ -29,6 +29,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function Customers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
@@ -49,6 +51,7 @@ export default function Customers() {
   const { toast } = useToast();
   const { data: customers = [], isLoading } = useCustomers();
   const createCustomer = useCreateCustomer();
+  const updateCustomer = useUpdateCustomer();
 
   const handleCreateCustomer = async () => {
     if (!formData.name || !formData.phone) {
@@ -79,6 +82,56 @@ export default function Customers() {
           phone: "",
           address: "",
           notes: "",
+        });
+      }
+    });
+  };
+
+  const handleEditClick = (customer: any) => {
+    setEditingCustomer(customer);
+    setFormData({
+      name: customer.name,
+      email: customer.email || "",
+      phone: customer.phone || "",
+      address: customer.address || "",
+      notes: customer.notes || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateCustomer = async () => {
+    if (!editingCustomer) return;
+    
+    if (!formData.name || !formData.phone) {
+      toast({
+        title: "Error",
+        description: "Nama dan No. Telepon wajib diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateCustomer.mutate({
+      id: editingCustomer.id,
+      name: formData.name,
+      email: formData.email || null,
+      phone: formData.phone,
+      address: formData.address || null,
+      notes: formData.notes || null,
+    }, {
+      onSuccess: () => {
+        setIsEditDialogOpen(false);
+        setEditingCustomer(null);
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          address: "",
+          notes: "",
+        });
+        toast({
+          title: "Berhasil",
+          description: "Data pelanggan berhasil diperbarui",
         });
       }
     });
@@ -296,6 +349,85 @@ export default function Customers() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Customer Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Pelanggan</DialogTitle>
+            <DialogDescription>Perbarui informasi pelanggan</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nama Lengkap *</Label>
+              <Input 
+                placeholder="Nama pelanggan" 
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input 
+                type="email" 
+                placeholder="email@example.com" 
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>No. Telepon *</Label>
+              <Input 
+                placeholder="08123456789" 
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Alamat</Label>
+              <Textarea 
+                placeholder="Alamat lengkap" 
+                value={formData.address}
+                onChange={(e) => setFormData({...formData, address: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Catatan</Label>
+              <Textarea 
+                placeholder="Catatan tambahan" 
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                className="flex-1"
+                variant="outline"
+                onClick={() => {
+                  setIsEditDialogOpen(false);
+                  setEditingCustomer(null);
+                  setFormData({
+                    name: "",
+                    email: "",
+                    phone: "",
+                    address: "",
+                    notes: "",
+                  });
+                }}
+              >
+                Batal
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={handleUpdateCustomer}
+                disabled={updateCustomer.isPending}
+              >
+                {updateCustomer.isPending ? "Menyimpan..." : "Simpan Perubahan"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -854,7 +986,13 @@ Tim IBN Kantiin"
                 >
                   Tutup
                 </Button>
-                <Button className="flex-1">
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    setIsDetailDialogOpen(false);
+                    handleEditClick(selectedCustomer);
+                  }}
+                >
                   Edit Pelanggan
                 </Button>
               </div>
