@@ -15,7 +15,7 @@ SELECT
   e.name as employee_name,
   e.position,
   COUNT(a.id) as total_days,
-  -- Present days: tepat waktu (clock_in <= 08:30)
+  -- Present days: hadir tepat waktu (clock_in antara 00:00 - 08:30)
   COUNT(CASE 
     WHEN a.clock_in IS NOT NULL 
     AND (EXTRACT(HOUR FROM a.clock_in AT TIME ZONE 'Asia/Jakarta') < 8 
@@ -23,12 +23,11 @@ SELECT
              AND EXTRACT(MINUTE FROM a.clock_in AT TIME ZONE 'Asia/Jakarta') <= 30))
     THEN 1 
   END) as present_days,
-  -- Late days: terlambat (clock_in > 08:30)
+  -- Late days: hadir terlambat (clock_in setelah 08:30)
   COUNT(CASE 
     WHEN a.clock_in IS NOT NULL
-    AND (EXTRACT(HOUR FROM a.clock_in AT TIME ZONE 'Asia/Jakarta') > 8 
-         OR (EXTRACT(HOUR FROM a.clock_in AT TIME ZONE 'Asia/Jakarta') = 8 
-             AND EXTRACT(MINUTE FROM a.clock_in AT TIME ZONE 'Asia/Jakarta') > 30))
+    AND EXTRACT(HOUR FROM a.clock_in AT TIME ZONE 'Asia/Jakarta') > 8 
+    AND EXTRACT(HOUR FROM a.clock_in AT TIME ZONE 'Asia/Jakarta') < 24
     THEN 1 
   END) as late_days,
   0 as absent_days,

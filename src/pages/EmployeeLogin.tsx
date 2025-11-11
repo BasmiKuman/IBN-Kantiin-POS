@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { LogIn, Clock, CheckCircle } from "lucide-react";
+import { LogIn, LogOut, Clock, CheckCircle } from "lucide-react";
 import { useEmployees } from "@/hooks/supabase/useEmployees";
-import { useClockIn, useActiveAttendance } from "@/hooks/supabase/useAttendance";
+import { useClockIn, useClockOut, useActiveAttendance } from "@/hooks/supabase/useAttendance";
 import { useToast } from "@/hooks/use-toast";
 
 export default function EmployeeLogin() {
@@ -17,6 +17,7 @@ export default function EmployeeLogin() {
 
   const { data: employees = [] } = useEmployees();
   const clockIn = useClockIn();
+  const clockOut = useClockOut();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -59,7 +60,7 @@ export default function EmployeeLogin() {
       await clockIn.mutateAsync(selectedEmployee.id);
       
       toast({
-        title: "Absensi Berhasil! ✓",
+        title: "Absen Masuk Berhasil! ✓",
         description: `Selamat bekerja, ${selectedEmployee.name}!`,
       });
 
@@ -69,6 +70,26 @@ export default function EmployeeLogin() {
       }, 2000);
     } catch (error) {
       console.error("Clock in error:", error);
+    }
+  };
+
+  const handleClockOut = async () => {
+    if (!selectedEmployee || !activeAttendance) return;
+
+    try {
+      await clockOut.mutateAsync(activeAttendance.id);
+      
+      toast({
+        title: "Absen Keluar Berhasil! ✓",
+        description: `Terima kasih atas kerja keras Anda, ${selectedEmployee.name}!`,
+      });
+
+      // Redirect ke dashboard setelah 2 detik
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+    } catch (error) {
+      console.error("Clock out error:", error);
     }
   };
 
@@ -144,13 +165,18 @@ export default function EmployeeLogin() {
 
               {/* Already Clocked In Warning */}
               {activeAttendance && (
-                <Alert className="border-warning bg-warning/5">
-                  <Clock className="h-4 w-4 text-warning" />
+                <Alert className="border-green-500 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
                   <AlertDescription>
-                    <p className="font-medium">Anda sudah absen masuk hari ini</p>
+                    <p className="font-medium text-green-900">Anda sudah absen masuk hari ini</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       Waktu masuk: {formatTime(activeAttendance.clock_in)}
                     </p>
+                    {activeAttendance.clock_out && (
+                      <p className="text-sm text-muted-foreground">
+                        Waktu keluar: {formatTime(activeAttendance.clock_out)}
+                      </p>
+                    )}
                   </AlertDescription>
                 </Alert>
               )}
@@ -186,6 +212,30 @@ export default function EmployeeLogin() {
                     <LogIn className="mr-2 h-4 w-4" />
                     {clockIn.isPending ? "Memproses..." : "Absen Masuk"}
                   </Button>
+                )}
+
+                {activeAttendance && !activeAttendance.clock_out && (
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    variant="destructive"
+                    onClick={handleClockOut}
+                    disabled={clockOut.isPending}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {clockOut.isPending ? "Memproses..." : "Absen Keluar"}
+                  </Button>
+                )}
+
+                {activeAttendance && activeAttendance.clock_out && (
+                  <Alert className="border-blue-500 bg-blue-50">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription>
+                      <p className="text-sm text-blue-900 font-medium">
+                        Anda sudah menyelesaikan absensi hari ini
+                      </p>
+                    </AlertDescription>
+                  </Alert>
                 )}
                 
                 <Button 
