@@ -120,9 +120,10 @@ export function useDeleteEmployee() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Hard delete the employee from the database
       const { error } = await supabase
         .from('employees')
-        .update({ is_active: false })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;

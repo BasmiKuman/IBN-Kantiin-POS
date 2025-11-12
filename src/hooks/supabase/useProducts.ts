@@ -153,9 +153,10 @@ export function useDeleteProduct() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Hard delete the product from the database
       const { error } = await supabase
         .from('products')
-        .update({ is_active: false })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;

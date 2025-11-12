@@ -111,9 +111,10 @@ export function useDeleteVariant() {
 
   return useMutation({
     mutationFn: async ({ id, productId }: { id: string; productId: string }) => {
+      // Hard delete the variant from the database
       const { error } = await supabase
         .from('product_variants')
-        .update({ is_active: false })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
