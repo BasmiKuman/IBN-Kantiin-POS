@@ -59,6 +59,7 @@ export default function POS() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [openBillConfirmDialogOpen, setOpenBillConfirmDialogOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash' | 'qris' | 'transfer'>('cash');
   const [paymentAmount, setPaymentAmount] = useState("");
   const [openBillPaymentDialogOpen, setOpenBillPaymentDialogOpen] = useState(false);
@@ -496,21 +497,27 @@ export default function POS() {
       date: new Date(),
     });
 
-    // Show print dialog for kitchen receipt
-    setPrintDialogOpen(true);
+    // Show confirmation dialog for open bill
+    setOpenBillConfirmDialogOpen(true);
 
     toast({
       title: "Open Bill Dibuat!",
-      description: `No. Order: ${orderNumber}. Anda bisa cetak struk dapur sekarang.`,
+      description: `No. Order: ${orderNumber}`,
     });
   };
 
-  const handleCloseOpenBill = () => {
-    // Reset form after printing
+  const handleCloseOpenBillConfirm = () => {
+    // Close confirmation and reset form
+    setOpenBillConfirmDialogOpen(false);
     setCart([]);
     setCustomerName("");
     setOrderNotes("");
-    setPrintDialogOpen(false);
+  };
+
+  const handlePrintOpenBill = () => {
+    // Open print dialog
+    setOpenBillConfirmDialogOpen(false);
+    setPrintDialogOpen(true);
   };
 
   const handlePayOpenBill = async (orderNumber: string, method: 'cash' | 'qris' | 'transfer') => {
@@ -1615,6 +1622,57 @@ export default function POS() {
               Batal
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Open Bill Confirmation Dialog */}
+      <Dialog open={openBillConfirmDialogOpen} onOpenChange={setOpenBillConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Open Bill Berhasil Dibuat!</DialogTitle>
+            <DialogDescription>
+              Order telah disimpan dan siap dikirim ke dapur.
+            </DialogDescription>
+          </DialogHeader>
+
+          {lastOpenBill && (
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-sm font-medium text-green-800">
+                  ✓ Order #{lastOpenBill.orderNumber}
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  {lastOpenBill.items.length} item - {lastOpenBill.customerName || 'Tanpa nama'}
+                </p>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
+                <p className="text-sm font-medium text-yellow-800">
+                  💡 Tips: Cetak struk dapur untuk kitchen
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Agar tidak salah orderan, cetak struk untuk dikirim ke dapur
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseOpenBillConfirm}
+                  className="flex-1"
+                >
+                  Tutup & Order Baru
+                </Button>
+                <Button
+                  onClick={handlePrintOpenBill}
+                  className="flex-1"
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Cetak Struk Dapur
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
