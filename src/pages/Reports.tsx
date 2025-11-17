@@ -37,6 +37,11 @@ import {
 import { ChevronDown } from "lucide-react";
 
 export default function Reports() {
+  // Date filter state - MUST BE DECLARED FIRST
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+
   const { data: transactions = [] as Transaction[], isLoading: loadingTransactions } = useTransactions();
   const { data: dailySales = [], isLoading: loadingDailySales } = useDailySales();
   const { data: products = [] } = useProducts();
@@ -50,11 +55,6 @@ export default function Reports() {
   };
   const { start, end } = getProductSalesDateRange();
   const { data: productSales = [], isLoading: loadingProductSales } = useProductSales(start, end);
-  
-  // Date filter state
-  const [dateFilter, setDateFilter] = useState<string>('all');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
 
   // Filter transactions by date
   const getFilteredTransactions = () => {
