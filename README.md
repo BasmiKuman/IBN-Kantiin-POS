@@ -354,12 +354,20 @@ git push origin main     # Push to remote
 ```
 
 ### GitHub Codespaces
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/BasmiKuman/IBN-Kantiin-POS)
+
 1. Click "Code" button → "Codespaces" tab
-2. Click "New codespace"
-3. Edit files and commit changes
+2. Click "New codespace" atau klik badge di atas
+3. Tunggu setup selesai (2-5 menit)
+4. Setup `.env` file (copy dari `.env.example`)
+5. Run `npm run dev`
+
+**📖 Panduan lengkap:** [CODESPACES_GUIDE.md](./CODESPACES_GUIDE.md)
 
 ## 📚 Documentation
 
+- [CODESPACES_GUIDE.md](./CODESPACES_GUIDE.md) - **GitHub Codespaces setup & troubleshooting**
 - [CHECKLIST.md](./CHECKLIST.md) - Setup checklist & verification
 - [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) - Complete Supabase guide
 - [SETUP_COMPLETE.md](./SETUP_COMPLETE.md) - Setup completion guide
