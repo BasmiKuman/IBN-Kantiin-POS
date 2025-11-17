@@ -17,12 +17,15 @@ interface PrintDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   receiptData?: ReceiptData;
+  batchMode?: boolean;
+  batchTransactions?: ReceiptData[];
 }
 
-export function PrintDialog({ open, onOpenChange, receiptData }: PrintDialogProps) {
+export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchTransactions }: PrintDialogProps) {
   const { isConnected, isConnecting, printerName, connect, disconnect, printReceipt } = useBluetoothPrinter();
   const [isPrintingKitchen, setIsPrintingKitchen] = useState(false);
   const [isPrintingCashier, setIsPrintingCashier] = useState(false);
+  const [isPrintingBatch, setIsPrintingBatch] = useState(false);
 
   const handleConnect = async () => {
     await connect();
@@ -47,6 +50,34 @@ export function PrintDialog({ open, onOpenChange, receiptData }: PrintDialogProp
     const receipt = generateCashierReceipt(receiptData);
     await printReceipt(receipt);
     setIsPrintingCashier(false);
+  };
+
+  const handleBatchPrintKitchen = async () => {
+    if (!batchTransactions || batchTransactions.length === 0) return;
+    setIsPrintingBatch(true);
+    
+    for (const transaction of batchTransactions) {
+      const receipt = generateKitchenReceipt(transaction);
+      await printReceipt(receipt);
+      // Small delay between prints
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    setIsPrintingBatch(false);
+  };
+
+  const handleBatchPrintCashier = async () => {
+    if (!batchTransactions || batchTransactions.length === 0) return;
+    setIsPrintingBatch(true);
+    
+    for (const transaction of batchTransactions) {
+      const receipt = generateCashierReceipt(transaction);
+      await printReceipt(receipt);
+      // Small delay between prints
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    setIsPrintingBatch(false);
   };
 
   return (
@@ -151,7 +182,7 @@ export function PrintDialog({ open, onOpenChange, receiptData }: PrintDialogProp
           </div>
 
           {/* Print Buttons */}
-          {isConnected && receiptData && (
+          {isConnected && !batchMode && receiptData && (
             <>
               <div className="border-t pt-4 space-y-3">
                 <p className="font-medium text-sm">Cetak Struk:</p>
@@ -199,6 +230,63 @@ export function PrintDialog({ open, onOpenChange, receiptData }: PrintDialogProp
                 <ul className="list-disc list-inside space-y-1 mt-1">
                   <li>Struk Dapur: Format sederhana untuk kitchen</li>
                   <li>Struk Kasir: Format lengkap dengan harga</li>
+                </ul>
+              </div>
+            </>
+          )}
+
+          {/* Batch Print Buttons */}
+          {isConnected && batchMode && batchTransactions && batchTransactions.length > 0 && (
+            <>
+              <div className="border-t pt-4 space-y-3">
+                <p className="font-medium text-sm">
+                  Print {batchTransactions.length} Transaksi:
+                </p>
+                
+                <Button
+                  onClick={handleBatchPrintKitchen}
+                  disabled={isPrintingBatch}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isPrintingBatch ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Mencetak batch...
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Batch Print Struk Dapur
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={handleBatchPrintCashier}
+                  disabled={isPrintingBatch}
+                  className="w-full"
+                >
+                  {isPrintingBatch ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Mencetak batch...
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Batch Print Struk Kasir
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="text-xs text-muted-foreground">
+                <p>⚠️ Catatan Batch Print:</p>
+                <ul className="list-disc list-inside space-y-1 mt-1">
+                  <li>Printer akan mencetak {batchTransactions.length} struk berturut-turut</li>
+                  <li>Pastikan kertas cukup untuk semua struk</li>
+                  <li>Jangan tutup dialog selama proses print</li>
                 </ul>
               </div>
             </>

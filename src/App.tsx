@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
 import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
+import TransactionHistory from "./pages/TransactionHistory";
 import Customers from "./pages/Customers";
 import Employees from "./pages/Employees";
 import Settings from "./pages/Settings";
@@ -74,6 +75,16 @@ const App = () => (
               <ProtectedRoute>
                 <MainLayout>
                   <Reports />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <TransactionHistory />
                 </MainLayout>
               </ProtectedRoute>
             }

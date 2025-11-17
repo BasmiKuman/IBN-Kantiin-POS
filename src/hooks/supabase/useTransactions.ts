@@ -48,6 +48,17 @@ export function useTransactions(limit?: number) {
           ),
           employees:cashier_id (
             name
+          ),
+          transaction_items (
+            id,
+            product_id,
+            product_name,
+            quantity,
+            unit_price,
+            subtotal,
+            variant_id,
+            variant_name,
+            created_at
           )
         `)
         .order('created_at', { ascending: false });
