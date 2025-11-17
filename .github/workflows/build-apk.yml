@@ -76,9 +76,9 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ github.run_number }}
-        name: BasmiKuman POS v${{ github.run_number }}
+        name: BK POS v${{ github.run_number }}
         body: |
-          ## 📱 BasmiKuman POS - Production Release
+          ## 📱 BK POS - Production Release
           
           **Build Number:** ${{ github.run_number }}
           **Date:** ${{ github.event.head_commit.timestamp }}
@@ -99,7 +99,7 @@ jobs:
           - Tax integration
           
           ---
-          Built with ❤️ by BasmiKuman Production
+          Built with ❤️ by BK POS Team
         files: |
           android/app/build/outputs/apk/release/app-release-unsigned.apk
           android/app/build/outputs/apk/debug/app-debug.apk

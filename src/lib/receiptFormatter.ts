@@ -38,7 +38,7 @@ function getReceiptSettings() {
     const savedStore = localStorage.getItem('settings_store');
     
     const receiptSettings = savedReceipt ? JSON.parse(savedReceipt) : {
-      header: 'BASMIKUMAN POS',
+      header: 'BK POS',
       tagline: 'Makanan Enak, Harga Terjangkau',
       footer: 'Terima kasih atas kunjungan Anda!',
     };
@@ -76,7 +76,7 @@ export function generateKitchenReceipt(data: ReceiptData): string {
   
   // Brand Header - ALWAYS SHOW
   receipt += ALIGN_CENTER + BOLD_ON;
-  receipt += 'BASMIKUMAN POS\n';
+  receipt += 'BK POS\n';
   receipt += BOLD_OFF;
   
   // Store name (dari settings)
@@ -121,7 +121,7 @@ export function generateCashierReceipt(data: ReceiptData): string {
   
   // Brand Header - ALWAYS SHOW (tidak bisa diubah)
   receipt += ALIGN_CENTER + BOLD_ON;
-  receipt += 'BASMIKUMAN POS\n';
+  receipt += 'BK POS\n';
   receipt += BOLD_OFF;
   receipt += '~~~~~~~\n';
   

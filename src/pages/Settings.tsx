@@ -63,7 +63,7 @@ interface LoyaltySettings {
 
 export default function Settings() {
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
-    businessName: "BasmiKuman POS",
+    businessName: "BK POS",
     currency: "IDR",
     timezone: "Asia/Jakarta",
     language: "id",
@@ -91,7 +91,7 @@ export default function Settings() {
   const [qrisImagePreview, setQrisImagePreview] = useState<string | null>(null);
 
   const [receiptSettings, setReceiptSettings] = useState<ReceiptSettings>({
-    header: "BASMIKUMAN POS",
+    header: "BK POS",
     tagline: "Makanan Enak, Harga Terjangkau",
     footer: "Terima kasih atas kunjungan Anda!",
     showLogo: true,
@@ -629,9 +629,9 @@ export default function Settings() {
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-blue-900 mb-1">BASMIKUMAN POS Brand</h4>
+                    <h4 className="font-bold text-blue-900 mb-1">BK POS Brand</h4>
                     <p className="text-sm text-blue-800">
-                      Brand "BASMIKUMAN POS" akan <strong>selalu tampil di bagian atas struk</strong> sebagai identitas sistem. 
+                      Brand "BK POS" akan <strong>selalu tampil di bagian atas struk</strong> sebagai identitas sistem. 
                       Header di bawah ini adalah nama toko/bisnis Anda yang bisa diubah sesuai kebutuhan.
                     </p>
                   </div>

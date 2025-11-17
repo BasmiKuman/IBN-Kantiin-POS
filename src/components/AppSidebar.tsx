@@ -136,10 +136,10 @@ export function AppSidebar() {
       <SidebarHeader className="border-b p-3">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center flex-shrink-0">
-            <img src="/Images/logo.png" alt="BasmiKuman POS Logo" className="h-8 w-8 object-contain" />
+            <img src="/Images/logo.png" alt="BK POS Logo" className="h-8 w-8 object-contain" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-base font-bold text-sidebar-foreground truncate">BasmiKuman POS</h2>
+            <h2 className="text-base font-bold text-sidebar-foreground truncate">BK POS</h2>
             <p className="text-[10px] text-sidebar-foreground/80 truncate">Point of Sale</p>
           </div>
         </div>
