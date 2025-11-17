@@ -74,10 +74,13 @@ export function generateKitchenReceipt(data: ReceiptData): string {
   
   let receipt = INIT; // Initialize printer
   
-  // Header - store name (normal size for 58mm)
+  // Brand Header - ALWAYS SHOW
   receipt += ALIGN_CENTER + BOLD_ON;
-  receipt += storeSettings.name.toUpperCase() + '\n';
+  receipt += 'BASMIKUMAN POS\n';
   receipt += BOLD_OFF;
+  
+  // Store name (dari settings)
+  receipt += storeSettings.name.toUpperCase() + '\n';
   receipt += '*** DAPUR ***\n';
   receipt += LINE_FEED;
   
@@ -116,8 +119,14 @@ export function generateCashierReceipt(data: ReceiptData): string {
   
   let receipt = INIT; // Initialize printer
   
-  // Store Header (dari settings)
+  // Brand Header - ALWAYS SHOW (tidak bisa diubah)
   receipt += ALIGN_CENTER + BOLD_ON;
+  receipt += 'BASMIKUMAN POS\n';
+  receipt += BOLD_OFF;
+  receipt += '~~~~~~~\n';
+  
+  // Store Header (dari settings - bisa diubah)
+  receipt += BOLD_ON;
   receipt += `${receiptSettings.header}\n`;
   receipt += BOLD_OFF;
   

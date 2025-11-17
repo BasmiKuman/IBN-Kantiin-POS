@@ -250,6 +250,7 @@ export default function Settings() {
           <TabsTrigger value="store">Toko</TabsTrigger>
           <TabsTrigger value="payment">Pembayaran</TabsTrigger>
           <TabsTrigger value="receipt">Struk</TabsTrigger>
+          <TabsTrigger value="bluetooth">Bluetooth Printer</TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
           <TabsTrigger value="loyalty">Program Loyalty</TabsTrigger>
         </TabsList>
@@ -521,6 +522,98 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="bluetooth" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Bluetooth Printer Settings</CardTitle>
+              <CardDescription>Kelola koneksi printer thermal Bluetooth</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-900 mb-2">📱 Printer Tersimpan</h4>
+                  {(() => {
+                    const savedPrinterName = localStorage.getItem('bluetooth_printer_name');
+                    if (savedPrinterName) {
+                      return (
+                        <div className="space-y-2">
+                          <p className="text-sm text-blue-800">
+                            ✓ {savedPrinterName}
+                          </p>
+                          <p className="text-xs text-blue-700">
+                            Printer ini akan otomatis terhubung saat Anda cetak
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              localStorage.removeItem('bluetooth_printer_name');
+                              toast({
+                                title: "Printer Dihapus",
+                                description: "Koneksi printer telah direset. Hubungkan ulang untuk menyimpan printer baru.",
+                              });
+                              // Force re-render
+                              window.location.reload();
+                            }}
+                            className="mt-2"
+                          >
+                            Hapus Printer
+                          </Button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <p className="text-sm text-blue-800">
+                        Belum ada printer tersimpan. Hubungkan printer dari menu Print untuk menyimpan.
+                      </p>
+                    );
+                  })()}
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">🔧 Cara Kerja Auto-Connect:</h4>
+                  <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                    <li>Hubungkan printer Bluetooth sekali dari menu Print</li>
+                    <li>Nama printer akan tersimpan otomatis</li>
+                    <li>Printer akan auto-reconnect saat Anda cetak</li>
+                    <li>Tidak perlu pairing manual lagi setiap kali</li>
+                  </ol>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">💡 Tips:</h4>
+                  <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                    <li>Pastikan Bluetooth aktif di perangkat Anda</li>
+                    <li>Printer harus dalam jangkauan (max 10 meter)</li>
+                    <li>Kalau gagal connect, matikan & nyalakan printer</li>
+                    <li>Gunakan Chrome atau Edge browser</li>
+                  </ul>
+                </div>
+
+                <Separator />
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Troubleshooting</h4>
+                  <div className="space-y-2 text-sm text-yellow-800">
+                    <p><strong>Printer tidak terdeteksi:</strong></p>
+                    <ul className="list-disc list-inside ml-4 space-y-1">
+                      <li>Pair printer via Settings Bluetooth sistem terlebih dahulu</li>
+                      <li>Pastikan printer tidak terhubung ke device lain</li>
+                    </ul>
+                    <p className="mt-2"><strong>Error "GATT operation":</strong></p>
+                    <ul className="list-disc list-inside ml-4 space-y-1">
+                      <li>Restart printer dan coba lagi</li>
+                      <li>Hapus pairing dan pair ulang</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="receipt" className="space-y-4">
           <Card>
             <CardHeader>
@@ -528,11 +621,29 @@ export default function Settings() {
               <CardDescription>Kustomisasi tampilan struk pembayaran</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      BP
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-blue-900 mb-1">BASMIKUMAN POS Brand</h4>
+                    <p className="text-sm text-blue-800">
+                      Brand "BASMIKUMAN POS" akan <strong>selalu tampil di bagian atas struk</strong> sebagai identitas sistem. 
+                      Header di bawah ini adalah nama toko/bisnis Anda yang bisa diubah sesuai kebutuhan.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Header Struk</Label>
+                <Label>Header Struk (Nama Toko Anda)</Label>
                 <Input 
                   value={receiptSettings.header}
                   onChange={(e) => setReceiptSettings({...receiptSettings, header: e.target.value})}
+                  placeholder="Contoh: WARUNG MAKAN IBN"
                 />
               </div>
               <div className="space-y-2">
