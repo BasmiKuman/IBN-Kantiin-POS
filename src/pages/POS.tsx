@@ -717,7 +717,7 @@ export default function POS() {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 w-full">
+    <div className="flex flex-col lg:flex-row gap-4 w-full min-h-screen">
       <div className="flex-1 space-y-4 min-w-0">
         <Card>
           <CardHeader className="pb-3">
@@ -796,8 +796,8 @@ export default function POS() {
         </Card>
       </div>
 
-      <div className="w-full sm:w-[380px] md:w-[400px] lg:w-[420px] flex-shrink-0">
-        <Card className="sticky top-4 max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+      <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0">
+        <Card className="lg:sticky lg:top-4 max-h-[600px] lg:max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
@@ -1066,7 +1066,7 @@ export default function POS() {
                   </div>
                 </div>
 
-                <div className="space-y-2 flex-shrink-0">
+                <div className="space-y-2 flex-shrink-0 mt-auto pt-3 border-t">
                   {editingOpenBillNumber ? (
                     // Tombol Save saat edit open bill
                     <>

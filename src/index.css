@@ -121,11 +121,25 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 
-  /* Force responsive behavior */
+  /* Mobile safe area and responsive behavior */
   html, body {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+    position: relative;
+  }
+  
+  /* Support for iOS safe area */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Prevent zoom on input focus in mobile */
+  input, select, textarea {
+    font-size: 16px !important;
   }
 }
 

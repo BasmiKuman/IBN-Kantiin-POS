@@ -49,9 +49,16 @@ export function useBluetoothPrinter() {
   const connect = useCallback(async () => {
     setIsConnecting(true);
     try {
+      // Check if running in native app (Capacitor)
+      const isNativeApp = !!(window as any).Capacitor;
+      
       // Check if Web Bluetooth API is available
       if (!navigator.bluetooth) {
-        throw new Error('Web Bluetooth API tidak didukung di browser ini. Gunakan Chrome/Edge di Android/Windows.');
+        if (isNativeApp) {
+          throw new Error('Fitur Bluetooth Printer belum tersedia di aplikasi mobile. Gunakan versi web di Chrome untuk sementara, atau tunggu update berikutnya dengan fitur native Bluetooth.');
+        } else {
+          throw new Error('Web Bluetooth API tidak didukung di browser ini. Gunakan Chrome/Edge versi terbaru.');
+        }
       }
 
       // Request Bluetooth device - accept all devices for maximum compatibility
