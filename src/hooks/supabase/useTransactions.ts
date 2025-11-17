@@ -253,9 +253,12 @@ export function useProductSales(startDate?: string, endDate?: string) {
           .lte('transactions.created_at', endDate);
       }
 
-      const { data, error } = await query.order('transactions.created_at', { ascending: false });
+      const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Product sales query error:', error);
+        throw error;
+      }
 
       // Aggregate data by product
       const productMap = new Map();

@@ -98,6 +98,25 @@ export function PrintDialog({ open, onOpenChange, receiptData }: PrintDialogProp
             </Alert>
           )}
 
+          {/* Connection Instructions */}
+          {!isConnected && (
+            <Alert>
+              <AlertDescription className="space-y-2">
+                <p className="font-semibold">📋 Panduan Koneksi:</p>
+                <ol className="list-decimal list-inside space-y-1 text-sm">
+                  <li>Nyalakan printer thermal Bluetooth</li>
+                  <li>Pastikan printer dalam mode pairing (LED berkedip)</li>
+                  <li>Klik tombol "Hubungkan Printer" di bawah</li>
+                  <li>Pilih nama printer dari daftar yang muncul</li>
+                  <li>Tunggu hingga status berubah jadi "Terhubung"</li>
+                </ol>
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 Jika printer tidak muncul, coba pair dulu via Settings → Bluetooth di perangkat Anda.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Connect/Disconnect Button */}
           <div className="flex gap-2">
             {!isConnected ? (
@@ -183,6 +202,24 @@ export function PrintDialog({ open, onOpenChange, receiptData }: PrintDialogProp
                 </ul>
               </div>
             </>
+          )}
+
+          {/* Troubleshooting Section */}
+          {!isConnected && (
+            <Alert variant="default" className="mt-4">
+              <AlertDescription className="space-y-2">
+                <p className="font-semibold">🔧 Troubleshooting:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Jika error "Unsupported device": Printer mungkin belum dipair. Pair dulu via Settings Bluetooth.</li>
+                  <li>Jika printer tidak terdeteksi: Pastikan printer dalam jarak 5 meter dan tidak terhubung ke perangkat lain.</li>
+                  <li>Jika koneksi terputus: Matikan lalu nyalakan printer, kemudian coba hubungkan lagi.</li>
+                  <li>Untuk debugging: Tekan F12 → Console untuk lihat detail koneksi.</li>
+                </ul>
+                <p className="text-xs text-muted-foreground mt-2">
+                  📖 Panduan lengkap tersedia di dokumentasi BLUETOOTH_PRINT_GUIDE.md
+                </p>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </DialogContent>

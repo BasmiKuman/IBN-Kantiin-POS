@@ -45,12 +45,14 @@ export function useBluetoothPrinter() {
         throw new Error('Web Bluetooth API tidak didukung di browser ini. Gunakan Chrome/Edge di Android/Windows.');
       }
 
-      // Request Bluetooth device
+      // Request Bluetooth device - accept all devices for maximum compatibility
       const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: [
           '000018f0-0000-1000-8000-00805f9b34fb', // Generic printer service
-          '0000ff00-0000-1000-8000-00805f9b34fb', // Alternative service UUID
+          '0000ff00-0000-1000-8000-00805f9b34fb', // Common thermal printer service
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // Nordic UART Service
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Microchip Transparent UART
         ],
       });
 
@@ -58,27 +60,75 @@ export function useBluetoothPrinter() {
         throw new Error('GATT tidak tersedia pada device ini');
       }
 
+      console.log('Connecting to:', device.name);
+      
       // Connect to GATT server
       const server = await device.gatt.connect();
+      console.log('GATT server connected');
       
-      // Try to get service and characteristic
+      // Get all services to find the right one
+      const services = await (server as any).getPrimaryServices();
+      console.log('Available services:', services.map((s: any) => s.uuid));
+      
       let characteristic: BluetoothRemoteGATTCharacteristic | null = null;
       
-      try {
-        const service = await (server as any).getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-        characteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-      } catch (e) {
-        // Try alternative service UUID
+      // Try common printer service UUIDs
+      const serviceUUIDs = [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        '0000ff00-0000-1000-8000-00805f9b34fb',
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // Nordic UART
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Microchip
+      ];
+
+      const characteristicUUIDs = [
+        '00002af1-0000-1000-8000-00805f9b34fb',
+        '0000ff01-0000-1000-8000-00805f9b34fb',
+        '0000ff02-0000-1000-8000-00805f9b34fb',
+        'e7810a72-73ae-499d-8c15-faa9aef0c3f2', // Nordic TX
+        '49535343-1e4d-4bd9-ba61-23c647249616', // Microchip TX
+      ];
+
+      // Try each service
+      for (const serviceUUID of serviceUUIDs) {
         try {
-          const service = await (server as any).getPrimaryService('0000ff00-0000-1000-8000-00805f9b34fb');
-          characteristic = await service.getCharacteristic('0000ff01-0000-1000-8000-00805f9b34fb');
-        } catch (e2) {
-          throw new Error('Tidak dapat menemukan service printer. Pastikan printer mendukung ESC/POS via Bluetooth.');
+          const service = await (server as any).getPrimaryService(serviceUUID);
+          console.log(`Found service: ${serviceUUID}`);
+          
+          // Try to get write characteristic
+          for (const charUUID of characteristicUUIDs) {
+            try {
+              characteristic = await service.getCharacteristic(charUUID);
+              console.log(`Found characteristic: ${charUUID}`);
+              break;
+            } catch (e) {
+              // Try next characteristic
+            }
+          }
+          
+          // If not found by UUID, get all characteristics
+          if (!characteristic) {
+            const characteristics = await service.getCharacteristics();
+            console.log('Available characteristics:', characteristics.map((c: any) => c.uuid));
+            
+            // Find writable characteristic
+            for (const char of characteristics) {
+              if (char.properties.write || char.properties.writeWithoutResponse) {
+                characteristic = char;
+                console.log('Using writable characteristic:', char.uuid);
+                break;
+              }
+            }
+          }
+          
+          if (characteristic) break;
+        } catch (e) {
+          // Try next service
+          console.log(`Service ${serviceUUID} not found, trying next...`);
         }
       }
 
       if (!characteristic) {
-        throw new Error('Tidak dapat menemukan characteristic printer');
+        throw new Error('Printer tidak memiliki characteristic yang dapat digunakan untuk menulis data. Pastikan printer dalam mode Bluetooth dan sudah dipair.');
       }
 
       setPrinter({
@@ -95,9 +145,19 @@ export function useBluetoothPrinter() {
       return true;
     } catch (error: any) {
       console.error('Bluetooth connection error:', error);
+      
+      let errorMessage = error.message || 'Tidak dapat terhubung ke printer';
+      
+      // Provide helpful error messages
+      if (error.message?.includes('User cancelled')) {
+        errorMessage = 'Koneksi dibatalkan oleh user';
+      } else if (error.message?.includes('Unsupported device')) {
+        errorMessage = 'Printer tidak didukung. Pastikan printer thermal Bluetooth dalam mode pairing dan coba lagi.';
+      }
+      
       toast({
         title: 'Gagal Terhubung',
-        description: error.message || 'Tidak dapat terhubung ke printer',
+        description: errorMessage,
         variant: 'destructive',
       });
       return false;
