@@ -115,6 +115,12 @@ export function useBluetoothPrinter() {
               if (char.properties.write || char.properties.writeWithoutResponse) {
                 characteristic = char;
                 console.log('Using writable characteristic:', char.uuid);
+                console.log('Characteristic properties:', {
+                  write: char.properties.write,
+                  writeWithoutResponse: char.properties.writeWithoutResponse,
+                  read: char.properties.read,
+                  notify: char.properties.notify,
+                });
                 break;
               }
             }
@@ -196,7 +202,18 @@ export function useBluetoothPrinter() {
       const data = encoder.encode(text);
       
       // Check if characteristic supports write or writeWithoutResponse
-      const useWriteWithoutResponse = printer.characteristic.properties.writeWithoutResponse && !printer.characteristic.properties.write;
+      const hasWrite = printer.characteristic.properties.write;
+      const hasWriteWithoutResponse = printer.characteristic.properties.writeWithoutResponse;
+      
+      console.log('Print: Characteristic properties:', {
+        write: hasWrite,
+        writeWithoutResponse: hasWriteWithoutResponse,
+      });
+      
+      // Prefer writeWithoutResponse for thermal printers (faster, no response needed)
+      const useWriteWithoutResponse = hasWriteWithoutResponse;
+      
+      console.log('Print: Using method:', useWriteWithoutResponse ? 'writeValueWithoutResponse' : 'writeValue');
       
       // Split data into chunks if needed (some printers have max packet size)
       const chunkSize = 512;
