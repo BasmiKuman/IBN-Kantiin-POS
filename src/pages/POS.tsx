@@ -16,7 +16,6 @@ import { useCreateTransaction, generateTransactionNumber } from "@/hooks/supabas
 import { useSearchCustomer, useUpdateCustomerPoints, useCreateCustomer } from "@/hooks/supabase/useCustomers";
 import { toast } from "@/hooks/use-toast";
 import { Receipt } from "@/components/Receipt";
-import { KitchenReceipt } from "@/components/KitchenReceipt";
 import { PrintDialog } from "@/components/PrintDialog";
 import { VariantSelector } from "@/components/VariantSelector";
 import { useReactToPrint } from "react-to-print";
@@ -60,7 +59,6 @@ export default function POS() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
-  const [kitchenReceiptDialogOpen, setKitchenReceiptDialogOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash' | 'qris' | 'transfer'>('cash');
   const [paymentAmount, setPaymentAmount] = useState("");
   const [openBillPaymentDialogOpen, setOpenBillPaymentDialogOpen] = useState(false);
@@ -134,14 +132,9 @@ export default function POS() {
   const [editingOpenBillNumber, setEditingOpenBillNumber] = useState<string | null>(null);
 
   const receiptRef = useRef<HTMLDivElement>(null);
-  const kitchenReceiptRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
     contentRef: receiptRef,
-  });
-
-  const handlePrintKitchen = useReactToPrint({
-    contentRef: kitchenReceiptRef,
   });
 
   const { data: products = [], isLoading: productsLoading } = useProducts();
@@ -485,12 +478,30 @@ export default function POS() {
       notes: orderNotes || undefined,
     });
 
-    // Show kitchen receipt dialog
-    setKitchenReceiptDialogOpen(true);
+    // Prepare receipt data for printing
+    setLastTransactionReceipt({
+      orderNumber,
+      items: cart.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        variant: item.variant,
+      })),
+      subtotal: billSubtotal,
+      tax: billTax,
+      total: billTotal,
+      paymentMethod: 'pending',
+      cashierName: username,
+      customerName: customerName || undefined,
+      date: new Date(),
+    });
+
+    // Show print dialog for kitchen receipt
+    setPrintDialogOpen(true);
 
     toast({
       title: "Open Bill Dibuat!",
-      description: `No. Order: ${orderNumber}`,
+      description: `No. Order: ${orderNumber}. Anda bisa cetak struk dapur sekarang.`,
     });
   };
 
@@ -499,7 +510,7 @@ export default function POS() {
     setCart([]);
     setCustomerName("");
     setOrderNotes("");
-    setKitchenReceiptDialogOpen(false);
+    setPrintDialogOpen(false);
   };
 
   const handlePayOpenBill = async (orderNumber: string, method: 'cash' | 'qris' | 'transfer') => {
@@ -1604,62 +1615,6 @@ export default function POS() {
               Batal
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Kitchen Receipt Dialog */}
-      <Dialog open={kitchenReceiptDialogOpen} onOpenChange={setKitchenReceiptDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Struk Dapur - Open Bill</DialogTitle>
-            <DialogDescription>
-              Order telah disimpan. Cetak struk untuk dapur atau tutup dialog ini.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {lastOpenBill && (
-            <div className="space-y-4">
-              <div className="max-h-[500px] overflow-auto border rounded-lg">
-                <KitchenReceipt
-                  ref={kitchenReceiptRef}
-                  orderNumber={lastOpenBill.orderNumber}
-                  date={lastOpenBill.date}
-                  items={lastOpenBill.items.map(item => ({
-                    name: item.name,
-                    quantity: item.quantity,
-                  }))}
-                  customerName={lastOpenBill.customerName}
-                  notes={lastOpenBill.notes}
-                />
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
-                <p className="text-sm font-medium text-yellow-800">
-                  ⚠️ Catatan: Order ini belum dibayar
-                </p>
-                <p className="text-xs text-yellow-700 mt-1">
-                  Simpan nomor order <strong>{lastOpenBill.orderNumber}</strong> untuk pembayaran nanti
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleCloseOpenBill}
-                  className="flex-1"
-                >
-                  Tutup
-                </Button>
-                <Button
-                  onClick={handlePrintKitchen}
-                  className="flex-1"
-                >
-                  <Printer className="mr-2 h-4 w-4" />
-                  Cetak Struk Dapur
-                </Button>
-              </div>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
 

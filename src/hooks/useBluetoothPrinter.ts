@@ -195,11 +195,20 @@ export function useBluetoothPrinter() {
       const encoder = new TextEncoder();
       const data = encoder.encode(text);
       
+      // Check if characteristic supports write or writeWithoutResponse
+      const useWriteWithoutResponse = printer.characteristic.properties.writeWithoutResponse && !printer.characteristic.properties.write;
+      
       // Split data into chunks if needed (some printers have max packet size)
       const chunkSize = 512;
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
-        await printer.characteristic.writeValue(chunk);
+        
+        if (useWriteWithoutResponse) {
+          await printer.characteristic.writeValueWithoutResponse(chunk);
+        } else {
+          await printer.characteristic.writeValue(chunk);
+        }
+        
         // Small delay between chunks
         await new Promise(resolve => setTimeout(resolve, 50));
       }
