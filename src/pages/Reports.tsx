@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, TrendingUp, DollarSign, ShoppingCart, Package, FileText, FileSpreadsheet, Calendar } from "lucide-react";
-import { useTransactions, useDailySales, type Transaction } from "@/hooks/supabase/useTransactions";
+import { Download, TrendingUp, DollarSign, ShoppingCart, Package, FileText, FileSpreadsheet, Calendar, Clock, Hash } from "lucide-react";
+import { useTransactions, useDailySales, useProductSales, type Transaction } from "@/hooks/supabase/useTransactions";
 import { useProducts } from "@/hooks/supabase/useProducts";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -20,11 +20,36 @@ import { saveAs } from "file-saver";
 import { toast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 export default function Reports() {
   const { data: transactions = [] as Transaction[], isLoading: loadingTransactions } = useTransactions();
   const { data: dailySales = [], isLoading: loadingDailySales } = useDailySales();
   const { data: products = [] } = useProducts();
+  
+  // Product sales with date filter
+  const getProductSalesDateRange = () => {
+    if (dateFilter === 'custom' && startDate && endDate) {
+      return { start: startDate, end: endDate };
+    }
+    return { start: undefined, end: undefined };
+  };
+  const { start, end } = getProductSalesDateRange();
+  const { data: productSales = [], isLoading: loadingProductSales } = useProductSales(start, end);
   
   // Date filter state
   const [dateFilter, setDateFilter] = useState<string>('all');
@@ -436,31 +461,174 @@ export default function Reports() {
         <TabsContent value="products" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Top 10 Produk Terlaris</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Laporan Penjualan Produk
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {products.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    Belum ada data produk
-                  </p>
-                ) : (
-                  products.slice(0, 5).map((product, index) => (
-                    <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm">
-                          {index + 1}
+              {loadingProductSales ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Memuat data...</p>
+                </div>
+              ) : productSales.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">Belum ada transaksi penjualan</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Summary Cards */}
+                  <div className="grid gap-4 md:grid-cols-3 mb-6">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Total Produk Terjual
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
+                          {productSales.reduce((sum, p) => sum + p.total_quantity, 0)} item
                         </div>
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-muted-foreground">Stok: {product.stock}</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Varian Produk
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">
+                          {productSales.length} produk
                         </div>
-                      </div>
-                      <p className="font-semibold">Rp {product.price.toLocaleString()}</p>
-                    </div>
-                  ))
-                )}
-              </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Total Penjualan Produk
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-success">
+                          Rp {productSales.reduce((sum, p) => sum + p.total_sales, 0).toLocaleString()}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Product Sales Table */}
+                  <div className="border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead>Produk</TableHead>
+                          <TableHead className="text-center">Kategori</TableHead>
+                          <TableHead className="text-center">Terjual</TableHead>
+                          <TableHead className="text-right">Harga Rata-rata</TableHead>
+                          <TableHead className="text-right">Total Penjualan</TableHead>
+                          <TableHead className="text-center">Transaksi</TableHead>
+                          <TableHead className="text-center">Detail</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {productSales.map((product, index) => (
+                          <Collapsible key={product.product_id + '-' + (product.variant_id || '')} asChild>
+                            <>
+                              <TableRow>
+                                <TableCell className="font-medium">{index + 1}</TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">{product.product_name}</p>
+                                    {product.sku && (
+                                      <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant="outline">{product.category}</Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant="secondary">
+                                    {product.total_quantity} pcs
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  Rp {Math.round(product.avg_price).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-right font-semibold text-success">
+                                  Rp {product.total_sales.toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge>{product.transaction_count}x</Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                </TableCell>
+                              </TableRow>
+                              <CollapsibleContent asChild>
+                                <TableRow>
+                                  <TableCell colSpan={8} className="bg-muted/30">
+                                    <div className="p-4 space-y-2">
+                                      <p className="font-semibold text-sm mb-3 flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        Riwayat Transaksi:
+                                      </p>
+                                      <div className="grid gap-2">
+                                        {product.transactions.slice(0, 10).map((txn: any, idx: number) => (
+                                          <div key={idx} className="flex items-center justify-between text-sm border-b pb-2">
+                                            <div className="flex items-center gap-3">
+                                              <Badge variant="outline" className="font-mono">
+                                                {txn.transaction_number}
+                                              </Badge>
+                                              <span className="text-muted-foreground">
+                                                {new Date(txn.date).toLocaleString('id-ID', {
+                                                  day: '2-digit',
+                                                  month: 'short',
+                                                  year: 'numeric',
+                                                  hour: '2-digit',
+                                                  minute: '2-digit',
+                                                })}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                              <span className="flex items-center gap-1">
+                                                <Hash className="h-3 w-3 text-muted-foreground" />
+                                                {txn.quantity} pcs
+                                              </span>
+                                              <span className="text-muted-foreground">
+                                                @ Rp {txn.unit_price.toLocaleString()}
+                                              </span>
+                                              <span className="font-semibold min-w-[120px] text-right">
+                                                = Rp {txn.subtotal.toLocaleString()}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                        {product.transactions.length > 10 && (
+                                          <p className="text-xs text-muted-foreground text-center pt-2">
+                                            ... dan {product.transactions.length - 10} transaksi lainnya
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              </CollapsibleContent>
+                            </>
+                          </Collapsible>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

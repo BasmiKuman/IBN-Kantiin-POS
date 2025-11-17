@@ -220,3 +220,93 @@ export function useSalesByDateRange(startDate: string, endDate: string) {
     },
   });
 }
+
+// Get product sales analytics
+export function useProductSales(startDate?: string, endDate?: string) {
+  return useQuery({
+    queryKey: ['product-sales', startDate, endDate],
+    queryFn: async () => {
+      let query = supabase
+        .from('transaction_items')
+        .select(`
+          *,
+          transactions!inner (
+            created_at,
+            status,
+            transaction_number
+          ),
+          products (
+            name,
+            sku,
+            category_id,
+            categories (
+              name
+            )
+          )
+        `)
+        .eq('transactions.status', 'completed');
+
+      // Filter by date range if provided
+      if (startDate && endDate) {
+        query = query
+          .gte('transactions.created_at', startDate)
+          .lte('transactions.created_at', endDate);
+      }
+
+      const { data, error } = await query.order('transactions.created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Aggregate data by product
+      const productMap = new Map();
+      
+      data?.forEach((item: any) => {
+        const productId = item.product_id;
+        const productName = item.product_name || item.products?.name;
+        const variantName = item.variant_name;
+        const displayName = variantName ? `${productName} (${variantName})` : productName;
+        
+        // Use product_id + variant_id as unique key
+        const key = `${productId}-${item.variant_id || 'no-variant'}`;
+        
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            product_id: productId,
+            product_name: displayName,
+            variant_id: item.variant_id,
+            variant_name: variantName,
+            sku: item.products?.sku || '',
+            category: item.products?.categories?.name || 'Uncategorized',
+            total_quantity: 0,
+            total_sales: 0,
+            transaction_count: 0,
+            avg_price: 0,
+            last_sold: null,
+            transactions: [],
+          });
+        }
+        
+        const product = productMap.get(key);
+        product.total_quantity += item.quantity;
+        product.total_sales += item.subtotal;
+        product.transaction_count += 1;
+        product.avg_price = product.total_sales / product.total_quantity;
+        product.last_sold = item.transactions?.created_at;
+        product.transactions.push({
+          transaction_number: item.transactions?.transaction_number,
+          date: item.transactions?.created_at,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          subtotal: item.subtotal,
+        });
+      });
+
+      // Convert map to array and sort by total sales
+      const productSales = Array.from(productMap.values()).sort(
+        (a, b) => b.total_sales - a.total_sales
+      );
+
+      return productSales;
+    },
+  });
+}
