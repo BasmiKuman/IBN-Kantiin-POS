@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BluetoothPrinter {
@@ -35,7 +35,16 @@ export function useBluetoothPrinter() {
     isConnected: false,
   });
   const [isConnecting, setIsConnecting] = useState(false);
+  const [storedDeviceName, setStoredDeviceName] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Load last connected printer from localStorage
+  useEffect(() => {
+    const savedDeviceName = localStorage.getItem('bluetooth_printer_name');
+    if (savedDeviceName) {
+      setStoredDeviceName(savedDeviceName);
+    }
+  }, []);
 
   const connect = useCallback(async () => {
     setIsConnecting(true);
@@ -81,11 +90,12 @@ export function useBluetoothPrinter() {
       ];
 
       const characteristicUUIDs = [
-        '00002af1-0000-1000-8000-00805f9b34fb',
+        '49535343-8841-43f4-a8d4-ecbe34729bb3', // Microchip TX (write-only) - PRIORITAS!
         '0000ff01-0000-1000-8000-00805f9b34fb',
+        '00002af1-0000-1000-8000-00805f9b34fb',
         '0000ff02-0000-1000-8000-00805f9b34fb',
         'e7810a72-73ae-499d-8c15-faa9aef0c3f2', // Nordic TX
-        '49535343-1e4d-4bd9-ba61-23c647249616', // Microchip TX
+        '49535343-1e4d-4bd9-ba61-23c647249616', // Microchip data
       ];
 
       // Try each service
@@ -137,6 +147,21 @@ export function useBluetoothPrinter() {
         throw new Error('Printer tidak memiliki characteristic yang dapat digunakan untuk menulis data. Pastikan printer dalam mode Bluetooth dan sudah dipair.');
       }
 
+      // Save device name to localStorage for future auto-reconnect
+      const deviceName = device.name || 'Bluetooth Printer';
+      localStorage.setItem('bluetooth_printer_name', deviceName);
+      setStoredDeviceName(deviceName);
+
+      // Listen for disconnect events
+      device.addEventListener('gattserverdisconnected', () => {
+        console.log('Printer disconnected');
+        setPrinter({
+          device: null,
+          characteristic: null,
+          isConnected: false,
+        });
+      });
+
       setPrinter({
         device,
         characteristic,
@@ -145,7 +170,7 @@ export function useBluetoothPrinter() {
 
       toast({
         title: 'Terhubung ke Printer',
-        description: `Berhasil terhubung ke ${device.name || 'Bluetooth Printer'}`,
+        description: `Berhasil terhubung ke ${deviceName}. Koneksi akan tersimpan.`,
       });
 
       return true;
@@ -188,10 +213,26 @@ export function useBluetoothPrinter() {
   }, [printer.device, toast]);
 
   const print = useCallback(async (text: string) => {
+    // Auto-reconnect if disconnected
+    if (!printer.isConnected && printer.device) {
+      console.log('Auto-reconnecting to printer...');
+      try {
+        if (printer.device.gatt && !printer.device.gatt.connected) {
+          await printer.device.gatt.connect();
+          toast({
+            title: 'Printer Terhubung Kembali',
+            description: 'Koneksi berhasil dipulihkan',
+          });
+        }
+      } catch (error) {
+        console.error('Auto-reconnect failed:', error);
+      }
+    }
+
     if (!printer.isConnected || !printer.characteristic) {
       toast({
         title: 'Printer Tidak Terhubung',
-        description: 'Silakan hubungkan printer terlebih dahulu',
+        description: storedDeviceName ? `Hubungkan kembali ke ${storedDeviceName}` : 'Silakan hubungkan printer terlebih dahulu',
         variant: 'destructive',
       });
       return false;
@@ -256,7 +297,7 @@ export function useBluetoothPrinter() {
   return {
     isConnected: printer.isConnected,
     isConnecting,
-    printerName: printer.device?.name || null,
+    printerName: printer.device?.name || storedDeviceName || null,
     connect,
     disconnect,
     print,
