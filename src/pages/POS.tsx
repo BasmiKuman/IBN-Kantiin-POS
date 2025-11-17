@@ -19,6 +19,8 @@ import { Receipt } from "@/components/Receipt";
 import { PrintDialog } from "@/components/PrintDialog";
 import { VariantSelector } from "@/components/VariantSelector";
 import { useReactToPrint } from "react-to-print";
+import { useBluetoothPrinter } from "@/hooks/useBluetoothPrinter";
+import { generateCashierReceipt } from "@/lib/receiptFormatter";
 
 interface CartItem {
   id: string;
@@ -114,6 +116,9 @@ export default function POS() {
     items: CartItem[];
     customerName?: string;
     notes?: string;
+    subtotal?: number;
+    tax?: number;
+    total?: number;
   } | null>(null);
 
   // State untuk menyimpan semua open bills
@@ -137,6 +142,9 @@ export default function POS() {
   const handlePrint = useReactToPrint({
     contentRef: receiptRef,
   });
+
+  // Bluetooth printer hook
+  const { isConnected, printReceipt } = useBluetoothPrinter();
 
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: categories = [] } = useCategories();
@@ -477,24 +485,9 @@ export default function POS() {
       })),
       customerName: customerName || undefined,
       notes: orderNotes || undefined,
-    });
-
-    // Prepare receipt data for printing
-    setLastTransactionReceipt({
-      orderNumber,
-      items: cart.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        variant: item.variant,
-      })),
       subtotal: billSubtotal,
       tax: billTax,
       total: billTotal,
-      paymentMethod: 'pending',
-      cashierName: username,
-      customerName: customerName || undefined,
-      date: new Date(),
     });
 
     // Show confirmation dialog for open bill
@@ -518,6 +511,49 @@ export default function POS() {
     // Open print dialog
     setOpenBillConfirmDialogOpen(false);
     setPrintDialogOpen(true);
+  };
+
+  const handleBluetoothPrint = async () => {
+    if (!lastTransaction) return;
+
+    // If already connected, print directly
+    if (isConnected) {
+      try {
+        const receiptData = {
+          orderNumber: lastTransaction.transactionNumber,
+          items: lastTransaction.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          subtotal: lastTransaction.subtotal,
+          tax: lastTransaction.tax,
+          total: lastTransaction.total,
+          paymentMethod: lastTransaction.paymentMethod,
+          customerName: lastTransaction.customerName,
+          date: lastTransaction.date,
+        };
+        const receipt = generateCashierReceipt(receiptData);
+        await printReceipt(receipt);
+        
+        toast({
+          title: "Struk Dicetak!",
+          description: "Struk kasir berhasil dicetak via Bluetooth",
+        });
+        
+        setReceiptDialogOpen(false);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Gagal mencetak struk",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Not connected, open dialog for connection
+      setReceiptDialogOpen(false);
+      setPrintDialogOpen(true);
+    }
   };
 
   const handlePayOpenBill = async (orderNumber: string, method: 'cash' | 'qris' | 'transfer') => {
@@ -1412,14 +1448,11 @@ export default function POS() {
                   Print PDF
                 </Button>
                 <Button
-                  onClick={() => {
-                    setReceiptDialogOpen(false);
-                    setPrintDialogOpen(true);
-                  }}
+                  onClick={handleBluetoothPrint}
                   className="flex-1"
                 >
                   <Printer className="mr-2 h-4 w-4" />
-                  Print Bluetooth
+                  {isConnected ? 'Print Bluetooth' : 'Koneksi & Print'}
                 </Button>
               </div>
             </div>
@@ -1626,7 +1659,7 @@ export default function POS() {
       </Dialog>
 
       {/* Open Bill Confirmation Dialog */}
-      <Dialog open={openBillConfirmDialogOpen} onOpenChange={setOpenBillConfirmDialogOpen}>
+      <Dialog open={openBillConfirmDialogOpen && !!lastOpenBill} onOpenChange={setOpenBillConfirmDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Open Bill Berhasil Dibuat!</DialogTitle>
@@ -1705,6 +1738,19 @@ export default function POS() {
           paymentMethod: lastTransaction.paymentMethod,
           customerName: lastTransaction.customerName,
           date: lastTransaction.date,
+        } : lastOpenBill ? {
+          orderNumber: lastOpenBill.orderNumber,
+          items: lastOpenBill.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          subtotal: lastOpenBill.subtotal || 0,
+          tax: lastOpenBill.tax || 0,
+          total: lastOpenBill.total || 0,
+          paymentMethod: 'Open Bill',
+          customerName: lastOpenBill.customerName,
+          date: lastOpenBill.date,
         } : undefined}
       />
     </div>
