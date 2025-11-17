@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Search, Plus, Pencil, Trash2, AlertCircle, Settings } from "lucide-react";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/supabase/useProducts";
 import { useCategories, useCreateCategory } from "@/hooks/supabase/useCategories";
@@ -42,6 +43,10 @@ export default function Inventory() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isVariantsDialogOpen, setIsVariantsDialogOpen] = useState(false);
+  const [isDeleteProductDialogOpen, setIsDeleteProductDialogOpen] = useState(false);
+  const [isDeleteVariantDialogOpen, setIsDeleteVariantDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<any>(null);
+  const [variantToDelete, setVariantToDelete] = useState<any>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [managingVariantsProduct, setManagingVariantsProduct] = useState<any>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -203,9 +208,15 @@ export default function Inventory() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteClick = (id: string) => {
-    if (confirm("Yakin ingin menghapus produk ini?")) {
-      deleteProduct.mutate(id);
+  const handleDeleteClick = (product: any) => {
+    setProductToDelete(product);
+    setIsDeleteProductDialogOpen(true);
+  };
+
+  const confirmDeleteProduct = () => {
+    if (productToDelete) {
+      deleteProduct.mutate(productToDelete.id);
+      setProductToDelete(null);
     }
   };
 
@@ -288,13 +299,19 @@ export default function Inventory() {
     });
   };
 
-  const handleDeleteVariant = (variantId: string) => {
-    if (!confirm("Yakin ingin menghapus varian ini?")) return;
-    
-    deleteVariant.mutate({
-      id: variantId,
-      productId: managingVariantsProduct.id,
-    });
+  const handleDeleteVariant = (variant: any) => {
+    setVariantToDelete(variant);
+    setIsDeleteVariantDialogOpen(true);
+  };
+
+  const confirmDeleteVariant = () => {
+    if (variantToDelete && managingVariantsProduct) {
+      deleteVariant.mutate({
+        id: variantToDelete.id,
+        productId: managingVariantsProduct.id,
+      });
+      setVariantToDelete(null);
+    }
   };
 
   const totalProducts = products.length;
@@ -770,7 +787,7 @@ export default function Inventory() {
                         <Button 
                           size="icon" 
                           variant="destructive"
-                          onClick={() => handleDeleteClick(product.id)}
+                          onClick={() => handleDeleteClick(product)}
                           disabled={deleteProduct.isPending}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -828,7 +845,7 @@ export default function Inventory() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleDeleteVariant(variant.id)}
+                        onClick={() => handleDeleteVariant(variant)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -889,6 +906,26 @@ export default function Inventory() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Delete Product Dialog */}
+      <ConfirmDeleteDialog
+        open={isDeleteProductDialogOpen}
+        onOpenChange={setIsDeleteProductDialogOpen}
+        onConfirm={confirmDeleteProduct}
+        title="Hapus Produk"
+        description="Apakah Anda yakin ingin menghapus produk ini?"
+        itemName={productToDelete?.name}
+      />
+
+      {/* Confirm Delete Variant Dialog */}
+      <ConfirmDeleteDialog
+        open={isDeleteVariantDialogOpen}
+        onOpenChange={setIsDeleteVariantDialogOpen}
+        onConfirm={confirmDeleteVariant}
+        title="Hapus Varian"
+        description="Apakah Anda yakin ingin menghapus varian ini?"
+        itemName={variantToDelete?.name}
+      />
     </div>
   );
 }

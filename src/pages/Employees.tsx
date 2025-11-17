@@ -29,6 +29,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UserCog, Plus, Award, Clock, Pencil, Trash2, Calendar, CheckCircle, XCircle, Upload, User } from "lucide-react";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { useEmployees, useCreateEmployee, useUpdateEmployee, useDeleteEmployee } from "@/hooks/supabase/useEmployees";
 import { useTodayAttendance, useAttendanceSummary } from "@/hooks/supabase/useAttendance";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +39,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export default function Employees() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<any>(null);
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
@@ -246,9 +249,15 @@ export default function Employees() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteClick = (id: string) => {
-    if (confirm("Yakin ingin menghapus karyawan ini?")) {
-      deleteEmployee.mutate(id);
+  const handleDeleteClick = (employee: any) => {
+    setEmployeeToDelete(employee);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteEmployee = () => {
+    if (employeeToDelete) {
+      deleteEmployee.mutate(employeeToDelete.id);
+      setEmployeeToDelete(null);
     }
   };
 
@@ -629,7 +638,7 @@ export default function Employees() {
                             <Button 
                               size="icon" 
                               variant="destructive"
-                              onClick={() => handleDeleteClick(employee.id)}
+                              onClick={() => handleDeleteClick(employee)}
                               disabled={deleteEmployee.isPending}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -778,6 +787,16 @@ export default function Employees() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Confirm Delete Employee Dialog */}
+      <ConfirmDeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDeleteEmployee}
+        title="Hapus Karyawan"
+        description="Apakah Anda yakin ingin menghapus karyawan ini?"
+        itemName={employeeToDelete?.name}
+      />
     </div>
   );
 }

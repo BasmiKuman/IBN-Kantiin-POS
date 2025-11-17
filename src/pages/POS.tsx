@@ -17,6 +17,7 @@ import { useSearchCustomer, useUpdateCustomerPoints, useCreateCustomer } from "@
 import { toast } from "@/hooks/use-toast";
 import { Receipt } from "@/components/Receipt";
 import { KitchenReceipt } from "@/components/KitchenReceipt";
+import { PrintDialog } from "@/components/PrintDialog";
 import { VariantSelector } from "@/components/VariantSelector";
 import { useReactToPrint } from "react-to-print";
 
@@ -58,6 +59,7 @@ export default function POS() {
   const [orderNotes, setOrderNotes] = useState("");
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [kitchenReceiptDialogOpen, setKitchenReceiptDialogOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cash' | 'qris' | 'transfer'>('cash');
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -1384,11 +1386,22 @@ export default function POS() {
                   Tutup
                 </Button>
                 <Button
+                  variant="outline"
                   onClick={handlePrint}
                   className="flex-1"
                 >
                   <Printer className="mr-2 h-4 w-4" />
-                  Cetak Struk
+                  Print PDF
+                </Button>
+                <Button
+                  onClick={() => {
+                    setReceiptDialogOpen(false);
+                    setPrintDialogOpen(true);
+                  }}
+                  className="flex-1"
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print Bluetooth
                 </Button>
               </div>
             </div>
@@ -1660,6 +1673,26 @@ export default function POS() {
         productName={selectedProductForVariant?.name || ""}
         variants={productVariants}
         onSelect={addVariantToCart}
+      />
+
+      {/* Print Dialog for Bluetooth Printer */}
+      <PrintDialog
+        open={printDialogOpen}
+        onOpenChange={setPrintDialogOpen}
+        receiptData={lastTransaction ? {
+          orderNumber: lastTransaction.transactionNumber,
+          items: lastTransaction.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          subtotal: lastTransaction.subtotal,
+          tax: lastTransaction.tax,
+          total: lastTransaction.total,
+          paymentMethod: lastTransaction.paymentMethod,
+          customerName: lastTransaction.customerName,
+          date: lastTransaction.date,
+        } : undefined}
       />
     </div>
   );
