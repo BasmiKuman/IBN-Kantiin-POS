@@ -819,14 +819,16 @@ export default function POS() {
               </TabsList>
 
               {/* Tab Keranjang */}
-              <TabsContent value="cart" className="flex-1 flex flex-col mt-3 space-y-3 overflow-hidden">
-                <div className="flex-1 space-y-2 overflow-auto">
-                  {cart.length === 0 ? (
-                    <p className="text-center text-sm text-muted-foreground py-8">
-                      Keranjang kosong
-                    </p>
-                  ) : (
-                    cart.map((item) => (
+              <TabsContent value="cart" className="flex-1 flex flex-col mt-3">
+                <div className="flex-1 overflow-auto">
+                  {/* Cart items list */}
+                  <div className="space-y-2">
+                    {cart.length === 0 ? (
+                      <p className="text-center text-sm text-muted-foreground py-8">
+                        Keranjang kosong
+                      </p>
+                    ) : (
+                      cart.map((item) => (
                       <div key={`${item.id}-${item.variantId || 'no-variant'}`} className="flex items-center gap-2 rounded-lg border p-2.5">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">
@@ -867,11 +869,12 @@ export default function POS() {
                       </div>
                     ))
                   )}
-                </div>
+                  </div>
 
-                <div className="space-y-2 border-t pt-3 flex-shrink-0">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="customerPhone" className="text-sm">Nomor Telepon Pelanggan (Opsional)</Label>
+                  {/* Customer info section */}
+                  <div className="space-y-2 border-t pt-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="customerPhone" className="text-sm">Nomor Telepon Pelanggan (Opsional)</Label>
                     <Input
                       id="customerPhone"
                       placeholder="08123456789"
@@ -1121,6 +1124,7 @@ export default function POS() {
                       Pilih Pembayaran
                     </Button>
                   )}
+                </div>
                 </div>
               </TabsContent>
 
