@@ -344,6 +344,38 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
     }
   }, [isNativeSupported, isConnected]);
 
+  // Helper: get receipt settings from localStorage (mirip receiptFormatter)
+  function getReceiptSettings() {
+    try {
+      const savedReceipt = typeof localStorage !== 'undefined' ? localStorage.getItem('settings_receipt') : null;
+      const savedStore = typeof localStorage !== 'undefined' ? localStorage.getItem('settings_store') : null;
+      const receiptSettings = savedReceipt ? JSON.parse(savedReceipt) : {
+        header: 'BK POS',
+        tagline: 'Makanan Enak, Harga Terjangkau',
+        footer: 'Terima kasih atas kunjungan Anda!',
+      };
+      const storeSettings = savedStore ? JSON.parse(savedStore) : {
+        name: 'Toko Pusat',
+        address: 'Jl. Contoh No. 123',
+        phone: '(021) 12345678',
+      };
+      return { receiptSettings, storeSettings };
+    } catch (error) {
+      return {
+        receiptSettings: {
+          header: 'BK POS',
+          tagline: 'Makanan Enak, Harga Terjangkau',
+          footer: 'Terima kasih!',
+        },
+        storeSettings: {
+          name: 'Toko Pusat',
+          address: 'Jl. Contoh No. 123',
+          phone: '(021) 12345678',
+        },
+      };
+    }
+  }
+
   const printSalesSummary = useCallback(async (summaryData: {
     startDate: string;
     endDate: string;
@@ -367,8 +399,7 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
     try {
       const now = new Date();
       const printTime = now.toLocaleString('id-ID');
-
-      // Helper for currency
+      const { receiptSettings, storeSettings } = getReceiptSettings();
       const formatCurrency = (amount) => 'Rp' + (amount || 0).toLocaleString('id-ID');
       const padText = (left, right, width = 32) => {
         const totalLength = left.length + right.length;
@@ -379,9 +410,17 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       let printer = CapacitorThermalPrinter.begin()
         .align('center')
         .bold()
-        .text('LAPORAN PENJUALAN\n')
-        .clearFormatting()
-        .align('center')
+        .text('BK POS\n')
+        .bold()
+        .text(`${receiptSettings.header}\n`)
+        .clearFormatting();
+      if (receiptSettings.tagline) {
+        printer = printer.text(`${receiptSettings.tagline}\n`);
+      }
+      printer = printer
+        .text(`${storeSettings.address}\n`)
+        .text(storeSettings.phone ? `Telp: ${storeSettings.phone}\n` : '')
+        .text('~~~~~~~\n')
         .text(`Cetak: ${printTime}\n`)
         .text('================================\n')
         .align('left')
@@ -454,11 +493,10 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
         .clearFormatting()
         .text('================================\n');
 
-      // Footer
+      // Footer (dari settings)
       printer = printer
         .align('center')
-        .text('Laporan ini dicetak otomatis\n')
-        .text('dari sistem POS\n')
+        .text(`${receiptSettings.footer}\n`)
         .text('\n\n\n')
         .feedCutPaper();
 
