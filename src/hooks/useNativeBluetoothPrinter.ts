@@ -9,6 +9,7 @@ interface UseNativeBluetoothPrinterReturn {
   isScanning: boolean;
   availableDevices: BluetoothDevice[];
   connectedDevice: BluetoothDevice | null;
+  printerName: string | null; // Add this for compatibility with web hook
   connect: (address: string) => Promise<boolean>;
   disconnect: () => Promise<void>;
   startScan: () => Promise<void>;
@@ -334,6 +335,7 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
     isScanning,
     availableDevices,
     connectedDevice,
+    printerName: connectedDevice?.name || null, // For compatibility with web hook
     connect,
     disconnect,
     startScan,
