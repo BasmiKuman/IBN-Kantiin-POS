@@ -368,7 +368,14 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       const now = new Date();
       const printTime = now.toLocaleString('id-ID');
 
-      // Build sales summary receipt
+      // Helper for currency
+      const formatCurrency = (amount) => 'Rp' + (amount || 0).toLocaleString('id-ID');
+      const padText = (left, right, width = 32) => {
+        const totalLength = left.length + right.length;
+        const spaces = width - totalLength;
+        return left + ' '.repeat(Math.max(1, spaces)) + right;
+      };
+
       let printer = CapacitorThermalPrinter.begin()
         .align('center')
         .bold()
@@ -384,15 +391,19 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
         .text(`${summaryData.startDate} s/d ${summaryData.endDate}\n`)
         .text('================================\n');
 
+      // Nama konsumen jika ada (ambil dari transaksi pertama)
+      if (summaryData.customerName) {
+        printer = printer.text(`Pelanggan: ${summaryData.customerName}\n`);
+      }
+
       // Aggregate items across all transactions
-      const itemSummary = new Map<string, { qty: number; revenue: number }>();
-      
+      const itemSummary = new Map();
       for (const transaction of summaryData.transactions) {
         for (const item of transaction.items) {
           const existing = itemSummary.get(item.name) || { qty: 0, revenue: 0 };
           itemSummary.set(item.name, {
-            qty: existing.qty + item.qty,
-            revenue: existing.revenue + item.subtotal,
+            qty: existing.qty + (item.qty || 0),
+            revenue: existing.revenue + (item.subtotal || 0),
           });
         }
       }
@@ -406,15 +417,15 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       for (const [itemName, data] of itemSummary.entries()) {
         printer = printer
           .text(`${itemName}\n`)
-          .text(`  ${data.qty} pcs = Rp ${data.revenue.toLocaleString('id-ID')}\n`);
+          .text(padText(`${data.qty} pcs`, formatCurrency(data.revenue)) + '\n');
       }
 
       printer = printer.text('================================\n');
 
       // Payment method breakdown
-      const paymentSummary = new Map<string, number>();
+      const paymentSummary = new Map();
       for (const transaction of summaryData.transactions) {
-        const method = transaction.paymentMethod || 'Cash';
+        const method = transaction.paymentMethod || 'Tunai';
         paymentSummary.set(method, (paymentSummary.get(method) || 0) + 1);
       }
 
@@ -429,17 +440,17 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
 
       printer = printer.text('================================\n');
 
-      // Summary totals
+      // Summary totals (rapi, padText)
       printer = printer
         .bold()
         .text('TOTAL PENJUALAN:\n')
         .clearFormatting()
-        .text(`Jumlah Transaksi: ${summaryData.totalTransactions}\n`)
-        .text(`Subtotal: Rp ${summaryData.totalRevenue.toLocaleString('id-ID')}\n`)
-        .text(`Pajak: Rp ${summaryData.totalTax.toLocaleString('id-ID')}\n`)
+        .text(padText('Jumlah Transaksi', String(summaryData.totalTransactions)) + '\n')
+        .text(padText('Subtotal', formatCurrency(summaryData.totalRevenue)) + '\n')
+        .text(padText('Pajak', formatCurrency(summaryData.totalTax)) + '\n')
         .text('--------------------------------\n')
         .bold()
-        .text(`GRAND TOTAL: Rp ${summaryData.grandTotal.toLocaleString('id-ID')}\n`)
+        .text(padText('GRAND TOTAL', formatCurrency(summaryData.grandTotal)) + '\n')
         .clearFormatting()
         .text('================================\n');
 

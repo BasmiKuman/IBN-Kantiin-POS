@@ -260,12 +260,12 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
         return;
       }
 
-      // Calculate totals
-      const totalRevenue = filteredTransactions.reduce((sum, t) => sum + t.subtotal, 0);
-      const totalTax = filteredTransactions.reduce((sum, t) => sum + t.tax, 0);
-      const grandTotal = filteredTransactions.reduce((sum, t) => sum + t.total, 0);
+      // Calculate totals (pastikan angka, bukan NaN)
+      const totalRevenue = filteredTransactions.reduce((sum, t) => sum + (t.subtotal || 0), 0);
+      const totalTax = filteredTransactions.reduce((sum, t) => sum + (t.tax || 0), 0);
+      const grandTotal = filteredTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
 
-      // Prepare summary data
+      // Prepare summary data, pastikan semua field angka
       const summaryData = {
         startDate: new Date(startDate).toLocaleDateString('id-ID'),
         endDate: new Date(endDate).toLocaleDateString('id-ID'),
@@ -273,19 +273,21 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           transactionNumber: t.orderNumber || '',
           items: t.items.map(item => ({
             name: item.name,
-            qty: item.quantity,
-            price: item.price,
-            subtotal: item.total,
+            qty: item.quantity || 0,
+            price: item.price || 0,
+            subtotal: item.total || 0,
           })),
-          subtotal: t.subtotal,
-          tax: t.tax,
-          total: t.total,
-          paymentMethod: t.paymentMethod,
+          subtotal: t.subtotal || 0,
+          tax: t.tax || 0,
+          total: t.total || 0,
+          paymentMethod: t.paymentMethod || 'Tunai',
+          customerName: t.customerName || '',
         })),
         totalTransactions: filteredTransactions.length,
-        totalRevenue,
-        totalTax,
-        grandTotal,
+        totalRevenue: totalRevenue || 0,
+        totalTax: totalTax || 0,
+        grandTotal: grandTotal || 0,
+        customerName: filteredTransactions[0]?.customerName || '',
       };
 
       if (isNativeApp) {
@@ -294,7 +296,6 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
         // For web, generate simple summary (fallback)
         alert('Sales summary print hanya tersedia di aplikasi mobile');
       }
-      
     } finally {
       setIsPrintingBatch(false);
     }
