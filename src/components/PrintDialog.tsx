@@ -26,6 +26,10 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
   const [isPrintingKitchen, setIsPrintingKitchen] = useState(false);
   const [isPrintingCashier, setIsPrintingCashier] = useState(false);
   const [isPrintingBatch, setIsPrintingBatch] = useState(false);
+  
+  // Check if running in native app (Capacitor)
+  const isNativeApp = !!(window as any).Capacitor;
+  const bluetoothSupported = typeof navigator !== 'undefined' && !!navigator.bluetooth;
 
   const handleConnect = async () => {
     await connect();
@@ -120,11 +124,34 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </Badge>
           </div>
 
-          {/* Browser Compatibility Warning */}
-          {typeof navigator !== 'undefined' && !navigator.bluetooth && (
-            <Alert>
-              <AlertDescription>
-                ⚠️ Browser Anda tidak mendukung Web Bluetooth. Gunakan Chrome atau Edge di Android/Windows.
+          {/* Browser/App Compatibility Warning */}
+          {!bluetoothSupported && (
+            <Alert variant="destructive">
+              <AlertDescription className="space-y-2">
+                {isNativeApp ? (
+                  <>
+                    <p className="font-semibold">📱 Fitur Bluetooth Printer di Aplikasi Mobile</p>
+                    <p className="text-sm">
+                      Fitur Bluetooth Printer saat ini hanya tersedia di versi web. 
+                      Untuk mencetak struk via Bluetooth, silakan:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-sm ml-2">
+                      <li>Buka aplikasi di browser Chrome/Edge Android</li>
+                      <li>Akses melalui: <span className="font-mono bg-background px-1 rounded">https://your-domain.com</span></li>
+                      <li>Atau gunakan printer USB/jaringan untuk sementara</li>
+                    </ol>
+                    <p className="text-xs mt-2">
+                      ℹ️ Fitur native Bluetooth akan tersedia di update mendatang.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold">⚠️ Browser Tidak Mendukung Web Bluetooth</p>
+                    <p className="text-sm">
+                      Gunakan browser Chrome atau Edge versi terbaru di Android/Windows untuk menggunakan fitur Bluetooth Printer.
+                    </p>
+                  </>
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -153,7 +180,7 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             {!isConnected ? (
               <Button
                 onClick={handleConnect}
-                disabled={isConnecting}
+                disabled={isNativeApp || isConnecting}
                 className="flex-1"
               >
                 {isConnecting ? (
