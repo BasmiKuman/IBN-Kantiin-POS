@@ -301,6 +301,15 @@ export function useBluetoothPrinter() {
     return success;
   }, [print, toast]);
 
+  // Dummy methods for compatibility with native hook interface
+  const printKitchenReceipt = useCallback(async () => {
+    throw new Error('Use generateKitchenReceipt + printReceipt instead');
+  }, []);
+
+  const printSalesSummary = useCallback(async () => {
+    throw new Error('Use generateSalesSummary + printReceipt instead');
+  }, []);
+
   return {
     isConnected: printer.isConnected,
     isConnecting,
@@ -309,5 +318,7 @@ export function useBluetoothPrinter() {
     disconnect,
     print,
     printReceipt,
+    printKitchenReceipt,
+    printSalesSummary,
   };
 }

@@ -30,6 +30,22 @@ interface UseNativeBluetoothPrinterReturn {
     orderType?: 'dine-in' | 'takeaway';
     tableNumber?: string;
   }) => Promise<void>;
+  printSalesSummary: (summaryData: {
+    startDate: string;
+    endDate: string;
+    transactions: Array<{
+      transactionNumber: string;
+      items: Array<{ name: string; qty: number; price: number; subtotal: number }>;
+      subtotal: number;
+      tax: number;
+      total: number;
+      paymentMethod?: string;
+    }>;
+    totalTransactions: number;
+    totalRevenue: number;
+    totalTax: number;
+    grandTotal: number;
+  }) => Promise<void>;
   isNativeSupported: boolean;
 }
 
@@ -326,6 +342,123 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
     }
   }, [isNativeSupported, isConnected]);
 
+  const printSalesSummary = useCallback(async (summaryData: {
+    startDate: string;
+    endDate: string;
+    transactions: Array<{
+      transactionNumber: string;
+      items: Array<{ name: string; qty: number; price: number; subtotal: number }>;
+      subtotal: number;
+      tax: number;
+      total: number;
+      paymentMethod?: string;
+    }>;
+    totalTransactions: number;
+    totalRevenue: number;
+    totalTax: number;
+    grandTotal: number;
+  }) => {
+    if (!isNativeSupported || !isConnected) {
+      throw new Error('Printer not connected');
+    }
+
+    try {
+      const now = new Date();
+      const printTime = now.toLocaleString('id-ID');
+
+      // Build sales summary receipt
+      let printer = CapacitorThermalPrinter.begin()
+        .align('center')
+        .bold()
+        .doubleWidth()
+        .text('LAPORAN PENJUALAN\n')
+        .clearFormatting()
+        .align('center')
+        .text(`Cetak: ${printTime}\n`)
+        .text('================================\n')
+        .align('left')
+        .bold()
+        .text(`Periode:\n`)
+        .clearFormatting()
+        .text(`${summaryData.startDate} s/d ${summaryData.endDate}\n`)
+        .text('================================\n');
+
+      // Aggregate items across all transactions
+      const itemSummary = new Map<string, { qty: number; revenue: number }>();
+      
+      for (const transaction of summaryData.transactions) {
+        for (const item of transaction.items) {
+          const existing = itemSummary.get(item.name) || { qty: 0, revenue: 0 };
+          itemSummary.set(item.name, {
+            qty: existing.qty + item.qty,
+            revenue: existing.revenue + item.subtotal,
+          });
+        }
+      }
+
+      // Print aggregated items
+      printer = printer
+        .bold()
+        .text('RINGKASAN PRODUK:\n')
+        .clearFormatting();
+
+      for (const [itemName, data] of itemSummary.entries()) {
+        printer = printer
+          .text(`${itemName}\n`)
+          .text(`  ${data.qty} pcs = Rp ${data.revenue.toLocaleString('id-ID')}\n`);
+      }
+
+      printer = printer.text('================================\n');
+
+      // Payment method breakdown
+      const paymentSummary = new Map<string, number>();
+      for (const transaction of summaryData.transactions) {
+        const method = transaction.paymentMethod || 'Cash';
+        paymentSummary.set(method, (paymentSummary.get(method) || 0) + 1);
+      }
+
+      printer = printer
+        .bold()
+        .text('METODE PEMBAYARAN:\n')
+        .clearFormatting();
+
+      for (const [method, count] of paymentSummary.entries()) {
+        printer = printer.text(`${method}: ${count} transaksi\n`);
+      }
+
+      printer = printer.text('================================\n');
+
+      // Summary totals
+      printer = printer
+        .bold()
+        .text('TOTAL PENJUALAN:\n')
+        .clearFormatting()
+        .text(`Jumlah Transaksi: ${summaryData.totalTransactions}\n`)
+        .text(`Subtotal: Rp ${summaryData.totalRevenue.toLocaleString('id-ID')}\n`)
+        .text(`Pajak: Rp ${summaryData.totalTax.toLocaleString('id-ID')}\n`)
+        .text('--------------------------------\n')
+        .bold()
+        .text(`GRAND TOTAL: Rp ${summaryData.grandTotal.toLocaleString('id-ID')}\n`)
+        .clearFormatting()
+        .text('================================\n');
+
+      // Footer
+      printer = printer
+        .align('center')
+        .text('Laporan ini dicetak otomatis\n')
+        .text('dari sistem POS\n')
+        .text('\n\n\n')
+        .feedCutPaper();
+
+      // Send to printer
+      await printer.write();
+
+    } catch (error) {
+      console.error('Error printing sales summary:', error);
+      throw error;
+    }
+  }, [isNativeSupported, isConnected]);
+
   return {
     isConnected,
     isConnecting,
@@ -339,6 +472,7 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
     stopScan,
     printReceipt,
     printKitchenReceipt,
+    printSalesSummary,
     isNativeSupported,
   };
 };

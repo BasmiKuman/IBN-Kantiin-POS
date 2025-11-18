@@ -8,7 +8,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Search } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Search, Calendar } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
 import { useNativeBluetoothPrinter } from '@/hooks/useNativeBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
@@ -36,6 +38,11 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
   const [isPrintingCashier, setIsPrintingCashier] = useState(false);
   const [isPrintingBatch, setIsPrintingBatch] = useState(false);
   const [showDeviceList, setShowDeviceList] = useState(false);
+  
+  // Date filter for batch summary
+  const today = new Date().toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
 
   const handleConnect = async () => {
     if (isNativeApp) {
@@ -193,6 +200,63 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
         // Small delay between prints
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+    } finally {
+      setIsPrintingBatch(false);
+    }
+  };
+
+  const handlePrintSalesSummary = async () => {
+    if (!batchTransactions || batchTransactions.length === 0) return;
+    setIsPrintingBatch(true);
+    
+    try {
+      // Filter transactions by date range
+      const filteredTransactions = batchTransactions.filter(transaction => {
+        if (!transaction.date) return true;
+        const transactionDate = new Date(transaction.date).toISOString().split('T')[0];
+        return transactionDate >= startDate && transactionDate <= endDate;
+      });
+
+      if (filteredTransactions.length === 0) {
+        alert('Tidak ada transaksi dalam rentang tanggal yang dipilih');
+        return;
+      }
+
+      // Calculate totals
+      const totalRevenue = filteredTransactions.reduce((sum, t) => sum + t.subtotal, 0);
+      const totalTax = filteredTransactions.reduce((sum, t) => sum + t.tax, 0);
+      const grandTotal = filteredTransactions.reduce((sum, t) => sum + t.total, 0);
+
+      // Prepare summary data
+      const summaryData = {
+        startDate: new Date(startDate).toLocaleDateString('id-ID'),
+        endDate: new Date(endDate).toLocaleDateString('id-ID'),
+        transactions: filteredTransactions.map(t => ({
+          transactionNumber: t.orderNumber || '',
+          items: t.items.map(item => ({
+            name: item.name,
+            qty: item.quantity,
+            price: item.price,
+            subtotal: item.total,
+          })),
+          subtotal: t.subtotal,
+          tax: t.tax,
+          total: t.total,
+          paymentMethod: t.paymentMethod,
+        })),
+        totalTransactions: filteredTransactions.length,
+        totalRevenue,
+        totalTax,
+        grandTotal,
+      };
+
+      if (isNativeApp) {
+        await bluetooth.printSalesSummary(summaryData);
+      } else {
+        // For web, generate simple summary (fallback)
+        alert('Sales summary print hanya tersedia di aplikasi mobile');
+      }
+      
     } finally {
       setIsPrintingBatch(false);
     }
@@ -408,56 +472,104 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           {/* Batch Print Buttons */}
           {bluetooth.isConnected && batchMode && batchTransactions && batchTransactions.length > 0 && (
             <>
-              <div className="border-t pt-4 space-y-3">
-                <p className="font-medium text-sm">
-                  Print {batchTransactions.length} Transaksi:
-                </p>
+              <div className="border-t pt-4 space-y-4">
+                <p className="font-medium">Laporan Penjualan (Batch Mode)</p>
                 
+                {/* Date Filter */}
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Calendar className="h-4 w-4" />
+                    Filter Tanggal
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="startDate" className="text-xs">Dari</Label>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="endDate" className="text-xs">Sampai</Label>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Summary Print Button - Primary Action */}
                 <Button
-                  onClick={handleBatchPrintKitchen}
+                  onClick={handlePrintSalesSummary}
                   disabled={isPrintingBatch}
-                  variant="outline"
                   className="w-full"
+                  size="lg"
                 >
                   {isPrintingBatch ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Mencetak batch...
+                      Mencetak Laporan...
                     </>
                   ) : (
                     <>
                       <Printer className="h-4 w-4 mr-2" />
-                      Batch Print Struk Dapur
+                      Print Laporan Penjualan
                     </>
                   )}
                 </Button>
 
-                <Button
-                  onClick={handleBatchPrintCashier}
-                  disabled={isPrintingBatch}
-                  className="w-full"
-                >
-                  {isPrintingBatch ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Mencetak batch...
-                    </>
-                  ) : (
-                    <>
+                <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md">
+                  <p className="font-semibold flex items-center gap-1 mb-2">
+                    💡 Laporan Ringkas:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Semua transaksi digabung dalam 1 struk</li>
+                    <li>Hemat kertas - tidak print satu per satu</li>
+                    <li>Ringkasan produk, metode bayar, dan total penjualan</li>
+                    <li>Filter berdasarkan rentang tanggal</li>
+                  </ul>
+                </div>
+
+                {/* Legacy Individual Print Options - Collapsed */}
+                <details className="border rounded-lg p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+                    Print Individual (Legacy) - {batchTransactions.length} struk
+                  </summary>
+                  <div className="mt-3 space-y-2">
+                    <Button
+                      onClick={handleBatchPrintKitchen}
+                      disabled={isPrintingBatch}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
                       <Printer className="h-4 w-4 mr-2" />
-                      Batch Print Struk Kasir
-                    </>
-                  )}
-                </Button>
-              </div>
+                      Print Struk Dapur Satu-Satu
+                    </Button>
 
-              <div className="text-xs text-muted-foreground">
-                <p>⚠️ Catatan Batch Print:</p>
-                <ul className="list-disc list-inside space-y-1 mt-1">
-                  <li>Printer akan mencetak {batchTransactions.length} struk berturut-turut</li>
-                  <li>Pastikan kertas cukup untuk semua struk</li>
-                  <li>Jangan tutup dialog selama proses print</li>
-                </ul>
+                    <Button
+                      onClick={handleBatchPrintCashier}
+                      disabled={isPrintingBatch}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print Struk Kasir Satu-Satu
+                    </Button>
+
+                    <p className="text-xs text-muted-foreground mt-2">
+                      ⚠️ Akan mencetak {batchTransactions.length} struk terpisah (boros kertas)
+                    </p>
+                  </div>
+                </details>
               </div>
             </>
           )}
