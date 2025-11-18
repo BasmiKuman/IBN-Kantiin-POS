@@ -463,7 +463,7 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           )}
 
           {/* Troubleshooting Section */}
-          {!isConnected && (
+          {!bluetooth.isConnected && (
             <Alert variant="default" className="mt-4">
               <AlertDescription className="space-y-2">
                 <p className="font-semibold">🔧 Troubleshooting:</p>
