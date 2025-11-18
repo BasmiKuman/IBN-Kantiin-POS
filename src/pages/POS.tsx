@@ -256,7 +256,7 @@ export default function POS() {
     } else {
       setCart([...cart, {
         id: product.id,
-        name: `${product.name} - ${variant.name}`,
+        name: `${product.name} (${variant.name})`,
         price: Number(variant.price),
         quantity: 1,
         category: product.categories?.name || 'Lainnya',
@@ -833,7 +833,6 @@ export default function POS() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">
                             {item.name}
-                            {item.variantName && <span className="text-muted-foreground"> - {item.variantName}</span>}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Rp {item.price.toLocaleString()} x {item.quantity}

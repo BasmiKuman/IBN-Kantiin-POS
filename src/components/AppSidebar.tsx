@@ -132,7 +132,7 @@ export function AppSidebar() {
   });
 
   return (
-    <Sidebar className="border-r">
+    <Sidebar className="border-r bg-sidebar min-h-screen">
       <SidebarHeader className="border-b p-3">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center flex-shrink-0">
