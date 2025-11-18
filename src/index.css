@@ -141,6 +141,14 @@ All colors MUST be HSL.
   input, select, textarea {
     font-size: 16px !important;
   }
+  
+  /* Optimize for tablet resolution 1340x800 */
+  @media (min-width: 1024px) and (max-width: 1400px) {
+    #root {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+  }
 }
 
 /* Responsive utilities - Force media query evaluation */

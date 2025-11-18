@@ -17,7 +17,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <h1 className="text-lg font-semibold truncate">POS System</h1>
             </div>
           </header>
-          <main className="flex-1 p-3 md:p-4 lg:p-6">{children}</main>
+          <main className="flex-1 p-3 md:p-4 lg:p-4 xl:p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>
