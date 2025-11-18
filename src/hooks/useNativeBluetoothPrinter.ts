@@ -169,7 +169,8 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       const dateStr = now.toLocaleDateString('id-ID');
       const timeStr = now.toLocaleTimeString('id-ID');
 
-      await CapacitorThermalPrinter.begin()
+      // Build receipt with chaining (no await until write())
+      let printer = CapacitorThermalPrinter.begin()
         .align('center')
         .bold()
         .doubleWidth()
@@ -182,14 +183,14 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
 
       // Order type
       if (receiptData.orderType) {
-        await CapacitorThermalPrinter
+        printer = printer
           .text(`Jenis: ${receiptData.orderType === 'dine-in' ? 'Makan Di Tempat' : 'Bawa Pulang'}\n`)
           .text('--------------------------------\n');
       }
 
       // Items
       for (const item of receiptData.items) {
-        await CapacitorThermalPrinter
+        printer = printer
           .text(`${item.name}\n`)
           .text(`  ${item.qty} x Rp ${item.price.toLocaleString('id-ID')}\n`)
           .align('right')
@@ -197,10 +198,10 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
           .align('left');
       }
 
-      await CapacitorThermalPrinter.text('--------------------------------\n');
+      printer = printer.text('--------------------------------\n');
 
       // Totals
-      await CapacitorThermalPrinter
+      printer = printer
         .align('left')
         .text(`Subtotal:`)
         .align('right')
@@ -219,32 +220,34 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
 
       // Payment info
       if (receiptData.paymentMethod) {
-        await CapacitorThermalPrinter
+        printer = printer
           .align('left')
           .text('--------------------------------\n')
           .text(`Metode: ${receiptData.paymentMethod}\n`);
         
         if (receiptData.change !== undefined && receiptData.change > 0) {
-          await CapacitorThermalPrinter
+          printer = printer
             .text(`Kembalian: Rp ${receiptData.change.toLocaleString('id-ID')}\n`);
         }
       }
 
       // Footer
-      await CapacitorThermalPrinter
+      printer = printer
         .align('center')
         .text('--------------------------------\n')
         .text('Terima Kasih\n')
         .text(`${receiptData.storeName}\n`);
 
       if (receiptData.cashierName) {
-        await CapacitorThermalPrinter.text(`Kasir: ${receiptData.cashierName}\n`);
+        printer = printer.text(`Kasir: ${receiptData.cashierName}\n`);
       }
 
-      await CapacitorThermalPrinter
+      printer = printer
         .text('\n\n')
-        .feedCutPaper()
-        .write();
+        .feedCutPaper();
+
+      // Now send to printer
+      await printer.write();
 
     } catch (error) {
       console.error('Error printing receipt:', error);
@@ -265,7 +268,8 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       const now = new Date();
       const timeStr = now.toLocaleTimeString('id-ID');
 
-      await CapacitorThermalPrinter.begin()
+      // Build kitchen receipt with chaining
+      let printer = CapacitorThermalPrinter.begin()
         .align('center')
         .bold()
         .doubleWidth()
@@ -278,50 +282,52 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
 
       // Order info
       if (receiptData.orderType || receiptData.tableNumber) {
-        await CapacitorThermalPrinter
+        printer = printer
           .bold()
           .text('Info Pesanan:\n')
           .clearFormatting();
 
         if (receiptData.orderType) {
-          await CapacitorThermalPrinter
+          printer = printer
             .text(`Jenis: ${receiptData.orderType === 'dine-in' ? 'Makan Di Tempat' : 'Bawa Pulang'}\n`);
         }
 
         if (receiptData.tableNumber) {
-          await CapacitorThermalPrinter.text(`Meja: ${receiptData.tableNumber}\n`);
+          printer = printer.text(`Meja: ${receiptData.tableNumber}\n`);
         }
 
-        await CapacitorThermalPrinter.text('================================\n');
+        printer = printer.text('================================\n');
       }
 
       // Items
-      await CapacitorThermalPrinter
+      printer = printer
         .bold()
         .text('Pesanan:\n')
         .clearFormatting();
 
       for (const item of receiptData.items) {
-        await CapacitorThermalPrinter
+        printer = printer
           .bold()
           .doubleWidth()
           .text(`${item.qty}x ${item.name}\n`)
           .clearFormatting();
 
         if (item.notes) {
-          await CapacitorThermalPrinter
+          printer = printer
             .text(`   Catatan: ${item.notes}\n`);
         }
 
-        await CapacitorThermalPrinter.text('\n');
+        printer = printer.text('\n');
       }
 
-      await CapacitorThermalPrinter
+      printer = printer
         .text('================================\n')
         .align('center')
         .text('\n\n')
-        .feedCutPaper()
-        .write();
+        .feedCutPaper();
+
+      // Send to printer
+      await printer.write();
 
     } catch (error) {
       console.error('Error printing kitchen receipt:', error);
