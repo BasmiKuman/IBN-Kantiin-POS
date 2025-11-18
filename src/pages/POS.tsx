@@ -797,7 +797,7 @@ export default function POS() {
       </div>
 
       <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0">
-        <Card className="lg:sticky lg:top-4 max-h-[600px] lg:max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+        <Card className="lg:sticky lg:top-4 min-h-[400px] max-h-[85vh] lg:max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
