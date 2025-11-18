@@ -136,18 +136,49 @@ export default function TransactionHistory() {
           <h1 className="text-3xl font-bold">History Transaksi</h1>
           <p className="text-muted-foreground">Lihat dan cetak ulang struk transaksi</p>
         </div>
-        {batchPrintMode && selectedTransactions.size > 0 && (
+        {batchPrintMode && (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => {
-              setBatchPrintMode(false);
-              setSelectedTransactions(new Set());
-            }}>
-              Batal
-            </Button>
-            <Button onClick={handleBatchPrint}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print {selectedTransactions.size} Transaksi
-            </Button>
+            {selectedTransactions.size > 0 ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedTransactions(new Set())}
+                  size="sm"
+                >
+                  Hapus Semua
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setBatchPrintMode(false);
+                  setSelectedTransactions(new Set());
+                }}>
+                  Batal
+                </Button>
+                <Button onClick={handleBatchPrint}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print {selectedTransactions.size} Transaksi
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    if (filteredTransactions) {
+                      setSelectedTransactions(new Set(filteredTransactions.map((t: any) => t.id)));
+                    }
+                  }}
+                  size="sm"
+                >
+                  Pilih Semua ({filteredTransactions?.length || 0})
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setBatchPrintMode(false);
+                  setSelectedTransactions(new Set());
+                }}>
+                  Batal
+                </Button>
+              </>
+            )}
           </div>
         )}
         {!batchPrintMode && (
