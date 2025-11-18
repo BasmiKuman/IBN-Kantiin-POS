@@ -189,7 +189,6 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       let printer = CapacitorThermalPrinter.begin()
         .align('center')
         .bold()
-        .doubleWidth()
         .text(`${receiptData.storeName}\n`)
         .clearFormatting()
         .align('center')
@@ -205,14 +204,14 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       }
 
       // Items header
-      printer = printer.text('PESANAN:\n');
+      printer = printer.bold().text('PESANAN:\n').clearFormatting();
 
       // Items - format sederhana tanpa align kanan-kiri
       for (const item of receiptData.items) {
         printer = printer
           .text(`${item.name}\n`)
-          .text(`${item.qty} x ${item.price.toLocaleString('id-ID')} = ${item.subtotal.toLocaleString('id-ID')}\n`)
-          .text('\n');
+          .text(`  ${item.qty} x Rp ${item.price.toLocaleString('id-ID')}\n`)
+          .text(`  = Rp ${item.subtotal.toLocaleString('id-ID')}\n`);
       }
 
       printer = printer.text('================================\n');
@@ -279,7 +278,6 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       let printer = CapacitorThermalPrinter.begin()
         .align('center')
         .bold()
-        .doubleWidth()
         .text('STRUK DAPUR\n')
         .clearFormatting()
         .align('center')
@@ -315,7 +313,6 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       for (const item of receiptData.items) {
         printer = printer
           .bold()
-          .doubleWidth()
           .text(`${item.qty}x ${item.name}\n`)
           .clearFormatting();
 
@@ -323,8 +320,6 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
           printer = printer
             .text(`   Catatan: ${item.notes}\n`);
         }
-
-        printer = printer.text('\n');
       }
 
       printer = printer
@@ -370,7 +365,6 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       let printer = CapacitorThermalPrinter.begin()
         .align('center')
         .bold()
-        .doubleWidth()
         .text('LAPORAN PENJUALAN\n')
         .clearFormatting()
         .align('center')

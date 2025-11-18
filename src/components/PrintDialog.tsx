@@ -68,24 +68,29 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
   };
 
   const handleTestPrint = async () => {
-    const testReceipt = generateTestReceipt();
-    if (isNativeApp) {
-      // Use native print for test
-      await bluetooth.printReceipt({
-        storeName: testReceipt.storeName || 'Test Store',
-        items: testReceipt.items.map(item => ({
-          name: item.name,
-          qty: item.quantity,
-          price: item.price,
-          subtotal: item.total,
-        })),
-        subtotal: testReceipt.subtotal,
-        tax: testReceipt.tax,
-        total: testReceipt.total,
-        paymentMethod: 'Test',
-      });
-    } else {
-      await bluetooth.printReceipt(testReceipt);
+    try {
+      const testReceipt = generateTestReceipt();
+      if (isNativeApp) {
+        // Use native print for test
+        await bluetooth.printReceipt({
+          storeName: testReceipt.storeName || 'Test Store',
+          items: testReceipt.items.map(item => ({
+            name: item.name,
+            qty: item.quantity,
+            price: item.price,
+            subtotal: item.total,
+          })),
+          subtotal: testReceipt.subtotal,
+          tax: testReceipt.tax,
+          total: testReceipt.total,
+          paymentMethod: 'Test',
+        });
+      } else {
+        await bluetooth.printReceipt(testReceipt);
+      }
+    } catch (error) {
+      console.error('Test print failed:', error);
+      alert('Gagal test print: ' + (error as Error).message);
     }
   };
 
