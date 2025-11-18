@@ -797,11 +797,11 @@ export default function POS() {
       </div>
 
       <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0">
-        <Card className="lg:sticky lg:top-4 h-[calc(100vh-6rem)] lg:h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+        <Card className="lg:sticky lg:top-4 flex flex-col">
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <CardContent className="flex-1 flex flex-col min-h-0">
             <Tabs defaultValue="cart" className="w-full flex-1 flex flex-col min-h-0">
               <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="cart" className="text-sm">
@@ -820,7 +820,7 @@ export default function POS() {
 
               {/* Tab Keranjang */}
               <TabsContent value="cart" className="flex-1 flex flex-col mt-3 min-h-0">
-                <div className="flex-1 overflow-auto h-full">
+                <div className="flex-1 space-y-3">
                   {/* Cart items list */}
                   <div className="space-y-2">
                     {cart.length === 0 ? (
@@ -1130,7 +1130,7 @@ export default function POS() {
 
               {/* Tab Open Bills */}
               <TabsContent value="openbills" className="flex-1 flex flex-col mt-3 min-h-0">
-                <div className="flex-1 space-y-2 overflow-auto h-full">
+                <div className="flex-1 space-y-2">
                   {openBills.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground py-8">
                       Belum ada Open Bill
