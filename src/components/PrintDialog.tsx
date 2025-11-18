@@ -137,7 +137,7 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
       console.log('Starting cashier print...', { isNativeApp, receiptData });
       
       if (isNativeApp) {
-        await bluetooth.printReceipt({
+        const printData = {
           storeName: receiptData.storeName || 'Kantin',
           items: receiptData.items.map(item => ({
             name: item.name,
@@ -152,13 +152,18 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           change: receiptData.change,
           cashierName: receiptData.cashierName,
           orderType: receiptData.orderType,
-        });
+        };
+        
+        console.log('Calling native printReceipt with:', printData);
+        await bluetooth.printReceipt(printData);
+        console.log('Native print completed successfully');
       } else {
         const receipt = generateCashierReceipt(receiptData);
+        console.log('Calling web printReceipt');
         await bluetooth.printReceipt(receipt);
+        console.log('Web print completed successfully');
       }
       
-      console.log('Cashier print completed');
       toast({
         title: 'Berhasil!',
         description: 'Struk kasir berhasil dicetak',

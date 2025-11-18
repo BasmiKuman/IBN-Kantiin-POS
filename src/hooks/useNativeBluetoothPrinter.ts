@@ -176,11 +176,16 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
     cashierName?: string;
     orderType?: 'dine-in' | 'takeaway';
   }) => {
+    console.log('[Native] printReceipt called', { isNativeSupported, isConnected, receiptData });
+    
     if (!isNativeSupported || !isConnected) {
-      throw new Error('Printer not connected');
+      const error = !isNativeSupported ? 'Native not supported' : 'Printer not connected';
+      console.error('[Native] Print failed:', error);
+      throw new Error(error);
     }
 
     try {
+      console.log('[Native] Building receipt...');
       const now = new Date();
       const dateStr = now.toLocaleDateString('id-ID');
       const timeStr = now.toLocaleTimeString('id-ID');
@@ -253,10 +258,12 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
         .feedCutPaper();
 
       // Now send to printer
+      console.log('[Native] Sending to printer...');
       await printer.write();
+      console.log('[Native] Print successful!');
 
     } catch (error) {
-      console.error('Error printing receipt:', error);
+      console.error('[Native] Error printing receipt:', error);
       throw error;
     }
   }, [isNativeSupported, isConnected]);
