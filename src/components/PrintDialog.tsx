@@ -8,10 +8,12 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Printer, Bluetooth, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Search } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
+import { useNativeBluetoothPrinter } from '@/hooks/useNativeBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PrintDialogProps {
   open: boolean;
@@ -22,66 +24,178 @@ interface PrintDialogProps {
 }
 
 export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchTransactions }: PrintDialogProps) {
-  const { isConnected, isConnecting, printerName, connect, disconnect, printReceipt } = useBluetoothPrinter();
+  // Use native Bluetooth for Capacitor app, Web Bluetooth for browser
+  const webBluetooth = useBluetoothPrinter();
+  const nativeBluetooth = useNativeBluetoothPrinter();
+  
+  // Smart detection: use native if available, fallback to web
+  const isNativeApp = nativeBluetooth.isNativeSupported;
+  const bluetooth = isNativeApp ? nativeBluetooth : webBluetooth;
+  
   const [isPrintingKitchen, setIsPrintingKitchen] = useState(false);
   const [isPrintingCashier, setIsPrintingCashier] = useState(false);
   const [isPrintingBatch, setIsPrintingBatch] = useState(false);
-  
-  // Check if running in native app (Capacitor)
-  const isNativeApp = !!(window as any).Capacitor;
-  const bluetoothSupported = typeof navigator !== 'undefined' && !!navigator.bluetooth;
+  const [showDeviceList, setShowDeviceList] = useState(false);
 
   const handleConnect = async () => {
-    await connect();
+    if (isNativeApp) {
+      // For native app, show device list for scanning
+      setShowDeviceList(true);
+      await bluetooth.startScan();
+    } else {
+      // For web, use browser's device picker
+      await bluetooth.connect('');
+    }
+  };
+
+  const handleDeviceSelect = async (address: string) => {
+    await bluetooth.connect(address);
+    setShowDeviceList(false);
+  };
+
+  const handleStopScan = async () => {
+    if (isNativeApp && bluetooth.isScanning) {
+      await bluetooth.stopScan();
+    }
+    setShowDeviceList(false);
   };
 
   const handleTestPrint = async () => {
     const testReceipt = generateTestReceipt();
-    await printReceipt(testReceipt);
+    if (isNativeApp) {
+      // Use native print for test
+      await bluetooth.printReceipt({
+        storeName: testReceipt.storeName || 'Test Store',
+        items: testReceipt.items.map(item => ({
+          name: item.name,
+          qty: item.quantity,
+          price: item.price,
+          subtotal: item.total,
+        })),
+        subtotal: testReceipt.subtotal,
+        tax: testReceipt.tax,
+        total: testReceipt.total,
+        paymentMethod: 'Test',
+      });
+    } else {
+      await bluetooth.printReceipt(testReceipt);
+    }
   };
 
   const handlePrintKitchen = async () => {
     if (!receiptData) return;
     setIsPrintingKitchen(true);
-    const receipt = generateKitchenReceipt(receiptData);
-    await printReceipt(receipt);
-    setIsPrintingKitchen(false);
+    try {
+      if (isNativeApp) {
+        await bluetooth.printKitchenReceipt({
+          items: receiptData.items.map(item => ({
+            name: item.name,
+            qty: item.quantity,
+            notes: item.notes,
+          })),
+          orderType: receiptData.orderType,
+          tableNumber: receiptData.tableNumber,
+        });
+      } else {
+        const receipt = generateKitchenReceipt(receiptData);
+        await bluetooth.printReceipt(receipt);
+      }
+    } finally {
+      setIsPrintingKitchen(false);
+    }
   };
 
   const handlePrintCashier = async () => {
     if (!receiptData) return;
     setIsPrintingCashier(true);
-    const receipt = generateCashierReceipt(receiptData);
-    await printReceipt(receipt);
-    setIsPrintingCashier(false);
+    try {
+      if (isNativeApp) {
+        await bluetooth.printReceipt({
+          storeName: receiptData.storeName || 'Kantin',
+          items: receiptData.items.map(item => ({
+            name: item.name,
+            qty: item.quantity,
+            price: item.price,
+            subtotal: item.total,
+          })),
+          subtotal: receiptData.subtotal,
+          tax: receiptData.tax,
+          total: receiptData.total,
+          paymentMethod: receiptData.paymentMethod,
+          change: receiptData.change,
+          cashierName: receiptData.cashierName,
+          orderType: receiptData.orderType,
+        });
+      } else {
+        const receipt = generateCashierReceipt(receiptData);
+        await bluetooth.printReceipt(receipt);
+      }
+    } finally {
+      setIsPrintingCashier(false);
+    }
   };
 
   const handleBatchPrintKitchen = async () => {
     if (!batchTransactions || batchTransactions.length === 0) return;
     setIsPrintingBatch(true);
     
-    for (const transaction of batchTransactions) {
-      const receipt = generateKitchenReceipt(transaction);
-      await printReceipt(receipt);
-      // Small delay between prints
-      await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      for (const transaction of batchTransactions) {
+        if (isNativeApp) {
+          await bluetooth.printKitchenReceipt({
+            items: transaction.items.map(item => ({
+              name: item.name,
+              qty: item.quantity,
+              notes: item.notes,
+            })),
+            orderType: transaction.orderType,
+            tableNumber: transaction.tableNumber,
+          });
+        } else {
+          const receipt = generateKitchenReceipt(transaction);
+          await bluetooth.printReceipt(receipt);
+        }
+        // Small delay between prints
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } finally {
+      setIsPrintingBatch(false);
     }
-    
-    setIsPrintingBatch(false);
   };
 
   const handleBatchPrintCashier = async () => {
     if (!batchTransactions || batchTransactions.length === 0) return;
     setIsPrintingBatch(true);
     
-    for (const transaction of batchTransactions) {
-      const receipt = generateCashierReceipt(transaction);
-      await printReceipt(receipt);
-      // Small delay between prints
-      await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      for (const transaction of batchTransactions) {
+        if (isNativeApp) {
+          await bluetooth.printReceipt({
+            storeName: transaction.storeName || 'Kantin',
+            items: transaction.items.map(item => ({
+              name: item.name,
+              qty: item.quantity,
+              price: item.price,
+              subtotal: item.total,
+            })),
+            subtotal: transaction.subtotal,
+            tax: transaction.tax,
+            total: transaction.total,
+            paymentMethod: transaction.paymentMethod,
+            change: transaction.change,
+            cashierName: transaction.cashierName,
+            orderType: transaction.orderType,
+          });
+        } else {
+          const receipt = generateCashierReceipt(transaction);
+          await bluetooth.printReceipt(receipt);
+        }
+        // Small delay between prints
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } finally {
+      setIsPrintingBatch(false);
     }
-    
-    setIsPrintingBatch(false);
   };
 
   return (
@@ -104,13 +218,13 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
               <Bluetooth className="h-5 w-5" />
               <div>
                 <p className="font-medium">Status Printer</p>
-                {printerName && (
-                  <p className="text-sm text-muted-foreground">{printerName}</p>
+                {bluetooth.isConnected && bluetooth.connectedDevice && (
+                  <p className="text-sm text-muted-foreground">{bluetooth.connectedDevice.name}</p>
                 )}
               </div>
             </div>
-            <Badge variant={isConnected ? 'default' : 'secondary'}>
-              {isConnected ? (
+            <Badge variant={bluetooth.isConnected ? 'default' : 'secondary'}>
+              {bluetooth.isConnected ? (
                 <>
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Terhubung
@@ -124,80 +238,109 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </Badge>
           </div>
 
-          {/* Browser/App Compatibility Warning */}
-          {!bluetoothSupported && (
-            <Alert variant="destructive">
-              <AlertDescription className="space-y-2">
-                {isNativeApp ? (
-                  <>
-                    <p className="font-semibold">📱 Fitur Bluetooth Printer di Aplikasi Mobile</p>
-                    <p className="text-sm">
-                      Fitur Bluetooth Printer saat ini hanya tersedia di versi web. 
-                      Untuk mencetak struk via Bluetooth, silakan:
-                    </p>
-                    <ol className="list-decimal list-inside space-y-1 text-sm ml-2">
-                      <li>Buka aplikasi di browser Chrome/Edge Android</li>
-                      <li>Akses melalui: <span className="font-mono bg-background px-1 rounded">https://your-domain.com</span></li>
-                      <li>Atau gunakan printer USB/jaringan untuk sementara</li>
-                    </ol>
-                    <p className="text-xs mt-2">
-                      ℹ️ Fitur native Bluetooth akan tersedia di update mendatang.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="font-semibold">⚠️ Browser Tidak Mendukung Web Bluetooth</p>
-                    <p className="text-sm">
-                      Gunakan browser Chrome atau Edge versi terbaru di Android/Windows untuk menggunakan fitur Bluetooth Printer.
-                    </p>
-                  </>
-                )}
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Connection Instructions */}
-          {!isConnected && (
+          {!bluetooth.isConnected && (
             <Alert>
               <AlertDescription className="space-y-2">
                 <p className="font-semibold">📋 Panduan Koneksi:</p>
                 <ol className="list-decimal list-inside space-y-1 text-sm">
                   <li>Nyalakan printer thermal Bluetooth</li>
                   <li>Pastikan printer dalam mode pairing (LED berkedip)</li>
-                  <li>Klik tombol "Hubungkan Printer" di bawah</li>
+                  <li>Klik tombol "{isNativeApp ? 'Scan Printer' : 'Hubungkan Printer'}" di bawah</li>
                   <li>Pilih nama printer dari daftar yang muncul</li>
                   <li>Tunggu hingga status berubah jadi "Terhubung"</li>
                 </ol>
                 <p className="text-xs text-muted-foreground mt-2">
-                  💡 Jika printer tidak muncul, coba pair dulu via Settings → Bluetooth di perangkat Anda.
+                  💡 {isNativeApp ? 'Aplikasi akan scan printer Bluetooth terdekat secara otomatis.' : 'Jika printer tidak muncul, coba pair dulu via Settings → Bluetooth di perangkat Anda.'}
                 </p>
               </AlertDescription>
             </Alert>
           )}
 
+          {/* Device List for Native App */}
+          {isNativeApp && showDeviceList && (
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="font-medium flex items-center gap-2">
+                  <Search className="h-4 w-4" />
+                  {bluetooth.isScanning ? 'Mencari Printer...' : 'Printer Ditemukan'}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleStopScan}
+                >
+                  Tutup
+                </Button>
+              </div>
+              
+              <ScrollArea className="h-48">
+                {bluetooth.availableDevices.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    {bluetooth.isScanning ? (
+                      <>
+                        <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                        <p className="text-sm">Scanning...</p>
+                      </>
+                    ) : (
+                      <p className="text-sm">Tidak ada printer ditemukan</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {bluetooth.availableDevices.map((device) => (
+                      <Button
+                        key={device.address}
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => handleDeviceSelect(device.address)}
+                        disabled={bluetooth.isConnecting}
+                      >
+                        <Bluetooth className="h-4 w-4 mr-2" />
+                        <div className="text-left">
+                          <p className="font-medium">{device.name}</p>
+                          <p className="text-xs text-muted-foreground">{device.address}</p>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          )}
+
           {/* Connect/Disconnect Button */}
           <div className="flex gap-2">
-            {!isConnected ? (
+            {!bluetooth.isConnected ? (
               <Button
                 onClick={handleConnect}
-                disabled={isNativeApp || isConnecting}
+                disabled={bluetooth.isConnecting}
                 className="flex-1"
               >
-                {isConnecting ? (
+                {bluetooth.isConnecting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Menghubungkan...
                   </>
                 ) : (
                   <>
-                    <Bluetooth className="h-4 w-4 mr-2" />
-                    Hubungkan Printer
+                    {isNativeApp ? (
+                      <>
+                        <Search className="h-4 w-4 mr-2" />
+                        Scan Printer
+                      </>
+                    ) : (
+                      <>
+                        <Bluetooth className="h-4 w-4 mr-2" />
+                        Hubungkan Printer
+                      </>
+                    )}
                   </>
                 )}
               </Button>
             ) : (
               <>
-                <Button onClick={disconnect} variant="outline" className="flex-1">
+                <Button onClick={() => bluetooth.disconnect()} variant="outline" className="flex-1">
                   Putuskan
                 </Button>
                 <Button onClick={handleTestPrint} variant="outline">
@@ -209,7 +352,7 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           </div>
 
           {/* Print Buttons */}
-          {isConnected && !batchMode && receiptData && (
+          {bluetooth.isConnected && !batchMode && receiptData && (
             <>
               <div className="border-t pt-4 space-y-3">
                 <p className="font-medium text-sm">Cetak Struk:</p>
@@ -263,7 +406,7 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           )}
 
           {/* Batch Print Buttons */}
-          {isConnected && batchMode && batchTransactions && batchTransactions.length > 0 && (
+          {bluetooth.isConnected && batchMode && batchTransactions && batchTransactions.length > 0 && (
             <>
               <div className="border-t pt-4 space-y-3">
                 <p className="font-medium text-sm">
