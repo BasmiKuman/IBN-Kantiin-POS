@@ -178,63 +178,54 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
         .clearFormatting()
         .align('center')
         .text(`${dateStr} ${timeStr}\n`)
-        .text('--------------------------------\n')
+        .text('================================\n')
         .align('left');
 
       // Order type
       if (receiptData.orderType) {
         printer = printer
           .text(`Jenis: ${receiptData.orderType === 'dine-in' ? 'Makan Di Tempat' : 'Bawa Pulang'}\n`)
-          .text('--------------------------------\n');
+          .text('================================\n');
       }
 
-      // Items
+      // Items header
+      printer = printer.text('PESANAN:\n');
+
+      // Items - format sederhana tanpa align kanan-kiri
       for (const item of receiptData.items) {
         printer = printer
           .text(`${item.name}\n`)
-          .text(`  ${item.qty} x Rp ${item.price.toLocaleString('id-ID')}\n`)
-          .align('right')
-          .text(`Rp ${item.subtotal.toLocaleString('id-ID')}\n`)
-          .align('left');
+          .text(`${item.qty} x ${item.price.toLocaleString('id-ID')} = ${item.subtotal.toLocaleString('id-ID')}\n`)
+          .text('\n');
       }
 
-      printer = printer.text('--------------------------------\n');
+      printer = printer.text('================================\n');
 
-      // Totals
+      // Totals - format sederhana left aligned
       printer = printer
-        .align('left')
-        .text(`Subtotal:`)
-        .align('right')
-        .text(`Rp ${receiptData.subtotal.toLocaleString('id-ID')}\n`)
-        .align('left')
-        .text(`Pajak (${receiptData.tax > 0 ? '11%' : '0%'}):`)
-        .align('right')
-        .text(`Rp ${receiptData.tax.toLocaleString('id-ID')}\n`)
-        .align('left')
+        .text(`Subtotal: Rp ${receiptData.subtotal.toLocaleString('id-ID')}\n`)
+        .text(`Pajak ${receiptData.tax > 0 ? '(11%)' : '(0%)'}: Rp ${receiptData.tax.toLocaleString('id-ID')}\n`)
+        .text('--------------------------------\n')
         .bold()
-        .doubleWidth()
-        .text(`TOTAL:`)
-        .align('right')
-        .text(`Rp ${receiptData.total.toLocaleString('id-ID')}\n`)
-        .clearFormatting();
+        .text(`TOTAL: Rp ${receiptData.total.toLocaleString('id-ID')}\n`)
+        .clearFormatting()
+        .text('================================\n');
 
       // Payment info
       if (receiptData.paymentMethod) {
         printer = printer
-          .align('left')
-          .text('--------------------------------\n')
-          .text(`Metode: ${receiptData.paymentMethod}\n`);
+          .text(`Metode Bayar: ${receiptData.paymentMethod}\n`);
         
         if (receiptData.change !== undefined && receiptData.change > 0) {
           printer = printer
             .text(`Kembalian: Rp ${receiptData.change.toLocaleString('id-ID')}\n`);
         }
+        printer = printer.text('\n');
       }
 
       // Footer
       printer = printer
         .align('center')
-        .text('--------------------------------\n')
         .text('Terima Kasih\n')
         .text(`${receiptData.storeName}\n`);
 
@@ -243,7 +234,7 @@ export const useNativeBluetoothPrinter = (): UseNativeBluetoothPrinterReturn => 
       }
 
       printer = printer
-        .text('\n\n')
+        .text('\n\n\n')
         .feedCutPaper();
 
       // Now send to printer
