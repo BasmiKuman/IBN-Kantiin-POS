@@ -16,6 +16,7 @@ import { useNativeBluetoothPrinter } from '@/hooks/useNativeBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 interface PrintDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
   // Use native Bluetooth for Capacitor app, Web Bluetooth for browser
   const webBluetooth = useBluetoothPrinter();
   const nativeBluetooth = useNativeBluetoothPrinter();
+  const { toast } = useToast();
   
   // Smart detection: use native if available, fallback to web
   const isNativeApp = nativeBluetooth.isNativeSupported;
@@ -112,6 +114,17 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
         const receipt = generateKitchenReceipt(receiptData);
         await bluetooth.printReceipt(receipt);
       }
+      toast({
+        title: 'Berhasil!',
+        description: 'Struk dapur berhasil dicetak',
+      });
+    } catch (error) {
+      console.error('Print kitchen failed:', error);
+      toast({
+        title: 'Gagal Cetak',
+        description: 'Error: ' + (error as Error).message,
+        variant: 'destructive',
+      });
     } finally {
       setIsPrintingKitchen(false);
     }
@@ -121,6 +134,8 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
     if (!receiptData) return;
     setIsPrintingCashier(true);
     try {
+      console.log('Starting cashier print...', { isNativeApp, receiptData });
+      
       if (isNativeApp) {
         await bluetooth.printReceipt({
           storeName: receiptData.storeName || 'Kantin',
@@ -142,6 +157,19 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
         const receipt = generateCashierReceipt(receiptData);
         await bluetooth.printReceipt(receipt);
       }
+      
+      console.log('Cashier print completed');
+      toast({
+        title: 'Berhasil!',
+        description: 'Struk kasir berhasil dicetak',
+      });
+    } catch (error) {
+      console.error('Print cashier failed:', error);
+      toast({
+        title: 'Gagal Cetak Struk Kasir',
+        description: 'Error: ' + (error as Error).message,
+        variant: 'destructive',
+      });
     } finally {
       setIsPrintingCashier(false);
     }
