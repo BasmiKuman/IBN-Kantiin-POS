@@ -801,8 +801,8 @@ export default function POS() {
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-hidden flex flex-col">
-            <Tabs defaultValue="cart" className="w-full flex-1 flex flex-col">
+          <CardContent className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <Tabs defaultValue="cart" className="w-full flex-1 flex flex-col min-h-0">
               <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="cart" className="text-sm">
                   Keranjang
@@ -819,8 +819,8 @@ export default function POS() {
               </TabsList>
 
               {/* Tab Keranjang */}
-              <TabsContent value="cart" className="flex-1 flex flex-col mt-3">
-                <div className="flex-1 overflow-auto">
+              <TabsContent value="cart" className="flex-1 flex flex-col mt-3 min-h-0">
+                <div className="flex-1 overflow-auto h-full">
                   {/* Cart items list */}
                   <div className="space-y-2">
                     {cart.length === 0 ? (
@@ -1129,8 +1129,8 @@ export default function POS() {
               </TabsContent>
 
               {/* Tab Open Bills */}
-              <TabsContent value="openbills" className="flex-1 flex flex-col mt-3 overflow-hidden">
-                <div className="flex-1 space-y-2 overflow-auto">
+              <TabsContent value="openbills" className="flex-1 flex flex-col mt-3 min-h-0">
+                <div className="flex-1 space-y-2 overflow-auto h-full">
                   {openBills.length === 0 ? (
                     <p className="text-center text-sm text-muted-foreground py-8">
                       Belum ada Open Bill
