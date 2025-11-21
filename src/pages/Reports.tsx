@@ -38,23 +38,61 @@ import { ChevronDown } from "lucide-react";
 
 export default function Reports() {
   // Date filter state - MUST BE DECLARED FIRST
+  // State filter untuk tab Laporan & Analitik
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+
+  // State filter untuk tab Produk
+  const [productDateFilter, setProductDateFilter] = useState<string>('all');
+  const [productStartDate, setProductStartDate] = useState<string>('');
+  const [productEndDate, setProductEndDate] = useState<string>('');
 
   const { data: transactions = [] as Transaction[], isLoading: loadingTransactions } = useTransactions();
   const { data: dailySales = [], isLoading: loadingDailySales } = useDailySales();
   const { data: products = [] } = useProducts();
   
   // Product sales with date filter
+  // Filter tanggal untuk tab Produk
+  // Helper untuk format tanggal yyyy-mm-dd
+  // Format tanggal ke YYYY-MM-DD
+  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+  // Format ke awal dan akhir hari
+  const toStartOfDay = (dateStr: string) => dateStr ? `${dateStr}T00:00:00` : undefined;
+  const toEndOfDay = (dateStr: string) => dateStr ? `${dateStr}T23:59:59` : undefined;
+
   const getProductSalesDateRange = () => {
-    if (dateFilter === 'custom' && startDate && endDate) {
-      return { start: startDate, end: endDate };
+    const today = new Date();
+    let start: string | undefined = undefined;
+    let end: string | undefined = undefined;
+    if (productDateFilter === 'today') {
+      const d = formatDate(today);
+      start = toStartOfDay(d);
+      end = toEndOfDay(d);
+    } else if (productDateFilter === 'yesterday') {
+      const yest = new Date();
+      yest.setDate(today.getDate() - 1);
+      const d = formatDate(yest);
+      start = toStartOfDay(d);
+      end = toEndOfDay(d);
+    } else if (productDateFilter === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(today.getDate() - 6);
+      start = toStartOfDay(formatDate(weekAgo));
+      end = toEndOfDay(formatDate(today));
+    } else if (productDateFilter === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(today.getMonth() - 1);
+      start = toStartOfDay(formatDate(monthAgo));
+      end = toEndOfDay(formatDate(today));
+    } else if (productDateFilter === 'custom' && productStartDate && productEndDate) {
+      start = toStartOfDay(productStartDate);
+      end = toEndOfDay(productEndDate);
     }
-    return { start: undefined, end: undefined };
+    return { start, end };
   };
-  const { start, end } = getProductSalesDateRange();
-  const { data: productSales = [], isLoading: loadingProductSales } = useProductSales(start, end);
+  const { start: productStart, end: productEnd } = getProductSalesDateRange();
+  const { data: productSales = [], isLoading: loadingProductSales } = useProductSales(productStart, productEnd);
 
   // Filter transactions by date
   const getFilteredTransactions = () => {
@@ -138,14 +176,17 @@ export default function Reports() {
     const tableData = filteredTransactions.slice(0, 50).map(t => [
       t.transaction_number || '-',
       new Date(t.created_at || '').toLocaleDateString('id-ID'),
+      (t.transaction_items && t.transaction_items.length > 0)
+        ? t.transaction_items.map(item => item.product_name).join(', ')
+        : '-',
       t.payment_method?.toUpperCase() || '-',
       `Rp ${formatCurrency(t.total || 0)}`,
       t.status || '-',
     ]);
-    
+
     autoTable(doc, {
       startY: 75,
-      head: [['No. Transaksi', 'Tanggal', 'Metode', 'Total', 'Status']],
+      head: [['No. Transaksi', 'Tanggal', 'Produk', 'Metode', 'Total', 'Status']],
       body: tableData,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [59, 130, 246] },
@@ -183,7 +224,7 @@ export default function Reports() {
   ['Transfer', `Rp ${formatCurrency(paymentMethods.transfer || 0)}`],
       [''],
       ['DETAIL TRANSAKSI'],
-      ['No. Transaksi', 'Tanggal', 'Waktu', 'Metode Pembayaran', 'Subtotal', 'Pajak', 'Total', 'Status'],
+      ['No. Transaksi', 'Tanggal', 'Produk', 'Waktu', 'Metode Pembayaran', 'Subtotal', 'Pajak', 'Total', 'Status'],
     ];
     
     // Transaction details - gunakan filtered transactions
@@ -192,6 +233,9 @@ export default function Reports() {
       return [
         t.transaction_number || '-',
         date.toLocaleDateString('id-ID'),
+        (t.transaction_items && t.transaction_items.length > 0)
+          ? t.transaction_items.map(item => item.product_name).join(', ')
+          : '-',
         date.toLocaleTimeString('id-ID'),
         t.payment_method?.toUpperCase() || '-',
         t.subtotal || 0,
@@ -467,6 +511,37 @@ export default function Reports() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Filter tanggal & quick access untuk produk */}
+              <div className="flex flex-wrap gap-4 items-end mb-6">
+                <div className="space-y-2">
+                  <Label>Quick Access</Label>
+                  <Select value={productDateFilter} onValueChange={setProductDateFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Pilih periode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Data</SelectItem>
+                      <SelectItem value="today">Hari Ini</SelectItem>
+                      <SelectItem value="yesterday">Kemarin</SelectItem>
+                      <SelectItem value="week">7 Hari Terakhir</SelectItem>
+                      <SelectItem value="month">30 Hari Terakhir</SelectItem>
+                      <SelectItem value="custom">Custom Range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {productDateFilter === 'custom' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Dari Tanggal</Label>
+                      <Input type="date" value={productStartDate} onChange={e => setProductStartDate(e.target.value)} className="w-[180px]" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sampai Tanggal</Label>
+                      <Input type="date" value={productEndDate} onChange={e => setProductEndDate(e.target.value)} className="w-[180px]" />
+                    </div>
+                  </>
+                )}
+              </div>
               {loadingProductSales ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Memuat data...</p>
