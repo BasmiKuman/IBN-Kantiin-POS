@@ -717,7 +717,7 @@ export default function POS() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 w-full min-h-screen">
+    <div className="flex flex-col md:flex-row gap-4 w-full min-h-screen">
       <div className="flex-1 space-y-4 min-w-0">
         <Card>
           <CardHeader className="pb-3">
@@ -734,7 +734,7 @@ export default function POS() {
           </CardHeader>
           <CardContent className="pb-3">
             <Tabs defaultValue="all">
-              <TabsList className="mb-3 grid grid-cols-3 lg:grid-cols-4">
+              <TabsList className="mb-3 grid grid-cols-3 md:grid-cols-4">
                 <TabsTrigger value="all" className="text-xs">Semua</TabsTrigger>
                 {categories.slice(0, 3).map((cat) => (
                   <TabsTrigger key={cat.id} value={cat.id} className="text-xs truncate">
@@ -743,7 +743,7 @@ export default function POS() {
                 ))}
               </TabsList>
               <TabsContent value="all" className="space-y-0">
-                <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
                   {filteredProducts.map((product) => (
                     <Card
                       key={product.id}
@@ -768,7 +768,7 @@ export default function POS() {
               </TabsContent>
               {categories.map((cat) => (
                 <TabsContent key={cat.id} value={cat.id} className="space-y-0">
-                  <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
                     {filteredProducts
                       .filter((p) => p.category_id === cat.id)
                       .map((product) => (
@@ -796,8 +796,8 @@ export default function POS() {
         </Card>
       </div>
 
-      <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0">
-        <Card className="lg:sticky lg:top-4 flex flex-col">
+      <div className="w-full md:w-[300px] xl:w-[340px] flex-shrink-0">
+        <Card className="md:sticky md:top-4 flex flex-col">
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="text-base">Keranjang & Open Bills</CardTitle>
           </CardHeader>
@@ -1238,14 +1238,55 @@ export default function POS() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="payment-amount">Jumlah Uang Diterima</Label>
-              <Input
-                id="payment-amount"
-                type="number"
-                placeholder="Masukkan jumlah uang"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                className="text-lg"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground select-none">Rp</span>
+                <Input
+                  id="payment-amount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Masukkan jumlah uang"
+                  value={paymentAmount ? Number(paymentAmount.replace(/\D/g, "")).toLocaleString("id-ID") : ""}
+                  onChange={e => {
+                    // Only allow numbers, remove non-digit
+                    const raw = e.target.value.replace(/\D/g, "");
+                    setPaymentAmount(raw);
+                  }}
+                  className="text-lg pl-10"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {[10000, 20000, 50000, 100000].map((denom) => {
+                  const isActive = paymentAmount && Number(paymentAmount) === denom;
+                  return (
+                    <Button
+                      key={denom}
+                      type="button"
+                      variant={isActive ? "default" : "secondary"}
+                      className={`px-3 py-1 text-xs font-semibold border ${isActive ? "border-primary ring-2 ring-primary/60" : "border-muted"}`}
+                      onClick={() => setPaymentAmount(String(denom))}
+                    >
+                      Rp {denom.toLocaleString()}
+                    </Button>
+                  );
+                })}
+                {(() => {
+                  const uangPas = String(selectedOpenBillForPayment
+                    ? openBills.find(b => b.orderNumber === selectedOpenBillForPayment)?.total || 0
+                    : total
+                  );
+                  const isActive = paymentAmount && Number(paymentAmount) === Number(uangPas);
+                  return (
+                    <Button
+                      type="button"
+                      variant={isActive ? "default" : "secondary"}
+                      className={`px-3 py-1 text-xs font-semibold border ${isActive ? "border-primary ring-2 ring-primary/60" : "border-muted"}`}
+                      onClick={() => setPaymentAmount(uangPas)}
+                    >
+                      Uang Pas
+                    </Button>
+                  );
+                })()}
+              </div>
             </div>
             {paymentAmount && parseFloat(paymentAmount) >= (selectedOpenBillForPayment 
               ? openBills.find(b => b.orderNumber === selectedOpenBillForPayment)?.total || 0

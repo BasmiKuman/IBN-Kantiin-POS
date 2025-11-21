@@ -157,7 +157,7 @@ export function generateCashierReceipt(data: ReceiptData): string {
   
   // Items
   data.items.forEach((item) => {
-    const itemName = item.variant ? `${item.name} (${item.variant})` : item.name;
+    const itemName = item.variant ? `${item.name}` : item.name;
     
     // Item name
     receipt += `${itemName}\n`;
