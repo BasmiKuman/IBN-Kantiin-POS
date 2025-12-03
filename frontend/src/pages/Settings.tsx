@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { BluetoothPrinterSettings } from "@/components/BluetoothPrinterSettings";
+import { useTheme } from "@/components/theme-provider";
 
 interface GeneralSettings {
   businessName: string;
@@ -63,6 +64,8 @@ interface LoyaltySettings {
 }
 
 export default function Settings() {
+  const { theme, setTheme } = useTheme();
+  
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
     businessName: "BK POS",
     currency: "IDR",
@@ -305,8 +308,14 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground">Aktifkan tema gelap</p>
                 </div>
                 <Switch 
-                  checked={generalSettings.darkMode}
-                  onCheckedChange={(checked) => setGeneralSettings({...generalSettings, darkMode: checked})}
+                  checked={theme === "dark"}
+                  onCheckedChange={(checked) => {
+                    setTheme(checked ? "dark" : "light");
+                    toast({
+                      title: "Tema Berubah",
+                      description: `Mode ${checked ? "gelap" : "terang"} diaktifkan`,
+                    });
+                  }}
                 />
               </div>
               <Separator />
