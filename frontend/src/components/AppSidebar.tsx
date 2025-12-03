@@ -10,6 +10,8 @@ import {
   Settings,
   LogOut,
   User,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,12 +24,14 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Separator } from "@/components/ui/separator";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["admin", "manager", "kasir"] },
