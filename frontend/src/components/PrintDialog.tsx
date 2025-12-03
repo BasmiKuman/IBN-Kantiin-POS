@@ -484,55 +484,91 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             )}
           </div>
 
-          {/* Print Buttons */}
+          {/* Print Buttons - Super Colorful */}
           {bluetooth.isConnected && !batchMode && receiptData && (
             <>
-              <div className="border-t pt-4 space-y-3">
-                <p className="font-medium text-sm">Cetak Struk:</p>
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                    Pilih Jenis Struk
+                  </p>
+                  <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+                </div>
                 
-                <Button
+                {/* Kitchen Receipt Button - Orange/Red Theme */}
+                <button
                   onClick={handlePrintKitchen}
                   disabled={isPrintingKitchen || !receiptData}
-                  variant="outline"
-                  className="w-full"
+                  className="w-full group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-br from-orange-400 via-red-400 to-pink-500 dark:from-orange-500 dark:via-red-500 dark:to-pink-600 shadow-lg hover:shadow-xl"
                 >
-                  {isPrintingKitchen ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Mencetak...
-                    </>
-                  ) : (
-                    <>
-                      <Printer className="h-4 w-4 mr-2" />
-                      Cetak Struk Dapur
-                    </>
-                  )}
-                </Button>
+                  {/* Background decoration */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  
+                  <div className="relative flex items-center gap-4">
+                    <div className="p-4 rounded-xl bg-white/20 backdrop-blur-sm">
+                      {isPrintingKitchen ? (
+                        <Loader2 className="h-8 w-8 text-white animate-spin" />
+                      ) : (
+                        <ChefHat className="h-8 w-8 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-xl font-bold text-white">
+                        {isPrintingKitchen ? 'Mencetak...' : 'Cetak Struk Dapur'}
+                      </p>
+                      <p className="text-sm text-white/90 mt-1">
+                        Format sederhana untuk kitchen
+                      </p>
+                    </div>
+                    <ChefHat className="h-6 w-6 text-white/50" />
+                  </div>
+                </button>
 
-                <Button
+                {/* Cashier Receipt Button - Blue/Purple Theme */}
+                <button
                   onClick={handlePrintCashier}
                   disabled={isPrintingCashier || !receiptData}
-                  className="w-full"
+                  className="w-full group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 dark:from-blue-600 dark:via-purple-600 dark:to-indigo-700 shadow-lg hover:shadow-xl"
                 >
-                  {isPrintingCashier ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Mencetak...
-                    </>
-                  ) : (
-                    <>
-                      <Printer className="h-4 w-4 mr-2" />
-                      Cetak Struk Kasir
-                    </>
-                  )}
-                </Button>
+                  {/* Background decoration */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  
+                  <div className="relative flex items-center gap-4">
+                    <div className="p-4 rounded-xl bg-white/20 backdrop-blur-sm">
+                      {isPrintingCashier ? (
+                        <Loader2 className="h-8 w-8 text-white animate-spin" />
+                      ) : (
+                        <ReceiptIcon className="h-8 w-8 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-xl font-bold text-white">
+                        {isPrintingCashier ? 'Mencetak...' : 'Cetak Struk Kasir'}
+                      </p>
+                      <p className="text-sm text-white/90 mt-1">
+                        Format lengkap untuk customer
+                      </p>
+                    </div>
+                    <ReceiptIcon className="h-6 w-6 text-white/50" />
+                  </div>
+                </button>
               </div>
 
-              <div className="text-xs text-muted-foreground">
-                <p>💡 Tips:</p>
-                <ul className="list-disc list-inside space-y-1 mt-1">
-                  <li>Struk Dapur: Format sederhana untuk kitchen</li>
-                  <li>Struk Kasir: Format lengkap dengan harga</li>
+              {/* Tips Card - Gradient */}
+              <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/30 dark:to-orange-950/30 border-2 border-amber-200 dark:border-amber-800">
+                <p className="font-semibold text-amber-900 dark:text-amber-300 mb-2 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  💡 Tips Cepat:
+                </p>
+                <ul className="space-y-1.5 text-sm text-amber-800 dark:text-amber-400">
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-500 font-bold">🍳</span>
+                    <span><strong>Dapur:</strong> Hanya item & qty (untuk chef)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 font-bold">🧾</span>
+                    <span><strong>Kasir:</strong> Lengkap dengan harga (untuk customer)</span>
+                  </li>
                 </ul>
               </div>
             </>
