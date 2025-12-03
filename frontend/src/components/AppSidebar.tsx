@@ -180,6 +180,28 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t p-3">
         <div className="space-y-2">
+          {/* Collapse/Expand Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground transition-colors text-xs h-8"
+          >
+            {open ? (
+              <>
+                <ChevronLeft className="h-4 w-4" />
+                Tutup Sidebar
+              </>
+            ) : (
+              <>
+                <ChevronRight className="h-4 w-4" />
+                Buka Sidebar
+              </>
+            )}
+          </Button>
+          
+          <Separator />
+          
           {/* User Profile with Photo */}
           <div className="flex items-center gap-2 px-1">
             <Avatar className="h-8 w-8 border-2 border-primary/20 flex-shrink-0">
@@ -197,11 +219,11 @@ export function AppSidebar() {
               </p>
             </div>
           </div>
-          {/* Logout Button with Black Text */}
+          {/* Logout Button */}
           <Button 
             variant="outline" 
             size="sm"
-            className="w-full justify-start gap-2 text-black hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors text-xs h-8" 
+            className="w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors text-xs h-8" 
             onClick={handleLogout}
           >
             <LogOut className="h-3 w-3" />
