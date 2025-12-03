@@ -197,7 +197,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-slate-200 dark:border-slate-800 p-3 bg-slate-50 dark:bg-slate-900/50">
+      <SidebarFooter className="border-t border-slate-200 dark:border-slate-800 p-3 bg-white dark:bg-slate-900">
         <div className="space-y-3">
           {/* Collapse/Expand Button - Fixed Color */}
           <Button
