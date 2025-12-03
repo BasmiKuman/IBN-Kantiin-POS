@@ -137,15 +137,15 @@ export function AppSidebar() {
   });
 
   return (
-    <Sidebar className="border-r bg-sidebar min-h-screen">
-      <SidebarHeader className="border-b p-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center flex-shrink-0">
-            <img src="/Images/logo.png" alt="BK POS Logo" className="h-8 w-8 object-contain" />
+    <Sidebar className="border-r bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 min-h-screen shadow-lg">
+      <SidebarHeader className="border-b border-slate-200 dark:border-slate-800 p-4 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center flex-shrink-0 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 dark:from-violet-600 dark:to-purple-700 shadow-lg">
+            <img src="/Images/logo.png" alt="BK POS Logo" className="h-6 w-6 object-contain" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-base font-bold text-sidebar-foreground truncate">BK POS</h2>
-            <p className="text-[10px] text-sidebar-foreground/80 truncate">Point of Sale</p>
+            <h2 className="text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent truncate">BK POS</h2>
+            <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 truncate">Point of Sale System</p>
           </div>
         </div>
       </SidebarHeader>
