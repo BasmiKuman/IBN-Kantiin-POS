@@ -185,43 +185,43 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-3">
-        <div className="space-y-2">
-          {/* Collapse/Expand Button */}
+      <SidebarFooter className="border-t border-slate-200 dark:border-slate-800 p-3 bg-slate-50 dark:bg-slate-900/50">
+        <div className="space-y-3">
+          {/* Collapse/Expand Button - Fixed Color */}
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleSidebar}
-            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground transition-colors text-xs h-8"
+            className="w-full justify-start gap-2 text-slate-700 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors text-sm h-9 font-medium"
           >
             {open ? (
               <>
                 <ChevronLeft className="h-4 w-4" />
-                Tutup Sidebar
+                <span>Tutup Sidebar</span>
               </>
             ) : (
               <>
                 <ChevronRight className="h-4 w-4" />
-                Buka Sidebar
+                <span>Buka Sidebar</span>
               </>
             )}
           </Button>
           
-          <Separator />
+          <Separator className="bg-slate-200 dark:bg-slate-700" />
           
           {/* User Profile with Photo */}
-          <div className="flex items-center gap-2 px-1">
-            <Avatar className="h-8 w-8 border-2 border-primary/20 flex-shrink-0">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-850 border border-slate-200 dark:border-slate-700">
+            <Avatar className="h-9 w-9 border-2 border-violet-400 dark:border-violet-600 flex-shrink-0 shadow-sm">
               <AvatarImage src={photoUrl || undefined} />
-              <AvatarFallback className="bg-primary/10">
-                <User className="h-4 w-4 text-primary" />
+              <AvatarFallback className="bg-gradient-to-br from-violet-400 to-purple-500 dark:from-violet-600 dark:to-purple-700">
+                <User className="h-4 w-4 text-white" />
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-sidebar-foreground truncate">
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
                 {username}
               </p>
-              <p className="text-[10px] text-sidebar-foreground/60 truncate">
+              <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
                 {userRole === "admin" ? "Admin" : userRole === "manager" ? "Manager" : "Kasir"} • {loginTime}
               </p>
             </div>
@@ -230,11 +230,11 @@ export function AppSidebar() {
           <Button 
             variant="outline" 
             size="sm"
-            className="w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors text-xs h-8" 
+            className="w-full justify-start gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700 dark:hover:text-red-300 hover:border-red-300 dark:hover:border-red-700 transition-colors text-sm h-9 font-medium border-slate-300 dark:border-slate-700" 
             onClick={handleLogout}
           >
-            <LogOut className="h-3 w-3" />
-            Logout
+            <LogOut className="h-4 w-4" />
+            <span>Logout</span>
           </Button>
         </div>
       </SidebarFooter>
