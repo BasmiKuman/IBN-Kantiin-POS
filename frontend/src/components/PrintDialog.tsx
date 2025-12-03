@@ -475,44 +475,55 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </div>
           )}
 
-          {/* Connect/Disconnect Button */}
-          <div className="flex gap-2">
+          {/* Connect/Disconnect Button - Colorful */}
+          <div className="flex gap-3">
             {!bluetooth.isConnected ? (
-              <Button
+              <button
                 onClick={handleConnect}
                 disabled={bluetooth.isConnecting}
-                className="flex-1"
+                className="flex-1 group relative overflow-hidden rounded-xl p-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 dark:from-cyan-600 dark:via-blue-600 dark:to-indigo-700 shadow-lg hover:shadow-xl"
               >
-                {bluetooth.isConnecting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Menghubungkan...
-                  </>
-                ) : (
-                  <>
-                    {isNativeApp ? (
-                      <>
-                        <Search className="h-4 w-4 mr-2" />
-                        Scan Printer
-                      </>
-                    ) : (
-                      <>
-                        <Bluetooth className="h-4 w-4 mr-2" />
-                        Hubungkan Printer
-                      </>
-                    )}
-                  </>
-                )}
-              </Button>
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative flex items-center justify-center gap-2 text-white font-semibold">
+                  {bluetooth.isConnecting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Menghubungkan...
+                    </>
+                  ) : (
+                    <>
+                      {isNativeApp ? (
+                        <>
+                          <Search className="h-5 w-5" />
+                          Scan Printer
+                        </>
+                      ) : (
+                        <>
+                          <Bluetooth className="h-5 w-5" />
+                          Hubungkan Printer
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              </button>
             ) : (
               <>
-                <Button onClick={() => bluetooth.disconnect()} variant="outline" className="flex-1">
+                <Button 
+                  onClick={() => bluetooth.disconnect()} 
+                  variant="outline" 
+                  className="flex-1 border-2 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-800 hover:text-red-600 dark:hover:text-red-400"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
                   Putuskan
                 </Button>
-                <Button onClick={handleTestPrint} variant="outline">
-                  <Printer className="h-4 w-4 mr-2" />
+                <button
+                  onClick={handleTestPrint}
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-700 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                >
+                  <Printer className="h-4 w-4 mr-2 inline" />
                   Test Print
-                </Button>
+                </button>
               </>
             )}
           </div>
