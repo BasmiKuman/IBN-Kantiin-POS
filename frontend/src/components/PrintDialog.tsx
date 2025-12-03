@@ -304,42 +304,71 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Printer className="h-5 w-5" />
-            Cetak Struk
-          </DialogTitle>
-          <DialogDescription>
-            Hubungkan printer Bluetooth dan cetak struk untuk dapur atau kasir
+      <DialogContent className="sm:max-w-lg">
+        {/* Header with Gradient */}
+        <DialogHeader className="space-y-3 pb-4">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500 dark:from-violet-600 dark:via-purple-600 dark:to-pink-600">
+                <Printer className="h-6 w-6 text-white" />
+              </div>
+              <span className="bg-gradient-to-r from-violet-600 to-pink-600 dark:from-violet-400 dark:to-pink-400 bg-clip-text text-transparent font-bold">
+                Cetak Struk
+              </span>
+            </DialogTitle>
+            <Sparkles className="h-5 w-5 text-yellow-500 animate-pulse" />
+          </div>
+          <DialogDescription className="text-base">
+            Printer Bluetooth siap mencetak struk untuk dapur atau kasir
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Connection Status */}
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="flex items-center gap-2">
-              <Bluetooth className="h-5 w-5" />
-              <div>
-                <p className="font-medium">Status Printer</p>
-                {bluetooth.isConnected && bluetooth.connectedDevice && (
-                  <p className="text-sm text-muted-foreground">{bluetooth.connectedDevice.name}</p>
-                )}
+        <div className="space-y-5">
+          {/* Connection Status Card - Colorful */}
+          <div className={`relative overflow-hidden rounded-2xl p-5 ${
+            bluetooth.isConnected 
+              ? 'bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/30 dark:via-emerald-950/30 dark:to-teal-950/30 border-2 border-green-200 dark:border-green-800' 
+              : 'bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 dark:from-slate-900/30 dark:via-gray-900/30 dark:to-zinc-900/30 border-2 border-gray-200 dark:border-gray-700'
+          }`}>
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/20 to-transparent rounded-full -mr-16 -mt-16"></div>
+            
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-3 rounded-xl ${
+                  bluetooth.isConnected 
+                    ? 'bg-gradient-to-br from-green-400 to-emerald-500 dark:from-green-500 dark:to-emerald-600' 
+                    : 'bg-gradient-to-br from-gray-300 to-slate-400 dark:from-gray-600 dark:to-slate-700'
+                }`}>
+                  <Bluetooth className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-lg">Status Printer</p>
+                  {bluetooth.isConnected && bluetooth.printerName && (
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">📱 {bluetooth.printerName}</p>
+                  )}
+                </div>
               </div>
+              <Badge 
+                variant={bluetooth.isConnected ? 'default' : 'secondary'}
+                className={bluetooth.isConnected 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold px-4 py-2 text-sm' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold px-4 py-2 text-sm'
+                }
+              >
+                {bluetooth.isConnected ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-1.5" />
+                    Terhubung
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-1.5" />
+                    Tidak Terhubung
+                  </>
+                )}
+              </Badge>
             </div>
-            <Badge variant={bluetooth.isConnected ? 'default' : 'secondary'}>
-              {bluetooth.isConnected ? (
-                <>
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Terhubung
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-3 w-3 mr-1" />
-                  Tidak Terhubung
-                </>
-              )}
-            </Badge>
           </div>
 
           {/* Connection Instructions */}
