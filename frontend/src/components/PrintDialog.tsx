@@ -371,23 +371,56 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </div>
           </div>
 
-          {/* Connection Instructions */}
-          {!bluetooth.isConnected && (
-            <Alert>
-              <AlertDescription className="space-y-2">
-                <p className="font-semibold">📋 Panduan Koneksi:</p>
-                <ol className="list-decimal list-inside space-y-1 text-sm">
-                  <li>Nyalakan printer thermal Bluetooth</li>
-                  <li>Pastikan printer dalam mode pairing (LED berkedip)</li>
-                  <li>Klik tombol "{isNativeApp ? 'Scan Printer' : 'Hubungkan Printer'}" di bawah</li>
-                  <li>Pilih nama printer dari daftar yang muncul</li>
-                  <li>Tunggu hingga status berubah jadi "Terhubung"</li>
-                </ol>
-                <p className="text-xs text-muted-foreground mt-2">
-                  💡 {isNativeApp ? 'Aplikasi akan scan printer Bluetooth terdekat secara otomatis.' : 'Jika printer tidak muncul, coba pair dulu via Settings → Bluetooth di perangkat Anda.'}
-                </p>
-              </AlertDescription>
-            </Alert>
+          {/* Setup Printer Alert - Colorful */}
+          {!bluetooth.isConnected && !bluetooth.printerName && (
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30 border-2 border-blue-200 dark:border-blue-800">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-blue-500 dark:bg-blue-600">
+                  <Bluetooth className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <p className="font-bold text-blue-900 dark:text-blue-300 text-lg">
+                    🎯 Setup Printer (Pertama Kali)
+                  </p>
+                  <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-400">
+                    <li>Nyalakan printer thermal Bluetooth</li>
+                    <li>Pastikan printer dalam mode pairing (LED berkedip)</li>
+                    <li>Klik tombol "Hubungkan Printer" di bawah</li>
+                    <li>Pilih nama printer dari daftar</li>
+                    <li>✨ Done! Printer tersimpan permanent</li>
+                  </ol>
+                  <div className="flex items-start gap-2 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                    <span className="text-lg">💡</span>
+                    <p className="text-xs text-blue-700 dark:text-blue-400">
+                      <strong>Pro Tip:</strong> Setup di Settings lebih mudah! <Link to="/settings" className="underline font-semibold">Klik di sini</Link>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Reconnect Alert */}
+          {!bluetooth.isConnected && bluetooth.printerName && (
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-red-950/30 border-2 border-orange-200 dark:border-orange-800">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-orange-500 dark:bg-orange-600">
+                  <Settings className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-orange-900 dark:text-orange-300 mb-2">
+                    📱 Printer Tersimpan: {bluetooth.printerName}
+                  </p>
+                  <p className="text-sm text-orange-800 dark:text-orange-400 mb-3">
+                    Klik "Hubungkan Printer" untuk reconnect otomatis
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-orange-700 dark:text-orange-500">
+                    <Sparkles className="h-3 w-3" />
+                    <span>Auto-reconnect diaktifkan</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Device List for Native App */}
