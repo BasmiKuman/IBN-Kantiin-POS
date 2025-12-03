@@ -250,17 +250,40 @@ export function generateCashierReceipt(data: ReceiptData): string {
   return receipt;
 }
 
-// Simple test receipt
+// Simple test receipt with modern design
 export function generateTestReceipt(): string {
-  const { INIT, ALIGN_CENTER, BOLD_ON, BOLD_OFF, LINE_FEED, SEPARATOR, LINE_FEED_3 } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, BOLD_ON, BOLD_OFF, FONT_SIZE_DOUBLE, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3 } = PrinterCommands;
   
   let receipt = INIT;
-  receipt += ALIGN_CENTER + BOLD_ON;
-  receipt += 'TEST PRINT\n';
+  receipt += ALIGN_CENTER + LINE_FEED;
+  
+  // Header box
+  receipt += '\u256D' + '\u2500'.repeat(30) + '\u256E\n';
+  receipt += '\u2502' + ' '.repeat(12) + 'TEST' + ' '.repeat(14) + '\u2502\n';
+  receipt += '\u2502' + ' '.repeat(11) + 'PRINT' + ' '.repeat(14) + '\u2502\n';
+  receipt += '\u2570' + '\u2500'.repeat(30) + '\u256F\n';
+  
+  receipt += LINE_FEED + SEPARATOR_BOLD + LINE_FEED;
+  
+  receipt += BOLD_ON + FONT_SIZE_DOUBLE;
+  receipt += '\u2705 SUKSES!\n';
+  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
+  
+  receipt += LINE_FEED;
+  receipt += 'Printer berhasil terhubung\n';
+  receipt += 'dan siap digunakan!\n';
+  
+  receipt += LINE_FEED + SEPARATOR + LINE_FEED;
+  
+  receipt += `\u23F0 ${new Date().toLocaleString('id-ID')}\n`;
+  
+  receipt += LINE_FEED + SEPARATOR_BOLD + LINE_FEED;
+  
+  receipt += BOLD_ON;
+  receipt += 'BK POS System\n';
   receipt += BOLD_OFF;
-  receipt += SEPARATOR;
-  receipt += 'Printer berhasil terhubung!\n';
-  receipt += `Waktu: ${new Date().toLocaleString('id-ID')}\n`;
+  receipt += 'Bluetooth Printer Ready\n';
+  
   receipt += LINE_FEED_3;
   
   return receipt;
