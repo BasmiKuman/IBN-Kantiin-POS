@@ -47,6 +47,7 @@ const menuItems = [
 export function AppSidebar() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { open, toggleSidebar } = useSidebar();
   const [username, setUsername] = useState("");
   const [loginTime, setLoginTime] = useState("");
   const [userRole, setUserRole] = useState("");
