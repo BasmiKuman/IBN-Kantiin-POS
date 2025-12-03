@@ -69,44 +69,58 @@ function getReceiptSettings() {
 
 // Generate Kitchen Receipt (untuk dapur)
 export function generateKitchenReceipt(data: ReceiptData): string {
-  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, LINE_FEED_3 } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_DOUBLE, FONT_SIZE_LARGE, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3 } = PrinterCommands;
   const { storeSettings } = getReceiptSettings();
   
   let receipt = INIT; // Initialize printer
   
-  // Brand Header - ALWAYS SHOW
-  receipt += ALIGN_CENTER + BOLD_ON;
+  // Brand Header - MODERN STYLE
+  receipt += ALIGN_CENTER + FONT_SIZE_DOUBLE + BOLD_ON;
   receipt += 'BK POS\n';
-  receipt += BOLD_OFF;
-  
-  // Store name (dari settings)
+  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
   receipt += storeSettings.name.toUpperCase() + '\n';
-  receipt += '*** DAPUR ***\n';
   receipt += LINE_FEED;
   
-  // Order info
-  receipt += ALIGN_LEFT + BOLD_ON;
-  receipt += `Order: ${data.orderNumber}\n`;
-  receipt += BOLD_OFF;
-  receipt += `Waktu: ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}\n`;
-  if (data.customerName) {
-    receipt += `Pelanggan: ${data.customerName}\n`;
-  }
-  receipt += SEPARATOR;
+  // Kitchen Badge
+  receipt += BOLD_ON + FONT_SIZE_LARGE;
+  receipt += '[ DAPUR ]\n';
+  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
+  receipt += LINE_FEED;
+  receipt += SEPARATOR_BOLD;
   
-  // Items
-  receipt += BOLD_ON + 'PESANAN:\n' + BOLD_OFF;
-  data.items.forEach((item) => {
-    receipt += LINE_FEED;
-    receipt += BOLD_ON + `${item.quantity}x ${item.name}\n` + BOLD_OFF;
+  // Order info with better spacing
+  receipt += ALIGN_LEFT + LINE_FEED;
+  receipt += BOLD_ON;
+  receipt += `ORDER #${data.orderNumber}\n`;
+  receipt += BOLD_OFF;
+  receipt += `\u23F0 ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}\n`;
+  if (data.customerName) {
+    receipt += `\uD83D\uDC64 ${data.customerName}\n`;
+  }
+  receipt += LINE_FEED;
+  receipt += SEPARATOR_BOLD;
+  
+  // Items with better formatting
+  receipt += LINE_FEED + BOLD_ON;
+  receipt += 'PESANAN:\n';
+  receipt += BOLD_OFF + LINE_FEED;
+  
+  data.items.forEach((item, index) => {
+    receipt += BOLD_ON + FONT_SIZE_LARGE;
+    receipt += `${item.quantity}x  ${item.name}\n`;
+    receipt += FONT_SIZE_NORMAL + BOLD_OFF;
     if (item.variant) {
-      receipt += `   (${item.variant})\n`;
+      receipt += `     \u2514\u2500 ${item.variant}\n`;
+    }
+    if (index < data.items.length - 1) {
+      receipt += LINE_FEED;
     }
   });
   
   receipt += LINE_FEED + SEPARATOR;
-  receipt += ALIGN_CENTER;
-  receipt += `Total: ${data.items.reduce((sum, item) => sum + item.quantity, 0)} item\n`;
+  receipt += ALIGN_CENTER + BOLD_ON;
+  receipt += `TOTAL: ${data.items.reduce((sum, item) => sum + item.quantity, 0)} ITEM\n`;
+  receipt += BOLD_OFF;
   receipt += LINE_FEED_3;
   
   return receipt;
