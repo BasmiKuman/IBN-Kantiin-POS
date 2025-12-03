@@ -176,11 +176,11 @@ export function AppSidebar() {
                             }}
                             className={({ isActive }) =>
                               isActive
-                                ? "flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 dark:from-violet-600 dark:to-purple-700 text-white font-semibold shadow-lg shadow-violet-500/30 dark:shadow-violet-900/30 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-3"
-                                : "flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800 dark:hover:to-slate-850 hover:text-violet-600 dark:hover:text-violet-400 font-medium transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-3"
+                                ? "flex items-center gap-3 px-4 py-3.5 rounded-xl bg-violet-600 dark:bg-violet-700 text-white font-bold border-2 border-violet-700 dark:border-violet-600 shadow-lg shadow-violet-500/50 dark:shadow-violet-900/50 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-3"
+                                : "flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-violet-600 dark:hover:text-violet-400 font-medium transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-3"
                             }
                           >
-                            <item.icon className="h-6 w-6 flex-shrink-0 group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7" />
+                            <item.icon className="h-5 w-5 flex-shrink-0 group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7" />
                             <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
                           </NavLink>
                         </SidebarMenuButton>
