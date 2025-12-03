@@ -128,21 +128,28 @@ export function generateKitchenReceipt(data: ReceiptData): string {
 
 // Generate Cashier Receipt (untuk kasir/customer)
 export function generateCashierReceipt(data: ReceiptData): string {
-  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, CUT_PAPER, LINE_FEED_3 } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_DOUBLE, FONT_SIZE_LARGE, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, CUT_PAPER, LINE_FEED_3 } = PrinterCommands;
   const { receiptSettings, storeSettings } = getReceiptSettings();
   
   let receipt = INIT; // Initialize printer
   
+  // Modern Header with Box Design
+  receipt += ALIGN_CENTER + LINE_FEED;
+  receipt += '\u256D' + '\u2500'.repeat(30) + '\u256E\n';
+  receipt += '\u2502' + ' '.repeat(30) + '\u2502\n';
+  
   // Brand Header - ALWAYS SHOW (tidak bisa diubah)
-  receipt += ALIGN_CENTER + BOLD_ON;
-  receipt += 'BK POS\n';
-  receipt += BOLD_OFF;
-  receipt += '~~~~~~~\n';
+  receipt += '\u2502  ' + BOLD_ON + FONT_SIZE_DOUBLE;
+  receipt += 'BK POS';
+  receipt += FONT_SIZE_NORMAL + BOLD_OFF + '  \u2502\n';
+  receipt += '\u2502' + ' '.repeat(30) + '\u2502\n';
+  receipt += '\u2570' + '\u2500'.repeat(30) + '\u256F\n';
+  receipt += LINE_FEED;
   
   // Store Header (dari settings - bisa diubah)
-  receipt += BOLD_ON;
+  receipt += BOLD_ON + FONT_SIZE_LARGE;
   receipt += `${receiptSettings.header}\n`;
-  receipt += BOLD_OFF;
+  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
   
   // Tagline (dari settings)
   if (receiptSettings.tagline) {
@@ -150,67 +157,91 @@ export function generateCashierReceipt(data: ReceiptData): string {
   }
   
   // Store Info (dari settings)
-  receipt += `${storeSettings.address}\n`;
+  receipt += `\uD83D\uDCCD ${storeSettings.address}\n`;
   if (storeSettings.phone) {
-    receipt += `Telp: ${storeSettings.phone}\n`;
+    receipt += `\uD83D\uDCDE ${storeSettings.phone}\n`;
   }
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
-  // Order info
-  receipt += ALIGN_LEFT;
-  receipt += `No: ${data.orderNumber}\n`;
-  receipt += `${data.date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}\n`;
+  // Order info with icons
+  receipt += ALIGN_LEFT + LINE_FEED;
+  receipt += BOLD_ON;
+  receipt += `\uD83D\uDCDD Order #${data.orderNumber}\n`;
+  receipt += BOLD_OFF;
+  receipt += `\uD83D\uDCC5 ${data.date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} \u23F0 ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}\n`;
   if (data.cashierName) {
-    receipt += `Kasir: ${data.cashierName}\n`;
+    receipt += `\uD83D\uDC68\u200D\uD83D\uDCBC Kasir: ${data.cashierName}\n`;
   }
   if (data.customerName) {
-    receipt += `Plg: ${data.customerName}\n`;
+    receipt += `\uD83D\uDC64 ${data.customerName}\n`;
   }
-  receipt += SEPARATOR;
+  receipt += LINE_FEED;
+  receipt += SEPARATOR_BOLD;
   
-  // Items
-  data.items.forEach((item) => {
-    const itemName = item.variant ? `${item.name}` : item.name;
+  // Items with better spacing
+  receipt += LINE_FEED;
+  data.items.forEach((item, index) => {
+    const itemName = item.variant ? `${item.name} (${item.variant})` : item.name;
     
-    // Item name
+    // Item name (bold)
+    receipt += BOLD_ON;
     receipt += `${itemName}\n`;
+    receipt += BOLD_OFF;
     
     // Price line (quantity x price = total)
     const pricePerItem = formatCurrency(item.price);
     const totalItemPrice = formatCurrency(item.price * item.quantity);
-    receipt += padText(`${item.quantity}x ${pricePerItem}`, totalItemPrice) + '\n';
+    receipt += padText(`  ${item.quantity}x @ ${pricePerItem}`, totalItemPrice) + '\n';
+    
+    // Add spacing between items
+    if (index < data.items.length - 1) {
+      receipt += LINE_FEED;
+    }
   });
   
+  receipt += LINE_FEED;
   receipt += SEPARATOR;
   
-  // Totals (normal size untuk 58mm)
-  receipt += padText('Subtotal', formatCurrency(data.subtotal)) + '\n';
+  // Totals with better formatting
+  receipt += LINE_FEED;
+  receipt += padText('Subtotal:', formatCurrency(data.subtotal)) + '\n';
   
   if (data.tax > 0) {
-    receipt += padText('Pajak', formatCurrency(data.tax)) + '\n';
+    receipt += padText('Pajak:', formatCurrency(data.tax)) + '\n';
   }
   
+  receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
-  receipt += BOLD_ON;
-  receipt += padText('TOTAL', formatCurrency(data.total)) + '\n';
-  receipt += BOLD_OFF;
+  receipt += BOLD_ON + FONT_SIZE_LARGE;
+  receipt += padText('TOTAL:', formatCurrency(data.total)) + '\n';
+  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
   receipt += SEPARATOR_BOLD;
   
-  // Payment method
+  // Payment method with icon
   receipt += LINE_FEED;
   const paymentLabels: Record<string, string> = {
-    cash: 'Tunai',
-    qris: 'QRIS',
-    transfer: 'Transfer',
-    debit: 'Debit',
-    credit: 'Kartu Kredit',
+    cash: '\uD83D\uDCB5 Tunai',
+    qris: '\uD83D\uDCF1 QRIS',
+    transfer: '\uD83C\uDFE6 Transfer',
+    debit: '\uD83D\uDCB3 Debit',
+    credit: '\uD83D\uDCB3 Kartu Kredit',
   };
-  receipt += `Bayar: ${paymentLabels[data.paymentMethod] || data.paymentMethod}\n`;
+  receipt += BOLD_ON;
+  receipt += `Metode: ${paymentLabels[data.paymentMethod] || data.paymentMethod}\n`;
+  receipt += BOLD_OFF;
   
-  // Footer (dari settings)
-  receipt += LINE_FEED + ALIGN_CENTER;
+  // Footer with decorative elements (dari settings)
+  receipt += LINE_FEED + LINE_FEED;
+  receipt += ALIGN_CENTER;
+  receipt += '\u2726'.repeat(32) + '\n';
+  receipt += LINE_FEED;
+  receipt += BOLD_ON;
   receipt += `${receiptSettings.footer}\n`;
+  receipt += BOLD_OFF;
+  receipt += '\u2665 Sampai jumpa lagi! \u2665\n';
+  receipt += LINE_FEED;
+  receipt += '\u2726'.repeat(32) + '\n';
   receipt += LINE_FEED_3;
   
   // Cut paper
