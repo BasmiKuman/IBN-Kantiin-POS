@@ -366,12 +366,12 @@ export function generateTestReceipt(): string {
 
 // Generate Product Sales Report
 export function generateProductSalesReport(data: ProductSalesReportData): string {
-  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3 } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3, CUT_PAPER } = PrinterCommands;
   const { receiptSettings } = getReceiptSettings();
   
   let receipt = INIT;
   
-  // Header
+  // Header - Centered
   receipt += ALIGN_CENTER + LINE_FEED;
   receipt += SEPARATOR_BOLD;
   receipt += BOLD_ON;
@@ -382,11 +382,12 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   // Report Title
   receipt += BOLD_ON;
-  receipt += 'LAPORAN PENJUALAN PRODUK\n';
+  receipt += 'LAPORAN PENJUALAN\n';
+  receipt += 'PRODUK\n';
   receipt += BOLD_OFF;
   receipt += LINE_FEED;
   
-  // Period
+  // Period - Left aligned
   receipt += ALIGN_LEFT;
   receipt += `Periode: ${data.period}\n`;
   if (data.startDate && data.endDate) {
@@ -405,17 +406,28 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += BOLD_OFF;
   receipt += SEPARATOR;
   
-  data.products.forEach((product, index) => {
+  data.products.forEach((product) => {
     const hargaSatuan = product.total_quantity > 0 
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
     receipt += LINE_FEED;
-    receipt += BOLD_ON;
-    receipt += `${product.product_name}\n`;
-    receipt += BOLD_OFF;
-    receipt += `Qty: ${product.total_quantity} x Rp ${hargaSatuan.toLocaleString('id-ID')}\n`;
-    receipt += padText('Total:', `Rp ${product.total_revenue.toLocaleString('id-ID')}`) + '\n';
+    
+    // Product name - wrap if too long
+    const productLines = wrapText(product.product_name, 24);
+    productLines.forEach((line, idx) => {
+      if (idx === 0) {
+        receipt += BOLD_ON + line + '\n' + BOLD_OFF;
+      } else {
+        receipt += line + '\n';
+      }
+    });
+    
+    // Quantity and unit price
+    receipt += `${product.total_quantity} x Rp${hargaSatuan.toLocaleString('id-ID')}\n`;
+    
+    // Total for this product
+    receipt += padText('Total:', `Rp${product.total_revenue.toLocaleString('id-ID')}`) + '\n';
   });
   
   receipt += LINE_FEED;
@@ -432,23 +444,35 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += padText('Total Item Terjual:', `${data.totalItems}`) + '\n';
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
+  
+  // GRAND TOTAL - Make it prominent
   receipt += BOLD_ON;
-  receipt += padText('TOTAL PENJUALAN:', `Rp ${data.totalRevenue.toLocaleString('id-ID')}`) + '\n';
+  receipt += padText('TOTAL PENJUALAN:', `Rp${data.totalRevenue.toLocaleString('id-ID')}`) + '\n';
   receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
   
-  // Footer
+  // Footer - Centered & wrapped
   receipt += LINE_FEED + LINE_FEED;
   receipt += ALIGN_CENTER;
   receipt += SEPARATOR;
+  
+  const footerLines = wrapText(receiptSettings.footer, 24);
   receipt += BOLD_ON;
-  receipt += `${receiptSettings.footer}\n`;
+  footerLines.forEach(line => {
+    receipt += `${line}\n`;
+  });
   receipt += BOLD_OFF;
+  
   if (data.cashierName) {
-    receipt += `Dicetak oleh: ${data.cashierName}\n`;
+    receipt += LINE_FEED;
+    receipt += `Dicetak: ${data.cashierName}\n`;
   }
+  
   receipt += SEPARATOR;
   receipt += LINE_FEED_3;
+  
+  // Cut paper
+  receipt += CUT_PAPER;
   
   return receipt;
 }
