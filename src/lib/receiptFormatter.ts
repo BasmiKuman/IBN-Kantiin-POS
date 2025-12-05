@@ -337,23 +337,14 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += BOLD_ON;
   receipt += 'DETAIL PRODUK:\n';
   receipt += BOLD_OFF;
-  receipt += LINE_FEED;
+  receipt += SEPARATOR;
   
   data.products.forEach((product, index) => {
-    const avgPrice = product.total_quantity > 0 
-      ? Math.round(product.total_revenue / product.total_quantity)
-      : 0;
-    
+    receipt += LINE_FEED;
     receipt += BOLD_ON;
-    receipt += `${index + 1}. ${product.product_name}\n`;
+    receipt += `${product.product_name}\n`;
     receipt += BOLD_OFF;
-    receipt += `   Qty: ${product.total_quantity} item\n`;
-    receipt += `   @ Rp${avgPrice.toLocaleString('id-ID')}\n`;
-    receipt += padText('   Total:', `Rp${product.total_revenue.toLocaleString('id-ID')}`) + '\n';
-    
-    if (index < data.products.length - 1) {
-      receipt += LINE_FEED;
-    }
+    receipt += padText(`Qty: ${product.total_quantity}`, `Rp ${product.total_revenue.toLocaleString('id-ID')}`) + '\n';
   });
   
   receipt += LINE_FEED;
@@ -361,19 +352,17 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   // Summary
   receipt += LINE_FEED;
-  receipt += ALIGN_CENTER;
   receipt += BOLD_ON;
-  receipt += 'RINGKASAN\n';
+  receipt += 'RINGKASAN PENJUALAN\n';
   receipt += BOLD_OFF;
   receipt += LINE_FEED;
   
-  receipt += ALIGN_LEFT;
-  receipt += padText('Total Produk:', `${data.products.length} jenis`) + '\n';
-  receipt += padText('Total Item Terjual:', `${data.totalItems} item`) + '\n';
+  receipt += padText('Total Jenis Produk:', `${data.products.length}`) + '\n';
+  receipt += padText('Total Item Terjual:', `${data.totalItems}`) + '\n';
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   receipt += BOLD_ON;
-  receipt += padText('TOTAL PENJUALAN:', `Rp${data.totalRevenue.toLocaleString('id-ID')}`) + '\n';
+  receipt += padText('TOTAL PENJUALAN:', `Rp ${data.totalRevenue.toLocaleString('id-ID')}`) + '\n';
   receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
   
