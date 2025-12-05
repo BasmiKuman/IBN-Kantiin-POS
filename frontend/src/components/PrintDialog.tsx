@@ -257,16 +257,20 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
       });
 
       if (filteredTransactions.length === 0) {
-        alert('Tidak ada transaksi dalam rentang tanggal yang dipilih');
+        toast({
+          title: "Tidak ada transaksi",
+          description: "Tidak ada transaksi dalam rentang tanggal yang dipilih",
+          variant: "destructive",
+        });
         return;
       }
 
-      // Calculate totals (pastikan angka, bukan NaN)
+      // Calculate totals
       const totalRevenue = filteredTransactions.reduce((sum, t) => sum + (t.subtotal || 0), 0);
       const totalTax = filteredTransactions.reduce((sum, t) => sum + (t.tax || 0), 0);
       const grandTotal = filteredTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
 
-      // Prepare summary data, pastikan semua field angka
+      // Prepare summary data
       const summaryData = {
         startDate: new Date(startDate).toLocaleDateString('id-ID'),
         endDate: new Date(endDate).toLocaleDateString('id-ID'),
@@ -292,10 +296,124 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
       };
 
       if (isNativeApp) {
+        // Native app uses thermal printer
         await bluetooth.printSalesSummary(summaryData);
+        toast({
+          title: "Laporan dicetak",
+          description: `Berhasil mencetak ${filteredTransactions.length} transaksi`,
+        });
       } else {
-        // For web, generate simple summary (fallback)
-        alert('Sales summary print hanya tersedia di aplikasi mobile');
+        // For web/browser: use browser's print dialog
+        const printWindow = window.open('', '', 'width=800,height=600');
+        if (!printWindow) {
+          toast({
+            title: "Gagal membuka dialog print",
+            description: "Izinkan popup untuk mencetak laporan",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Generate HTML for print
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Laporan Penjualan - ${summaryData.startDate} s/d ${summaryData.endDate}</title>
+            <style>
+              @media print {
+                body { margin: 0; padding: 20px; }
+                @page { margin: 1cm; }
+              }
+              body {
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1.4;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              h1, h2, h3 { margin: 10px 0; }
+              h1 { font-size: 20px; text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+              h2 { font-size: 16px; margin-top: 20px; }
+              h3 { font-size: 14px; margin-top: 15px; }
+              table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+              th, td { padding: 5px; text-align: left; border-bottom: 1px solid #ddd; }
+              th { background: #f0f0f0; font-weight: bold; }
+              .text-right { text-align: right; }
+              .separator { border-top: 2px solid #000; margin: 15px 0; }
+              .summary { background: #f9f9f9; padding: 10px; margin: 15px 0; }
+              .total-row { font-weight: bold; font-size: 14px; background: #e8e8e8; }
+            </style>
+          </head>
+          <body>
+            <h1>== BK POS ==</h1>
+            <h2>LAPORAN PENJUALAN</h2>
+            <p><strong>Periode:</strong> ${summaryData.startDate} s/d ${summaryData.endDate}</p>
+            <p><strong>Total Transaksi:</strong> ${summaryData.totalTransactions}</p>
+            <div class="separator"></div>
+            
+            ${summaryData.transactions.map((t, idx) => `
+              <h3>Transaksi #${idx + 1} - ${t.transactionNumber}</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th class="text-right">Qty</th>
+                    <th class="text-right">Harga</th>
+                    <th class="text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${t.items.map(item => `
+                    <tr>
+                      <td>${item.name}</td>
+                      <td class="text-right">${item.qty}</td>
+                      <td class="text-right">Rp${item.price.toLocaleString('id-ID')}</td>
+                      <td class="text-right">Rp${item.subtotal.toLocaleString('id-ID')}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              <p><strong>Pembayaran:</strong> ${t.paymentMethod} | <strong>Total:</strong> Rp${t.total.toLocaleString('id-ID')}</p>
+            `).join('<div class="separator"></div>')}
+            
+            <div class="separator"></div>
+            <div class="summary">
+              <h2>RINGKASAN TOTAL</h2>
+              <table>
+                <tr>
+                  <td><strong>Subtotal Penjualan:</strong></td>
+                  <td class="text-right"><strong>Rp${summaryData.totalRevenue.toLocaleString('id-ID')}</strong></td>
+                </tr>
+                ${summaryData.totalTax > 0 ? `
+                <tr>
+                  <td><strong>Total Pajak:</strong></td>
+                  <td class="text-right"><strong>Rp${summaryData.totalTax.toLocaleString('id-ID')}</strong></td>
+                </tr>
+                ` : ''}
+                <tr class="total-row">
+                  <td><strong>GRAND TOTAL:</strong></td>
+                  <td class="text-right"><strong>Rp${summaryData.grandTotal.toLocaleString('id-ID')}</strong></td>
+                </tr>
+              </table>
+            </div>
+            
+            <div class="separator"></div>
+            <p style="text-align: center; margin-top: 30px;">
+              <em>Terima kasih telah menggunakan BK POS</em><br>
+              <small>Dicetak: ${new Date().toLocaleString('id-ID')}</small>
+            </p>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+        
+        toast({
+          title: "Dialog print dibuka",
+          description: `Siap mencetak ${filteredTransactions.length} transaksi`,
+        });
       }
     } finally {
       setIsPrintingBatch(false);
@@ -618,11 +736,19 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </>
           )}
 
-          {/* Batch Print Buttons */}
-          {bluetooth.isConnected && batchMode && batchTransactions && batchTransactions.length > 0 && (
+          {/* Batch Print Buttons - Available in browser without Bluetooth */}
+          {batchMode && batchTransactions && batchTransactions.length > 0 && (
             <>
               <div className="border-t pt-4 space-y-4">
-                <p className="font-medium">Laporan Penjualan (Batch Mode)</p>
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">Laporan Penjualan (Batch Mode)</p>
+                  {!isNativeApp && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Printer className="h-3 w-3 mr-1" />
+                      Browser Print
+                    </Badge>
+                  )}
+                </div>
                 
                 {/* Date Filter */}
                 <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
@@ -654,35 +780,47 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
                   </div>
                 </div>
 
-                {/* Summary Print Button - Primary Action */}
+                {/* Summary Print Button - Works without Bluetooth in browser */}
                 <Button
                   onClick={handlePrintSalesSummary}
-                  disabled={isPrintingBatch}
+                  disabled={isPrintingBatch || (isNativeApp && !bluetooth.isConnected)}
                   className="w-full"
                   size="lg"
                 >
                   {isPrintingBatch ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Mencetak Laporan...
+                      {isNativeApp ? 'Mencetak ke Thermal...' : 'Membuka Print Dialog...'}
                     </>
                   ) : (
                     <>
                       <Printer className="h-4 w-4 mr-2" />
-                      Print Laporan Penjualan
+                      {isNativeApp ? 'Print ke Thermal Printer' : 'Print Laporan (Browser)'}
                     </>
                   )}
                 </Button>
+
+                {/* Warning for native app without connection */}
+                {isNativeApp && !bluetooth.isConnected && (
+                  <Alert>
+                    <Bluetooth className="h-4 w-4" />
+                    <AlertDescription>
+                      Hubungkan printer Bluetooth terlebih dahulu untuk mencetak
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md">
                   <p className="font-semibold flex items-center gap-1 mb-2">
                     💡 Laporan Ringkas:
                   </p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Semua transaksi digabung dalam 1 struk</li>
+                    <li>Semua transaksi digabung dalam 1 laporan</li>
                     <li>Hemat kertas - tidak print satu per satu</li>
                     <li>Ringkasan produk, metode bayar, dan total penjualan</li>
                     <li>Filter berdasarkan rentang tanggal</li>
+                    <li><strong>📱 Mobile:</strong> Print ke thermal printer</li>
+                    <li><strong>💻 Browser:</strong> Print dialog (semua printer)</li>
                   </ul>
                 </div>
 
