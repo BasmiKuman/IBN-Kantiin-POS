@@ -42,6 +42,37 @@ function padText(left: string, right: string, width: number = 24): string {
   return left + ' '.repeat(Math.max(1, spaces)) + right;
 }
 
+// Helper function to wrap long text into multiple lines
+function wrapText(text: string, maxWidth: number = 24): string[] {
+  if (!text) return [''];
+  
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  words.forEach(word => {
+    // If adding this word would exceed maxWidth
+    if ((currentLine + word).length > maxWidth) {
+      if (currentLine) {
+        lines.push(currentLine.trim());
+        currentLine = word + ' ';
+      } else {
+        // Word itself is longer than maxWidth, split it
+        lines.push(word.substring(0, maxWidth));
+        currentLine = word.substring(maxWidth) + ' ';
+      }
+    } else {
+      currentLine += word + ' ';
+    }
+  });
+
+  if (currentLine.trim()) {
+    lines.push(currentLine.trim());
+  }
+
+  return lines.length > 0 ? lines : [''];
+}
+
 // Format currency (shorter format for 58mm)
 function formatCurrency(amount: number): string {
   return 'Rp' + amount.toLocaleString('id-ID');
@@ -157,41 +188,48 @@ export function generateKitchenReceipt(data: ReceiptData): string {
 
 // Generate Cashier Receipt (untuk kasir/customer)
 export function generateCashierReceipt(data: ReceiptData): string {
-  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, CUT_PAPER, LINE_FEED_3 } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, CUT_PAPER, LINE_FEED_3 } = PrinterCommands;
   const { receiptSettings, storeSettings } = getReceiptSettings();
   
   let receipt = INIT; // Initialize printer
   
-  // Header
+  // Header - Centered
   receipt += ALIGN_CENTER + LINE_FEED;
   receipt += SEPARATOR_BOLD;
-  
-  // Brand Header - ALWAYS SHOW (BK POS tetap muncul)
   receipt += BOLD_ON;
   receipt += 'BK POS\n';
   receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
   receipt += LINE_FEED;
   
-  // Store Header (dari settings)
+  // Store Header (dari settings) - word wrap jika perlu
   receipt += BOLD_ON;
-  receipt += `${receiptSettings.header}\n`;
+  const headerLines = wrapText(receiptSettings.header, 24);
+  headerLines.forEach(line => {
+    receipt += `${line}\n`;
+  });
   receipt += BOLD_OFF;
   
-  // Tagline (dari settings)
+  // Tagline (dari settings) - word wrap jika perlu
   if (receiptSettings.tagline) {
-    receipt += `${receiptSettings.tagline}\n`;
+    const taglineLines = wrapText(receiptSettings.tagline, 24);
+    taglineLines.forEach(line => {
+      receipt += `${line}\n`;
+    });
   }
   
-  // Store Info (dari settings)
-  receipt += `${storeSettings.address}\n`;
+  // Store Info (dari settings) - word wrap jika perlu
+  const addressLines = wrapText(storeSettings.address, 24);
+  addressLines.forEach(line => {
+    receipt += `${line}\n`;
+  });
   if (storeSettings.phone) {
     receipt += `Telp: ${storeSettings.phone}\n`;
   }
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
-  // Order info
+  // Order info - Left aligned
   receipt += ALIGN_LEFT + LINE_FEED;
   receipt += BOLD_ON;
   receipt += `Order #${data.orderNumber}\n`;
@@ -206,30 +244,36 @@ export function generateCashierReceipt(data: ReceiptData): string {
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
-  // Items with better spacing
+  // Items header - Table format
   receipt += LINE_FEED;
-  data.items.forEach((item, index) => {
+  receipt += BOLD_ON;
+  receipt += 'Item         Qty @Harga\n';
+  receipt += BOLD_OFF;
+  receipt += SEPARATOR;
+  
+  // Items with detail format
+  data.items.forEach((item) => {
     // Check if item.name already contains variant in parentheses
     const hasVariantInName = item.name.includes('(') && item.name.includes(')');
     const itemName = (!hasVariantInName && item.variant) ? `${item.name} (${item.variant})` : item.name;
     
-    // Item name (bold)
-    receipt += BOLD_ON;
-    receipt += `${itemName}\n`;
-    receipt += BOLD_OFF;
+    // Item name - wrap if too long
+    const itemLines = wrapText(itemName, 24);
+    itemLines.forEach((line, idx) => {
+      if (idx === 0) {
+        receipt += BOLD_ON + line + '\n' + BOLD_OFF;
+      } else {
+        receipt += line + '\n';
+      }
+    });
     
-    // Price line (quantity x price = total)
-    const pricePerItem = formatCurrency(item.price);
-    const totalItemPrice = formatCurrency(item.price * item.quantity);
-    receipt += padText(`  ${item.quantity}x @ ${pricePerItem}`, totalItemPrice) + '\n';
-    
-    // Add spacing between items
-    if (index < data.items.length - 1) {
-      receipt += LINE_FEED;
-    }
+    // Quantity, price, and subtotal on one line
+    const qtyPrice = `${item.quantity} x ${formatCurrency(item.price)}`;
+    const subtotal = formatCurrency(item.price * item.quantity);
+    receipt += padText(`  ${qtyPrice}`, subtotal) + '\n';
+    receipt += LINE_FEED;
   });
   
-  receipt += LINE_FEED;
   receipt += SEPARATOR;
   
   // Totals with better formatting
@@ -260,12 +304,15 @@ export function generateCashierReceipt(data: ReceiptData): string {
   receipt += `Pembayaran: ${paymentLabels[data.paymentMethod] || data.paymentMethod}\n`;
   receipt += BOLD_OFF;
   
-  // Footer (dari settings)
+  // Footer (dari settings) - centered & word wrap
   receipt += LINE_FEED + LINE_FEED;
   receipt += ALIGN_CENTER;
   receipt += SEPARATOR;
+  const footerLines = wrapText(receiptSettings.footer, 24);
   receipt += BOLD_ON;
-  receipt += `${receiptSettings.footer}\n`;
+  footerLines.forEach(line => {
+    receipt += `${line}\n`;
+  });
   receipt += BOLD_OFF;
   receipt += 'Terima kasih!\n';
   receipt += SEPARATOR;

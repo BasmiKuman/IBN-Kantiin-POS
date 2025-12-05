@@ -10,12 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Search, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles, FileText } from 'lucide-react';
+import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles, FileText } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
-import { useNativeBluetoothPrinter } from '@/hooks/useNativeBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 
@@ -29,14 +27,9 @@ interface PrintDialogProps {
 }
 
 export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchTransactions, productSalesText }: PrintDialogProps) {
-  // Use native Bluetooth for Capacitor app, Web Bluetooth for browser
-  const webBluetooth = useBluetoothPrinter();
-  const nativeBluetooth = useNativeBluetoothPrinter();
+  // Always use Web Bluetooth (native features not implemented)
+  const bluetooth = useBluetoothPrinter();
   const { toast } = useToast();
-  
-  // Smart detection: use native if available, fallback to web
-  const isNativeApp = nativeBluetooth.isNativeSupported;
-  const bluetooth = isNativeApp ? nativeBluetooth : webBluetooth;
   
   const [isPrintingKitchen, setIsPrintingKitchen] = useState(false);
   const [isPrintingCashier, setIsPrintingCashier] = useState(false);
@@ -49,49 +42,25 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
   const [endDate, setEndDate] = useState(today);
 
   const handleConnect = async () => {
-    if (isNativeApp) {
-      // For native app, show device list for scanning
-      setShowDeviceList(true);
-      await bluetooth.startScan();
-    } else {
-      // For web, use browser's device picker
-      await bluetooth.connect('');
-    }
+    // Always use web Bluetooth (browser picker)
+    await bluetooth.connect();
   };
 
   const handleDeviceSelect = async (address: string) => {
-    await bluetooth.connect(address);
+    await bluetooth.connect();
     setShowDeviceList(false);
   };
 
   const handleStopScan = async () => {
-    if (isNativeApp && bluetooth.isScanning) {
-      await bluetooth.stopScan();
-    }
+    // Removed native scan features - not implemented
     setShowDeviceList(false);
   };
 
   const handleTestPrint = async () => {
     try {
       const testReceipt = generateTestReceipt();
-      if (isNativeApp) {
-        // Use native print for test
-        await bluetooth.printReceipt({
-          storeName: testReceipt.storeName || 'Test Store',
-          items: testReceipt.items.map(item => ({
-            name: item.name,
-            qty: item.quantity,
-            price: item.price,
-            subtotal: item.total,
-          })),
-          subtotal: testReceipt.subtotal,
-          tax: testReceipt.tax,
-          total: testReceipt.total,
-          paymentMethod: 'Test',
-        });
-      } else {
-        await bluetooth.printReceipt(testReceipt);
-      }
+      // Use web Bluetooth print (text receipt)
+      await bluetooth.printReceipt(testReceipt);
     } catch (error) {
       console.error('Test print failed:', error);
       alert('Gagal test print: ' + (error as Error).message);
@@ -102,20 +71,10 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
     if (!receiptData) return;
     setIsPrintingKitchen(true);
     try {
-      if (isNativeApp) {
-        await bluetooth.printKitchenReceipt({
-          items: receiptData.items.map(item => ({
-            name: item.name,
-            qty: item.quantity,
-            notes: item.notes,
-          })),
-          orderType: receiptData.orderType,
-          tableNumber: receiptData.tableNumber,
-        });
-      } else {
-        const receipt = generateKitchenReceipt(receiptData);
-        await bluetooth.printReceipt(receipt);
-      }
+      // Always use web Bluetooth (text receipt)
+      const receipt = generateKitchenReceipt(receiptData);
+      await bluetooth.printReceipt(receipt);
+      
       toast({
         title: 'Berhasil!',
         description: 'Struk dapur berhasil dicetak',
@@ -136,35 +95,9 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
     if (!receiptData) return;
     setIsPrintingCashier(true);
     try {
-      console.log('Starting cashier print...', { isNativeApp, receiptData });
-      
-      if (isNativeApp) {
-        const printData = {
-          storeName: receiptData.storeName || 'Kantin',
-          items: receiptData.items.map(item => ({
-            name: item.name || 'Item',
-            qty: item.quantity || 0,
-            price: item.price || 0,
-            subtotal: item.total || 0,
-          })),
-          subtotal: receiptData.subtotal || 0,
-          tax: receiptData.tax || 0,
-          total: receiptData.total || 0,
-          paymentMethod: receiptData.paymentMethod || 'Tunai',
-          change: receiptData.change || 0,
-          cashierName: receiptData.cashierName || 'Kasir',
-          orderType: receiptData.orderType,
-        };
-        
-        console.log('Calling native printReceipt with:', printData);
-        await bluetooth.printReceipt(printData);
-        console.log('Native print completed successfully');
-      } else {
-        const receipt = generateCashierReceipt(receiptData);
-        console.log('Calling web printReceipt');
-        await bluetooth.printReceipt(receipt);
-        console.log('Web print completed successfully');
-      }
+      // Always use web Bluetooth (text receipt)
+      const receipt = generateCashierReceipt(receiptData);
+      await bluetooth.printReceipt(receipt);
       
       toast({
         title: 'Berhasil!',
@@ -188,20 +121,10 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
     
     try {
       for (const transaction of batchTransactions) {
-        if (isNativeApp) {
-          await bluetooth.printKitchenReceipt({
-            items: transaction.items.map(item => ({
-              name: item.name,
-              qty: item.quantity,
-              notes: item.notes,
-            })),
-            orderType: transaction.orderType,
-            tableNumber: transaction.tableNumber,
-          });
-        } else {
-          const receipt = generateKitchenReceipt(transaction);
-          await bluetooth.printReceipt(receipt);
-        }
+        // Always use web Bluetooth (text receipt)
+        const receipt = generateKitchenReceipt(transaction);
+        await bluetooth.printReceipt(receipt);
+        
         // Small delay between prints
         await new Promise(resolve => setTimeout(resolve, 500));
       }
@@ -216,27 +139,10 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
     
     try {
       for (const transaction of batchTransactions) {
-        if (isNativeApp) {
-          await bluetooth.printReceipt({
-            storeName: transaction.storeName || 'Kantin',
-            items: transaction.items.map(item => ({
-              name: item.name || 'Item',
-              qty: item.quantity || 0,
-              price: item.price || 0,
-              subtotal: item.total || 0,
-            })),
-            subtotal: transaction.subtotal || 0,
-            tax: transaction.tax || 0,
-            total: transaction.total || 0,
-            paymentMethod: transaction.paymentMethod || 'Tunai',
-            change: transaction.change || 0,
-            cashierName: transaction.cashierName || 'Kasir',
-            orderType: transaction.orderType,
-          });
-        } else {
-          const receipt = generateCashierReceipt(transaction);
-          await bluetooth.printReceipt(receipt);
-        }
+        // Always use web Bluetooth (text receipt)
+        const receipt = generateCashierReceipt(transaction);
+        await bluetooth.printReceipt(receipt);
+        
         // Small delay between prints
         await new Promise(resolve => setTimeout(resolve, 500));
       }
@@ -250,13 +156,9 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
     setIsPrintingBatch(true);
     
     try {
-      if (isNativeApp) {
-        // For native app, use printReceipt with text string
-        await bluetooth.printReceipt(productSalesText);
-      } else {
-        // For web, use print method
-        await bluetooth.print(productSalesText);
-      }
+      // Always use web Bluetooth printReceipt (accepts text string)
+      await bluetooth.printReceipt(productSalesText);
+      
       toast({
         title: "Berhasil mencetak",
         description: "Laporan penjualan produk berhasil dicetak",
@@ -296,153 +198,128 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
       // Calculate totals
       const totalRevenue = filteredTransactions.reduce((sum, t) => sum + (t.subtotal || 0), 0);
       const totalTax = filteredTransactions.reduce((sum, t) => sum + (t.tax || 0), 0);
-      const grandTotal = filteredTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
+      const grandTotal = totalRevenue + totalTax;
 
-      // Prepare summary data
-      const summaryData = {
-        startDate: new Date(startDate).toLocaleDateString('id-ID'),
-        endDate: new Date(endDate).toLocaleDateString('id-ID'),
-        transactions: filteredTransactions.map(t => ({
-          transactionNumber: t.orderNumber || '',
-          items: t.items.map(item => ({
-            name: item.name,
-            qty: item.quantity || 0,
-            price: item.price || 0,
-            subtotal: item.total || 0,
-          })),
-          subtotal: t.subtotal || 0,
-          tax: t.tax || 0,
-          total: t.total || 0,
-          paymentMethod: t.paymentMethod || 'Tunai',
-          customerName: t.customerName || '',
-        })),
-        totalTransactions: filteredTransactions.length,
-        totalRevenue: totalRevenue || 0,
-        totalTax: totalTax || 0,
-        grandTotal: grandTotal || 0,
-        customerName: filteredTransactions[0]?.customerName || '',
-      };
+      const startDateFormatted = new Date(startDate).toLocaleDateString('id-ID');
+      const endDateFormatted = new Date(endDate).toLocaleDateString('id-ID');
 
-      if (isNativeApp) {
-        // Native app uses thermal printer
-        await bluetooth.printSalesSummary(summaryData);
+      // For web/browser: use browser's print dialog
+      const printWindow = window.open('', '', 'width=800,height=600');
+      if (!printWindow) {
         toast({
-          title: "Laporan dicetak",
-          description: `Berhasil mencetak ${filteredTransactions.length} transaksi`,
+          title: "Gagal membuka dialog print",
+          description: "Izinkan popup untuk mencetak laporan",
+          variant: "destructive",
         });
-      } else {
-        // For web/browser: use browser's print dialog
-        const printWindow = window.open('', '', 'width=800,height=600');
-        if (!printWindow) {
-          toast({
-            title: "Gagal membuka dialog print",
-            description: "Izinkan popup untuk mencetak laporan",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Generate HTML for print
-        printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>Laporan Penjualan - ${summaryData.startDate} s/d ${summaryData.endDate}</title>
-            <style>
-              @media print {
-                body { margin: 0; padding: 20px; }
-                @page { margin: 1cm; }
-              }
-              body {
-                font-family: 'Courier New', monospace;
-                font-size: 12px;
-                line-height: 1.4;
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-              }
-              h1, h2, h3 { margin: 10px 0; }
-              h1 { font-size: 20px; text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
-              h2 { font-size: 16px; margin-top: 20px; }
-              h3 { font-size: 14px; margin-top: 15px; }
-              table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-              th, td { padding: 5px; text-align: left; border-bottom: 1px solid #ddd; }
-              th { background: #f0f0f0; font-weight: bold; }
-              .text-right { text-align: right; }
-              .separator { border-top: 2px solid #000; margin: 15px 0; }
-              .summary { background: #f9f9f9; padding: 10px; margin: 15px 0; }
-              .total-row { font-weight: bold; font-size: 14px; background: #e8e8e8; }
-            </style>
-          </head>
-          <body>
-            <h1>== BK POS ==</h1>
-            <h2>LAPORAN PENJUALAN</h2>
-            <p><strong>Periode:</strong> ${summaryData.startDate} s/d ${summaryData.endDate}</p>
-            <p><strong>Total Transaksi:</strong> ${summaryData.totalTransactions}</p>
-            <div class="separator"></div>
-            
-            ${summaryData.transactions.map((t, idx) => `
-              <h3>Transaksi #${idx + 1} - ${t.transactionNumber}</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th class="text-right">Qty</th>
-                    <th class="text-right">Harga</th>
-                    <th class="text-right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${t.items.map(item => `
-                    <tr>
-                      <td>${item.name}</td>
-                      <td class="text-right">${item.qty}</td>
-                      <td class="text-right">Rp${item.price.toLocaleString('id-ID')}</td>
-                      <td class="text-right">Rp${item.subtotal.toLocaleString('id-ID')}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-              <p><strong>Pembayaran:</strong> ${t.paymentMethod} | <strong>Total:</strong> Rp${t.total.toLocaleString('id-ID')}</p>
-            `).join('<div class="separator"></div>')}
-            
-            <div class="separator"></div>
-            <div class="summary">
-              <h2>RINGKASAN TOTAL</h2>
-              <table>
-                <tr>
-                  <td><strong>Subtotal Penjualan:</strong></td>
-                  <td class="text-right"><strong>Rp${summaryData.totalRevenue.toLocaleString('id-ID')}</strong></td>
-                </tr>
-                ${summaryData.totalTax > 0 ? `
-                <tr>
-                  <td><strong>Total Pajak:</strong></td>
-                  <td class="text-right"><strong>Rp${summaryData.totalTax.toLocaleString('id-ID')}</strong></td>
-                </tr>
-                ` : ''}
-                <tr class="total-row">
-                  <td><strong>GRAND TOTAL:</strong></td>
-                  <td class="text-right"><strong>Rp${summaryData.grandTotal.toLocaleString('id-ID')}</strong></td>
-                </tr>
-              </table>
-            </div>
-            
-            <div class="separator"></div>
-            <p style="text-align: center; margin-top: 30px;">
-              <em>Terima kasih telah menggunakan BK POS</em><br>
-              <small>Dicetak: ${new Date().toLocaleString('id-ID')}</small>
-            </p>
-          </body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
-        
-        toast({
-          title: "Dialog print dibuka",
-          description: `Siap mencetak ${filteredTransactions.length} transaksi`,
-        });
+        return;
       }
+
+      // Generate HTML for print
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Laporan Penjualan - ${startDateFormatted} s/d ${endDateFormatted}</title>
+          <style>
+            @media print {
+              body { margin: 0; padding: 20px; }
+              @page { margin: 1cm; }
+            }
+            body {
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              line-height: 1.4;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            h1, h2, h3 { margin: 10px 0; }
+            h1 { font-size: 20px; text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            h2 { font-size: 16px; margin-top: 20px; }
+            h3 { font-size: 14px; margin-top: 15px; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { padding: 5px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background: #f0f0f0; font-weight: bold; }
+            .text-right { text-align: right; }
+            .separator { border-top: 2px solid #000; margin: 15px 0; }
+            .summary { background: #f9f9f9; padding: 10px; margin: 15px 0; }
+            .total-row { font-weight: bold; font-size: 14px; background: #e8e8e8; }
+          </style>
+        </head>
+        <body>
+          <h1>== BK POS ==</h1>
+          <h2>LAPORAN PENJUALAN</h2>
+          <p><strong>Periode:</strong> ${startDateFormatted} s/d ${endDateFormatted}</p>
+          <p><strong>Total Transaksi:</strong> ${filteredTransactions.length}</p>
+          <div class="separator"></div>
+          
+          ${filteredTransactions.map((t, idx) => {
+            const transactionTotal = (t.subtotal || 0) + (t.tax || 0);
+            return `
+            <h3>Transaksi #${idx + 1} - ${t.orderNumber || ''}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th class="text-right">Qty</th>
+                  <th class="text-right">Harga</th>
+                  <th class="text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${t.items.map(item => {
+                  const itemSubtotal = (item.quantity || 0) * (item.price || 0);
+                  return `
+                  <tr>
+                    <td>${item.name}${item.variant ? ` (${item.variant})` : ''}</td>
+                    <td class="text-right">${item.quantity || 0}</td>
+                    <td class="text-right">Rp${(item.price || 0).toLocaleString('id-ID')}</td>
+                    <td class="text-right">Rp${itemSubtotal.toLocaleString('id-ID')}</td>
+                  </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+            <p><strong>Pembayaran:</strong> ${t.paymentMethod || 'Tunai'} | <strong>Total:</strong> Rp${transactionTotal.toLocaleString('id-ID')}</p>
+            `;
+          }).join('<div class="separator"></div>')}
+          
+          <div class="separator"></div>
+          <div class="summary">
+            <h2>RINGKASAN TOTAL</h2>
+            <table>
+              <tr>
+                <td><strong>Subtotal Penjualan:</strong></td>
+                <td class="text-right"><strong>Rp${totalRevenue.toLocaleString('id-ID')}</strong></td>
+              </tr>
+              ${totalTax > 0 ? `
+              <tr>
+                <td><strong>Total Pajak:</strong></td>
+                <td class="text-right"><strong>Rp${totalTax.toLocaleString('id-ID')}</strong></td>
+              </tr>
+              ` : ''}
+              <tr class="total-row">
+                <td><strong>GRAND TOTAL:</strong></td>
+                <td class="text-right"><strong>Rp${grandTotal.toLocaleString('id-ID')}</strong></td>
+              </tr>
+            </table>
+          </div>
+          
+          <div class="separator"></div>
+          <p style="text-align: center; margin-top: 30px;">
+            <em>Terima kasih telah menggunakan BK POS</em><br>
+            <small>Dicetak: ${new Date().toLocaleString('id-ID')}</small>
+          </p>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+      
+      toast({
+        title: "Dialog print dibuka",
+        description: `Siap mencetak ${filteredTransactions.length} transaksi`,
+      });
     } finally {
       setIsPrintingBatch(false);
     }
@@ -569,57 +446,8 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </div>
           )}
 
-          {/* Device List for Native App */}
-          {isNativeApp && showDeviceList && (
-            <div className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="font-medium flex items-center gap-2">
-                  <Search className="h-4 w-4" />
-                  {bluetooth.isScanning ? 'Mencari Printer...' : 'Printer Ditemukan'}
-                </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleStopScan}
-                >
-                  Tutup
-                </Button>
-              </div>
-              
-              <ScrollArea className="h-48">
-                {bluetooth.availableDevices.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                    {bluetooth.isScanning ? (
-                      <>
-                        <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                        <p className="text-sm">Scanning...</p>
-                      </>
-                    ) : (
-                      <p className="text-sm">Tidak ada printer ditemukan</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {bluetooth.availableDevices.map((device) => (
-                      <Button
-                        key={device.address}
-                        variant="outline"
-                        className="w-full justify-start"
-                        onClick={() => handleDeviceSelect(device.address)}
-                        disabled={bluetooth.isConnecting}
-                      >
-                        <Bluetooth className="h-4 w-4 mr-2" />
-                        <div className="text-left">
-                          <p className="font-medium">{device.name}</p>
-                          <p className="text-xs text-muted-foreground">{device.address}</p>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-          )}
+          {/* Device List - Removed: Native features not implemented */}
+          {/* Web Bluetooth uses browser picker automatically */}
 
           {/* Connect/Disconnect Button - Colorful */}
           <div className="flex gap-3">
@@ -638,17 +466,8 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
                     </>
                   ) : (
                     <>
-                      {isNativeApp ? (
-                        <>
-                          <Search className="h-5 w-5" />
-                          Scan Printer
-                        </>
-                      ) : (
-                        <>
-                          <Bluetooth className="h-5 w-5" />
-                          Hubungkan Printer
-                        </>
-                      )}
+                      <Bluetooth className="h-5 w-5" />
+                      Hubungkan Printer
                     </>
                   )}
                 </div>
@@ -770,12 +589,10 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
               <div className="border-t pt-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="font-medium">Laporan Penjualan (Batch Mode)</p>
-                  {!isNativeApp && (
-                    <Badge variant="secondary" className="text-xs">
-                      <Printer className="h-3 w-3 mr-1" />
-                      Browser Print
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className="text-xs">
+                    <Printer className="h-3 w-3 mr-1" />
+                    Browser Print
+                  </Badge>
                 </div>
                 
                 {/* Date Filter */}
@@ -811,32 +628,21 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
                 {/* Summary Print Button - Works without Bluetooth in browser */}
                 <Button
                   onClick={handlePrintSalesSummary}
-                  disabled={isPrintingBatch || (isNativeApp && !bluetooth.isConnected)}
+                  disabled={isPrintingBatch}
                   className="w-full"
                   size="lg"
                 >
                   {isPrintingBatch ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {isNativeApp ? 'Mencetak ke Thermal...' : 'Membuka Print Dialog...'}
+                      Membuka Print Dialog...
                     </>
                   ) : (
                     <>
                       <Printer className="h-4 w-4 mr-2" />
-                      {isNativeApp ? 'Print ke Thermal Printer' : 'Print Laporan (Browser)'}
+                      Print Laporan (Browser)
                     </>
                   )}
                 </Button>
-
-                {/* Warning for native app without connection */}
-                {isNativeApp && !bluetooth.isConnected && (
-                  <Alert>
-                    <Bluetooth className="h-4 w-4" />
-                    <AlertDescription>
-                      Hubungkan printer Bluetooth terlebih dahulu untuk mencetak
-                    </AlertDescription>
-                  </Alert>
-                )}
 
                 <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md">
                   <p className="font-semibold flex items-center gap-1 mb-2">
