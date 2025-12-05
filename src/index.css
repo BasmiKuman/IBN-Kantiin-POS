@@ -149,6 +149,36 @@ All colors MUST be HSL.
       overflow-x: hidden;
     }
   }
+  
+  /* Force desktop layout for tablet landscape mode */
+  @media (min-width: 768px) and (orientation: landscape) {
+    /* Override mobile-first responsive classes */
+    .md\:block {
+      display: block !important;
+    }
+    .md\:flex {
+      display: flex !important;
+    }
+    .md\:flex-row {
+      flex-direction: row !important;
+    }
+    .md\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .md\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    .md\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    .hidden.md\:block {
+      display: block !important;
+    }
+    /* Sidebar untuk tablet landscape */
+    .peer.hidden.md\:block {
+      display: block !important;
+    }
+  }
 }
 
 /* Responsive utilities - Force media query evaluation */
