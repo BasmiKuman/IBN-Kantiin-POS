@@ -92,22 +92,16 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     data.items.forEach((item, idx) => {
       console.log(`Item ${idx}:`, item);
       
-      // Product name on its own line (no separator to interfere)
+      // Product name on first line
       let itemName = item.name;
       if (item.variant) {
         itemName += ' - ' + item.variant;
       }
       receipt += itemName + '\n';
       
-      // Qty x price with right-aligned total
+      // Qty x price = total on second line (all vertical, no side-by-side)
       const itemTotal = item.price * item.quantity;
-      const qtyPrice = item.quantity + 'x Rp' + item.price;
-      const total = 'Rp' + itemTotal;
-      
-      // Pad to align right (24 chars width)
-      const leftPart = '  ' + qtyPrice;
-      const spaces = 24 - leftPart.length - total.length;
-      receipt += leftPart + ' '.repeat(Math.max(1, spaces)) + total + '\n';
+      receipt += '  ' + item.quantity + ' x Rp' + item.price + ' = Rp' + itemTotal + '\n';
       
       console.log('Added item to receipt');
     });
