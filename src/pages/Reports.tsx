@@ -798,10 +798,10 @@ export default function Reports() {
           products: productSales.map(p => ({
             product_name: p.product_name || 'Unknown Product',
             total_quantity: p.total_quantity || 0,
-            total_revenue: p.total_revenue || 0,
+            total_revenue: p.total_sales || 0,
           })),
           totalItems: productSales.reduce((sum, p) => sum + (p.total_quantity || 0), 0),
-          totalRevenue: productSales.reduce((sum, p) => sum + (p.total_revenue || 0), 0),
+          totalRevenue: productSales.reduce((sum, p) => sum + (p.total_sales || 0), 0),
           cashierName: localStorage.getItem('userName') || 'Admin',
         })}
       />
