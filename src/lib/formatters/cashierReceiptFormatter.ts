@@ -77,14 +77,13 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     receipt += `Customer: ${data.customerName}\n`;
   }
   receipt += '\n';
-  receipt += '========================\n';
+  receipt += '------------------------\n';
   
   // Items section - ULTRA SIMPLE for Android
   console.log('Checking items - exists:', !!data.items, 'length:', data.items?.length);
   
   receipt += '\n';
   receipt += 'PESANAN:\n';
-  receipt += '\n';
   
   if (data.items && data.items.length > 0) {
     console.log('Processing', data.items.length, 'items');
@@ -104,7 +103,6 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
       // Just qty x price = total (simple format)
       const itemTotal = item.price * item.quantity;
       receipt += item.quantity + ' x Rp' + item.price + ' = Rp' + itemTotal + '\n';
-      receipt += '\n';
       
       console.log('Added item to receipt');
     });
@@ -117,21 +115,15 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   
   receipt += '------------------------\n';
   
-  // Totals - ULTRA SIMPLE
-  receipt += '\n';
+  // Totals - compact
   receipt += 'Subtotal: Rp' + data.subtotal + '\n';
-  
   if (data.tax > 0) {
     receipt += 'Pajak: Rp' + data.tax + '\n';
   }
-  
-  receipt += '\n';
-  receipt += '========================\n';
   receipt += 'TOTAL: Rp' + data.total + '\n';
-  receipt += '========================\n';
+  receipt += '------------------------\n';
   
-  // Payment method - simplified
-  receipt += '\n';
+  // Payment method
   const paymentLabels: Record<string, string> = {
     cash: 'Tunai',
     qris: 'QRIS',
@@ -139,19 +131,17 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     debit: 'Kartu Debit',
     credit: 'Kartu Kredit',
   };
-  receipt += `Pembayaran: ${paymentLabels[data.paymentMethod] || data.paymentMethod}\n`;
+  receipt += `Bayar: ${paymentLabels[data.paymentMethod] || data.paymentMethod}\n`;
+  receipt += '\n';
   
-  // Footer - simplified for Android
-  receipt += '\n\n';
+  // Footer - compact
   receipt += ALIGN_CENTER;
-  receipt += '------------------------\n';
   const footerLines = wrapText(receiptSettings.footer, 24);
   footerLines.forEach(line => {
     receipt += `${line}\n`;
   });
   receipt += 'Terima kasih!\n';
-  receipt += '------------------------\n';
-  receipt += '\n\n\n';
+  receipt += '\n';
   
   // Cut paper
   receipt += CUT_PAPER;

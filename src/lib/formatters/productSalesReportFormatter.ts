@@ -31,14 +31,8 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   // Header - Centered
   receipt += ALIGN_CENTER + '\n';
-  receipt += '========================\n';
   receipt += 'BK POS\n';
-  receipt += '========================\n';
-  receipt += '\n';
-  
-  // Report Title
-  receipt += 'LAPORAN PENJUALAN\n';
-  receipt += 'PRODUK\n';
+  receipt += 'LAPORAN PENJUALAN PRODUK\n';
   receipt += '\n';
   
   // Period - Left aligned
@@ -50,13 +44,11 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   } else {
     receipt += `Tanggal: ${new Date().toLocaleDateString('id-ID')}\n`;
   }
+  receipt += '------------------------\n';
   receipt += '\n';
-  receipt += '========================\n';
   
-  // Products List - ULTRA SIMPLE for Android
-  receipt += '\n';
+  // Products List
   receipt += 'PRODUK TERJUAL:\n';
-  receipt += '\n';
   
   console.log('Formatting', data.products.length, 'products...');
   data.products.forEach((product, idx) => {
@@ -66,46 +58,33 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
-    // Simple format - no wrapping
+    // Simple format - no separator lines
     receipt += product.product_name + '\n';
-    receipt += product.total_quantity + ' x Rp' + hargaSatuan + '\n';
-    receipt += '- - - - - - - - - - - -\n';
+    receipt += product.total_quantity + ' x Rp' + hargaSatuan + ' = Rp' + product.total_revenue + '\n';
   });
   
   console.log('Products formatted, adding summary...');
   
-  receipt += '========================\n';
+  receipt += '------------------------\n';
   
-  // Summary - ULTRA SIMPLE
-  receipt += '\n';
+  // Summary - compact
   receipt += 'RINGKASAN:\n';
-  receipt += '\n';
-  
   receipt += 'Jenis Produk: ' + data.products.length + '\n';
   receipt += 'Total Item: ' + data.totalItems + '\n';
+  receipt += 'TOTAL PENJUALAN: Rp' + data.totalRevenue + '\n';
+  receipt += '------------------------\n';
   
-  receipt += '\n';
-  receipt += '========================\n';
-  
-  // GRAND TOTAL - ULTRA SIMPLE
-  receipt += '\n';
-  receipt += 'TOTAL PENJUALAN:\n';
-  receipt += 'Rp' + data.totalRevenue + '\n';
-  receipt += '========================\n';
-  
-  console.log('Grand total added:', grandValue);
+  console.log('Grand total added:', data.totalRevenue);
   console.log('Receipt length:', receipt.length);
   
-  // Footer - simplified for Android
-  receipt += '\n\n';
+  // Footer - compact
+  receipt += '\n';
   receipt += ALIGN_CENTER;
-  
   receipt += `Dicetak: ${new Date().toLocaleString('id-ID')}\n`;
   if (data.cashierName) {
     receipt += `Oleh: ${data.cashierName}\n`;
   }
-  
-  receipt += '\n\n\n';
+  receipt += '\n';
   
   // Cut paper
   receipt += CUT_PAPER;
