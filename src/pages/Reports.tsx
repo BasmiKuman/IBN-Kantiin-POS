@@ -551,6 +551,15 @@ export default function Reports() {
                 <div className="ml-auto">
                   <Button
                     onClick={() => {
+                      // Debug: Log data sebelum generate
+                      console.log('=== DEBUG PRINT THERMAL ===');
+                      console.log('Product Date Filter:', productDateFilter);
+                      console.log('Product Start:', productStart);
+                      console.log('Product End:', productEnd);
+                      console.log('Product Sales Data:', productSales);
+                      console.log('Total Items:', productSales.reduce((sum, p) => sum + (p.total_quantity || 0), 0));
+                      console.log('Total Revenue:', productSales.reduce((sum, p) => sum + (p.total_sales || 0), 0));
+                      
                       // Generate receipt text dengan data terkini
                       const receiptText = generateProductSalesReport({
                         period: productDateFilter === 'today' ? 'Hari Ini' :
@@ -570,6 +579,10 @@ export default function Reports() {
                         totalRevenue: productSales.reduce((sum, p) => sum + (p.total_sales || 0), 0),
                         cashierName: localStorage.getItem('userName') || 'Admin',
                       });
+                      
+                      console.log('Generated Receipt:', receiptText);
+                      console.log('=== END DEBUG ===');
+                      
                       setPrintReceiptText(receiptText);
                       setShowPrintDialog(true);
                     }}
