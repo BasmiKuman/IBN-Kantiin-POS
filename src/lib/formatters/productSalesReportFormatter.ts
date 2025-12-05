@@ -72,7 +72,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   console.log('Products formatted, adding summary...');
   
-  receipt += '\n';
+  receipt += '------------------------\n';
   
   // Summary - right aligned
   receipt += 'RINGKASAN:\n';
@@ -91,6 +91,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   value = 'Rp' + data.totalRevenue;
   spaces = 24 - label.length - value.length;
   receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
+  receipt += '------------------------\n';
   receipt += '\n';
   
   console.log('Grand total added:', data.totalRevenue);
