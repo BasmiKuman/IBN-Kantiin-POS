@@ -64,12 +64,16 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
-    // Product name - direct without formatting
-    receipt += `${product.product_name}\n`;
+    // Product name - wrap if too long for Android
+    const nameLines = wrapText(product.product_name, 24);
+    nameLines.forEach(line => {
+      receipt += `${line}\n`;
+    });
     
-    // Quantity and price per item
-    receipt += `${product.total_quantity} x Rp${hargaSatuan.toLocaleString('id-ID')}\n`;
-    receipt += '\n';
+    // Quantity and price per item - simplified format
+    const formattedPrice = `Rp${hargaSatuan.toLocaleString('id-ID')}`;
+    receipt += `${product.total_quantity} x ${formattedPrice}\n`;
+    receipt += '- - - - - - - - - - - -\n';  // Separator between products
   });
   
   console.log('Products formatted, adding summary...');

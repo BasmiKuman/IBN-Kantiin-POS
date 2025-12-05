@@ -35,21 +35,17 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   let receipt = INIT; // Initialize printer
   
   // Header - Centered
-  receipt += ALIGN_CENTER + LINE_FEED;
-  receipt += SEPARATOR_BOLD;
-  receipt += BOLD_ON;
+  receipt += ALIGN_CENTER + '\n';
+  receipt += '========================\n';
   receipt += 'BK POS\n';
-  receipt += BOLD_OFF;
-  receipt += SEPARATOR_BOLD;
-  receipt += LINE_FEED;
+  receipt += '========================\n';
+  receipt += '\n';
   
   // Store Header (dari settings) - word wrap jika perlu
-  receipt += BOLD_ON;
   const headerLines = wrapText(receiptSettings.header, 24);
   headerLines.forEach(line => {
     receipt += `${line}\n`;
   });
-  receipt += BOLD_OFF;
   
   // Tagline (dari settings) - word wrap jika perlu
   if (receiptSettings.tagline) {
@@ -67,14 +63,12 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   if (storeSettings.phone) {
     receipt += `Telp: ${storeSettings.phone}\n`;
   }
-  receipt += LINE_FEED;
-  receipt += SEPARATOR_BOLD;
+  receipt += '\n';
+  receipt += '========================\n';
   
   // Order info - Left aligned
-  receipt += ALIGN_LEFT + LINE_FEED;
-  receipt += BOLD_ON;
+  receipt += ALIGN_LEFT + '\n';
   receipt += `Order #${data.orderNumber}\n`;
-  receipt += BOLD_OFF;
   receipt += `${data.date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}\n`;
   if (data.cashierName) {
     receipt += `Kasir: ${data.cashierName}\n`;
@@ -128,9 +122,9 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   }
   
   receipt += '\n';
-  receipt += SEPARATOR_BOLD;
+  receipt += '========================\n';
   receipt += padText('TOTAL:', formatCurrency(data.total)) + '\n';
-  receipt += SEPARATOR_BOLD;
+  receipt += '========================\n';
   
   // Payment method - simplified
   receipt += '\n';

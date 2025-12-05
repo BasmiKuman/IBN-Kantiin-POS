@@ -10,12 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles, FileText } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles, FileText, Eye } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { ReceiptPreview } from './ReceiptPreview';
 
 interface PrintDialogProps {
   open: boolean;
@@ -35,6 +37,7 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
   const [isPrintingCashier, setIsPrintingCashier] = useState(false);
   const [isPrintingBatch, setIsPrintingBatch] = useState(false);
   const [showDeviceList, setShowDeviceList] = useState(false);
+  const [activeTab, setActiveTab] = useState<'print' | 'preview'>('preview');
   
   // Date filter for batch summary
   const today = new Date().toISOString().split('T')[0];
