@@ -14,6 +14,7 @@ import { Download, TrendingUp, DollarSign, ShoppingCart, Package, FileText, File
 import { useTransactions, useDailySales, useProductSales, type Transaction } from "@/hooks/supabase/useTransactions";
 import { useProducts } from "@/hooks/supabase/useProducts";
 import { PrintDialog } from "@/components/PrintDialog";
+import { generateProductSalesReport } from "@/lib/receiptFormatter";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -785,22 +786,21 @@ export default function Reports() {
       <PrintDialog 
         open={showPrintDialog}
         onOpenChange={setShowPrintDialog}
-        batchMode={true}
-        batchTransactions={productSales.map((product, index) => ({
-          orderNumber: `PROD-${index + 1}`,
-          items: [{
-            name: product.product_name || 'Unknown Product',
-            quantity: product.total_quantity || 0,
-            price: product.total_revenue ? Math.round(product.total_revenue / product.total_quantity) : 0,
-            total: product.total_revenue || 0,
-          }],
-          subtotal: product.total_revenue || 0,
-          tax: 0,
-          total: product.total_revenue || 0,
-          paymentMethod: 'Multiple',
-          date: new Date(),
-          cashierName: 'System',
-        }))}
+        productSalesText={generateProductSalesReport({
+          period: productDateFilter === 'today' ? 'Hari Ini' :
+                  productDateFilter === 'yesterday' ? 'Kemarin' :
+                  productDateFilter === 'week' ? '7 Hari Terakhir' :
+                  productDateFilter === 'month' ? '30 Hari Terakhir' :
+                  productDateFilter === 'custom' && productStartDate && productEndDate 
+                    ? `${productStartDate} s/d ${productEndDate}` : 'Semua',
+          products: productSales.map(p => ({
+            product_name: p.product_name || 'Unknown Product',
+            total_quantity: p.total_quantity || 0,
+            total_revenue: p.total_revenue || 0,
+          })),
+          totalItems: productSales.reduce((sum, p) => sum + (p.total_quantity || 0), 0),
+          totalRevenue: productSales.reduce((sum, p) => sum + (p.total_revenue || 0), 0),
+        })}
       />
     </div>
   );
