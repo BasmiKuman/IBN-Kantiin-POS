@@ -77,32 +77,37 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     receipt += `Customer: ${data.customerName}\n`;
   }
   receipt += '\n';
-  receipt += '------------------------\n';
+  receipt += '\n';
   
-  // Items section - ULTRA SIMPLE for Android
+  // Items section - simple format with right-aligned prices
   console.log('Checking items - exists:', !!data.items, 'length:', data.items?.length);
   
-  receipt += '\n';
   receipt += 'PESANAN:\n';
+  receipt += '\n';
   
   if (data.items && data.items.length > 0) {
     console.log('Processing', data.items.length, 'items');
     console.log('Items array:', JSON.stringify(data.items));
     
-    // Ultra simple format - no fancy formatting
     data.items.forEach((item, idx) => {
       console.log(`Item ${idx}:`, item);
       
-      // Just name
-      receipt += item.name;
+      // Product name on its own line (no separator to interfere)
+      let itemName = item.name;
       if (item.variant) {
-        receipt += ' - ' + item.variant;
+        itemName += ' - ' + item.variant;
       }
-      receipt += '\n';
+      receipt += itemName + '\n';
       
-      // Just qty x price = total (simple format)
+      // Qty x price with right-aligned total
       const itemTotal = item.price * item.quantity;
-      receipt += item.quantity + ' x Rp' + item.price + ' = Rp' + itemTotal + '\n';
+      const qtyPrice = item.quantity + 'x Rp' + item.price;
+      const total = 'Rp' + itemTotal;
+      
+      // Pad to align right (24 chars width)
+      const leftPart = '  ' + qtyPrice;
+      const spaces = 24 - leftPart.length - total.length;
+      receipt += leftPart + ' '.repeat(Math.max(1, spaces)) + total + '\n';
       
       console.log('Added item to receipt');
     });
@@ -113,15 +118,26 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     receipt += 'Tidak ada item\n';
   }
   
-  receipt += '------------------------\n';
+  receipt += '\n';
   
-  // Totals - compact
-  receipt += 'Subtotal: Rp' + data.subtotal + '\n';
+  // Totals - right aligned
+  const subtotalLabel = 'Subtotal:';
+  const subtotalValue = 'Rp' + data.subtotal;
+  let spaces = 24 - subtotalLabel.length - subtotalValue.length;
+  receipt += subtotalLabel + ' '.repeat(Math.max(1, spaces)) + subtotalValue + '\n';
+  
   if (data.tax > 0) {
-    receipt += 'Pajak: Rp' + data.tax + '\n';
+    const taxLabel = 'Pajak:';
+    const taxValue = 'Rp' + data.tax;
+    spaces = 24 - taxLabel.length - taxValue.length;
+    receipt += taxLabel + ' '.repeat(Math.max(1, spaces)) + taxValue + '\n';
   }
-  receipt += 'TOTAL: Rp' + data.total + '\n';
-  receipt += '------------------------\n';
+  
+  const totalLabel = 'TOTAL:';
+  const totalValue = 'Rp' + data.total;
+  spaces = 24 - totalLabel.length - totalValue.length;
+  receipt += totalLabel + ' '.repeat(Math.max(1, spaces)) + totalValue + '\n';
+  receipt += '\n';
   
   // Payment method
   const paymentLabels: Record<string, string> = {

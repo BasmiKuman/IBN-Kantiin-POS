@@ -49,6 +49,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   // Products List
   receipt += 'PRODUK TERJUAL:\n';
+  receipt += '\n';
   
   console.log('Formatting', data.products.length, 'products...');
   data.products.forEach((product, idx) => {
@@ -58,21 +59,39 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
-    // Simple format - no separator lines
+    // Product name on its own line
     receipt += product.product_name + '\n';
-    receipt += product.total_quantity + ' x Rp' + hargaSatuan + ' = Rp' + product.total_revenue + '\n';
+    
+    // Qty x price with right-aligned total
+    const qtyPrice = product.total_quantity + 'x Rp' + hargaSatuan;
+    const total = 'Rp' + product.total_revenue;
+    const leftPart = '  ' + qtyPrice;
+    const spaces = 24 - leftPart.length - total.length;
+    receipt += leftPart + ' '.repeat(Math.max(1, spaces)) + total + '\n';
   });
   
   console.log('Products formatted, adding summary...');
   
-  receipt += '------------------------\n';
+  receipt += '\n';
   
-  // Summary - compact
+  // Summary - right aligned
   receipt += 'RINGKASAN:\n';
-  receipt += 'Jenis Produk: ' + data.products.length + '\n';
-  receipt += 'Total Item: ' + data.totalItems + '\n';
-  receipt += 'TOTAL PENJUALAN: Rp' + data.totalRevenue + '\n';
-  receipt += '------------------------\n';
+  
+  let label = 'Jenis Produk:';
+  let value = String(data.products.length);
+  let spaces = 24 - label.length - value.length;
+  receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
+  
+  label = 'Total Item:';
+  value = String(data.totalItems);
+  spaces = 24 - label.length - value.length;
+  receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
+  
+  label = 'TOTAL PENJUALAN:';
+  value = 'Rp' + data.totalRevenue;
+  spaces = 24 - label.length - value.length;
+  receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
+  receipt += '\n';
   
   console.log('Grand total added:', data.totalRevenue);
   console.log('Receipt length:', receipt.length);
