@@ -94,30 +94,32 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   receipt += LINE_FEED;
   
   // Check if items exist and has length
+  console.log('Checking items - exists:', !!data.items, 'length:', data.items?.length);
+  
   if (data.items && data.items.length > 0) {
+    console.log('Processing', data.items.length, 'items');
+    
     // Items with detail format
-    data.items.forEach((item) => {
+    data.items.forEach((item, idx) => {
+      console.log(`Item ${idx}:`, item);
+      
       // Check if item.name already contains variant in parentheses
       const hasVariantInName = item.name.includes('(') && item.name.includes(')');
       const itemName = (!hasVariantInName && item.variant) ? `${item.name} (${item.variant})` : item.name;
       
-      // Item name - wrap if too long
-      const itemLines = wrapText(itemName, 24);
-      itemLines.forEach((line, idx) => {
-        if (idx === 0) {
-          receipt += BOLD_ON + line + '\n' + BOLD_OFF;
-        } else {
-          receipt += line + '\n';
-        }
-      });
+      // Item name - bold and on one line
+      receipt += BOLD_ON + itemName + '\n' + BOLD_OFF;
       
       // Quantity, price, and subtotal on one line
       const qtyPrice = `${item.quantity} x ${formatCurrency(item.price)}`;
       const subtotal = formatCurrency(item.price * item.quantity);
       receipt += padText(`  ${qtyPrice}`, subtotal) + '\n';
       receipt += LINE_FEED;
+      
+      console.log('Item formatted:', itemName, qtyPrice, subtotal);
     });
   } else {
+    console.log('NO ITEMS FOUND!');
     receipt += 'Tidak ada item\n';
     receipt += LINE_FEED;
   }

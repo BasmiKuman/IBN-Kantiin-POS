@@ -19,6 +19,11 @@ export interface ProductSalesReportData {
 
 // Generate Product Sales Report
 export function generateProductSalesReport(data: ProductSalesReportData): string {
+  console.log('=== PRODUCT SALES REPORT START ===');
+  console.log('Products count:', data.products?.length);
+  console.log('Total Revenue:', data.totalRevenue);
+  console.log('Total Items:', data.totalItems);
+  
   const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3, CUT_PAPER } = PrinterCommands;
   const { receiptSettings } = getReceiptSettings();
   
@@ -60,7 +65,10 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += SEPARATOR;
   receipt += LINE_FEED;
   
-  data.products.forEach((product) => {
+  console.log('Formatting', data.products.length, 'products...');
+  data.products.forEach((product, idx) => {
+    console.log(`Product ${idx}:`, product.product_name, product.total_quantity, product.total_revenue);
+    
     const hargaSatuan = product.total_quantity > 0 
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
@@ -74,6 +82,8 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
     receipt += `${product.total_quantity} x Rp${hargaSatuan.toLocaleString('id-ID')}\n`;
     receipt += LINE_FEED;
   });
+  
+  console.log('Products formatted, adding summary...');
   
   receipt += SEPARATOR_BOLD;
   
@@ -109,8 +119,11 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
   
+  console.log('Grand total added:', grandValue);
+  console.log('Receipt length:', receipt.length);
+  
   // Footer - Simple print info only
-  receipt += LINE_FEED + LINE_FEED + LINE_FEED;
+  receipt += LINE_FEED + LINE_FEED;
   receipt += ALIGN_CENTER;
   
   receipt += `Dicetak: ${new Date().toLocaleString('id-ID')}\n`;
@@ -122,6 +135,9 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   // Cut paper
   receipt += CUT_PAPER;
+  
+  console.log('=== PRODUCT SALES REPORT END ===');
+  console.log('Final receipt length:', receipt.length);
   
   return receipt;
 }

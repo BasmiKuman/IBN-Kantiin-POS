@@ -93,10 +93,18 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
 
   const handlePrintCashier = async () => {
     if (!receiptData) return;
+    
+    console.log('PrintDialog - receiptData:', receiptData);
+    console.log('PrintDialog - receiptData.items:', receiptData.items);
+    
     setIsPrintingCashier(true);
     try {
       // Always use web Bluetooth (text receipt)
       const receipt = generateCashierReceipt(receiptData);
+      
+      console.log('Generated receipt string length:', receipt.length);
+      console.log('Receipt preview (first 500 chars):', receipt.substring(0, 500));
+      
       await bluetooth.printReceipt(receipt);
       
       toast({
