@@ -52,6 +52,7 @@ export default function Reports() {
   
   // State for Print Dialog
   const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [printReceiptText, setPrintReceiptText] = useState<string>('');
 
   const { data: transactions = [] as Transaction[], isLoading: loadingTransactions } = useTransactions();
   const { data: dailySales = [], isLoading: loadingDailySales } = useDailySales();
@@ -549,7 +550,29 @@ export default function Reports() {
                 {/* Print Thermal Button */}
                 <div className="ml-auto">
                   <Button
-                    onClick={() => setShowPrintDialog(true)}
+                    onClick={() => {
+                      // Generate receipt text dengan data terkini
+                      const receiptText = generateProductSalesReport({
+                        period: productDateFilter === 'today' ? 'Hari Ini' :
+                                productDateFilter === 'yesterday' ? 'Kemarin' :
+                                productDateFilter === 'week' ? '7 Hari Terakhir' :
+                                productDateFilter === 'month' ? '30 Hari Terakhir' :
+                                productDateFilter === 'custom' && productStartDate && productEndDate 
+                                  ? `${productStartDate} s/d ${productEndDate}` : 'Semua',
+                        startDate: productStart,
+                        endDate: productEnd,
+                        products: productSales.map(p => ({
+                          product_name: p.product_name || 'Unknown Product',
+                          total_quantity: p.total_quantity || 0,
+                          total_revenue: p.total_sales || 0,
+                        })),
+                        totalItems: productSales.reduce((sum, p) => sum + (p.total_quantity || 0), 0),
+                        totalRevenue: productSales.reduce((sum, p) => sum + (p.total_sales || 0), 0),
+                        cashierName: localStorage.getItem('userName') || 'Admin',
+                      });
+                      setPrintReceiptText(receiptText);
+                      setShowPrintDialog(true);
+                    }}
                     disabled={loadingProductSales || productSales.length === 0}
                     className="gap-2"
                     variant="outline"
@@ -786,24 +809,7 @@ export default function Reports() {
       <PrintDialog 
         open={showPrintDialog}
         onOpenChange={setShowPrintDialog}
-        productSalesText={generateProductSalesReport({
-          period: productDateFilter === 'today' ? 'Hari Ini' :
-                  productDateFilter === 'yesterday' ? 'Kemarin' :
-                  productDateFilter === 'week' ? '7 Hari Terakhir' :
-                  productDateFilter === 'month' ? '30 Hari Terakhir' :
-                  productDateFilter === 'custom' && productStartDate && productEndDate 
-                    ? `${productStartDate} s/d ${productEndDate}` : 'Semua',
-          startDate: productStart,
-          endDate: productEnd,
-          products: productSales.map(p => ({
-            product_name: p.product_name || 'Unknown Product',
-            total_quantity: p.total_quantity || 0,
-            total_revenue: p.total_sales || 0,
-          })),
-          totalItems: productSales.reduce((sum, p) => sum + (p.total_quantity || 0), 0),
-          totalRevenue: productSales.reduce((sum, p) => sum + (p.total_sales || 0), 0),
-          cashierName: localStorage.getItem('userName') || 'Admin',
-        })}
+        productSalesText={printReceiptText}
       />
     </div>
   );
