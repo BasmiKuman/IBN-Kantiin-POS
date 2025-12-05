@@ -25,9 +25,10 @@ interface PrintDialogProps {
   receiptData?: ReceiptData;
   batchMode?: boolean;
   batchTransactions?: ReceiptData[];
+  productSalesText?: string;
 }
 
-export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchTransactions }: PrintDialogProps) {
+export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchTransactions, productSalesText }: PrintDialogProps) {
   // Use native Bluetooth for Capacitor app, Web Bluetooth for browser
   const webBluetooth = useBluetoothPrinter();
   const nativeBluetooth = useNativeBluetoothPrinter();
@@ -239,6 +240,83 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
         // Small delay between prints
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+    } finally {
+      setIsPrintingBatch(false);
+    }
+  };
+
+  const handlePrintProductSales = async () => {
+    if (!productSalesText) return;
+    setIsPrintingBatch(true);
+    
+    try {
+      // For native app, use Bluetooth printer
+      if (isNativeApp && bluetooth.isConnected) {
+        await bluetooth.print(productSalesText);
+        toast({
+          title: "Berhasil mencetak",
+          description: "Laporan penjualan produk berhasil dicetak",
+        });
+      } else if (!isNativeApp) {
+        // For browser, convert to HTML and print
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+          toast({
+            title: "Error",
+            description: "Tidak dapat membuka jendela print. Pastikan popup tidak diblokir.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const htmlContent = productSalesText
+          .split('\n')
+          .map(line => line.replace(/\s/g, '&nbsp;'))
+          .join('<br>');
+
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Laporan Penjualan Produk</title>
+            <style>
+              @page { margin: 10mm; }
+              body {
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1.4;
+                max-width: 80mm;
+                margin: 0 auto;
+                padding: 10px;
+              }
+              @media print {
+                body { margin: 0; padding: 10px; }
+              }
+            </style>
+          </head>
+          <body>
+            <pre style="margin: 0; font-family: inherit; white-space: pre-wrap; word-wrap: break-word;">${htmlContent}</pre>
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                  window.onafterprint = function() {
+                    window.close();
+                  };
+                }, 500);
+              };
+            </script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      }
+    } catch (error) {
+      toast({
+        title: "Gagal mencetak",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mencetak",
+        variant: "destructive",
+      });
     } finally {
       setIsPrintingBatch(false);
     }
@@ -857,6 +935,72 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
                     </p>
                   </div>
                 </details>
+              </div>
+            </>
+          )}
+
+          {/* Product Sales Report Print */}
+          {productSalesText && (
+            <>
+              <div className="border-t pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">Laporan Penjualan Produk</p>
+                  {!isNativeApp && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Printer className="h-3 w-3 mr-1" />
+                      Browser Print
+                    </Badge>
+                  )}
+                  {isNativeApp && bluetooth.isConnected && (
+                    <Badge variant="secondary" className="text-xs bg-green-100 dark:bg-green-900">
+                      <Bluetooth className="h-3 w-3 mr-1" />
+                      Thermal Ready
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Product Sales Print Button */}
+                <Button
+                  onClick={handlePrintProductSales}
+                  disabled={isPrintingBatch || (isNativeApp && !bluetooth.isConnected)}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isPrintingBatch ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {isNativeApp ? 'Mencetak ke Thermal...' : 'Membuka Print Dialog...'}
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="h-4 w-4 mr-2" />
+                      {isNativeApp ? 'Print ke Thermal Printer' : 'Print Laporan (Browser)'}
+                    </>
+                  )}
+                </Button>
+
+                {/* Warning for native app without connection */}
+                {isNativeApp && !bluetooth.isConnected && (
+                  <Alert>
+                    <Bluetooth className="h-4 w-4" />
+                    <AlertDescription>
+                      Hubungkan printer Bluetooth terlebih dahulu untuk mencetak
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md">
+                  <p className="font-semibold flex items-center gap-1 mb-2">
+                    💡 Laporan Penjualan:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Ringkasan penjualan per produk</li>
+                    <li>Total quantity dan revenue</li>
+                    <li>Sudah difilter sesuai tanggal yang dipilih</li>
+                    <li><strong>📱 Mobile:</strong> Print ke thermal printer</li>
+                    <li><strong>💻 Browser:</strong> Print dialog (semua printer)</li>
+                  </ul>
+                </div>
               </div>
             </>
           )}

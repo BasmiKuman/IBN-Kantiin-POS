@@ -19,6 +19,19 @@ export interface ReceiptData {
   date: Date;
 }
 
+export interface ProductSalesItem {
+  product_name: string;
+  total_quantity: number;
+  total_revenue: number;
+}
+
+export interface ProductSalesReportData {
+  period: string;
+  products: ProductSalesItem[];
+  totalItems: number;
+  totalRevenue: number;
+}
+
 // Helper function to pad text for alignment (58mm = 32 chars)
 function padText(left: string, right: string, width: number = 32): string {
   const totalLength = left.length + right.length;
@@ -285,6 +298,94 @@ export function generateTestReceipt(): string {
   receipt += BOLD_OFF;
   receipt += 'Bluetooth Printer Ready\n';
   
+  receipt += LINE_FEED_3;
+  
+  return receipt;
+}
+
+// Generate Product Sales Report
+export function generateProductSalesReport(data: ProductSalesReportData): string {
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3 } = PrinterCommands;
+  const { receiptSettings } = getReceiptSettings();
+  
+  let receipt = INIT;
+  
+  // Header
+  receipt += ALIGN_CENTER + LINE_FEED;
+  receipt += SEPARATOR_BOLD;
+  receipt += BOLD_ON;
+  receipt += 'BK POS\n';
+  receipt += BOLD_OFF;
+  receipt += SEPARATOR_BOLD;
+  receipt += LINE_FEED;
+  
+  // Report Title
+  receipt += BOLD_ON;
+  receipt += 'LAPORAN PENJUALAN PRODUK\n';
+  receipt += BOLD_OFF;
+  receipt += LINE_FEED;
+  
+  // Period
+  receipt += ALIGN_LEFT;
+  receipt += `Periode: ${data.period}\n`;
+  receipt += `Tanggal: ${new Date().toLocaleDateString('id-ID')}\n`;
+  receipt += LINE_FEED;
+  receipt += SEPARATOR_BOLD;
+  
+  // Products List
+  receipt += LINE_FEED;
+  receipt += BOLD_ON;
+  receipt += 'DETAIL PRODUK:\n';
+  receipt += BOLD_OFF;
+  receipt += LINE_FEED;
+  
+  data.products.forEach((product, index) => {
+    const avgPrice = product.total_quantity > 0 
+      ? Math.round(product.total_revenue / product.total_quantity)
+      : 0;
+    
+    receipt += BOLD_ON;
+    receipt += `${index + 1}. ${product.product_name}\n`;
+    receipt += BOLD_OFF;
+    receipt += `   Qty: ${product.total_quantity} item\n`;
+    receipt += `   @ Rp${avgPrice.toLocaleString('id-ID')}\n`;
+    receipt += padText('   Total:', `Rp${product.total_revenue.toLocaleString('id-ID')}`) + '\n';
+    
+    if (index < data.products.length - 1) {
+      receipt += LINE_FEED;
+    }
+  });
+  
+  receipt += LINE_FEED;
+  receipt += SEPARATOR_BOLD;
+  
+  // Summary
+  receipt += LINE_FEED;
+  receipt += ALIGN_CENTER;
+  receipt += BOLD_ON;
+  receipt += 'RINGKASAN\n';
+  receipt += BOLD_OFF;
+  receipt += LINE_FEED;
+  
+  receipt += ALIGN_LEFT;
+  receipt += padText('Total Produk:', `${data.products.length} jenis`) + '\n';
+  receipt += padText('Total Item Terjual:', `${data.totalItems} item`) + '\n';
+  receipt += LINE_FEED;
+  receipt += SEPARATOR_BOLD;
+  receipt += BOLD_ON;
+  receipt += padText('TOTAL PENJUALAN:', `Rp${data.totalRevenue.toLocaleString('id-ID')}`) + '\n';
+  receipt += BOLD_OFF;
+  receipt += SEPARATOR_BOLD;
+  
+  // Footer
+  receipt += LINE_FEED + LINE_FEED;
+  receipt += ALIGN_CENTER;
+  receipt += SEPARATOR;
+  receipt += BOLD_ON;
+  receipt += `${receiptSettings.footer}\n`;
+  receipt += BOLD_OFF;
+  receipt += 'Terima kasih!\n';
+  receipt += SEPARATOR;
   receipt += LINE_FEED_3;
   
   return receipt;
