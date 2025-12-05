@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Search, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
 import { useNativeBluetoothPrinter } from '@/hooks/useNativeBluetoothPrinter';
-import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
+import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, generateProductSalesReport, type ReceiptData } from '@/lib/receiptFormatter';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -25,9 +25,10 @@ interface PrintDialogProps {
   receiptData?: ReceiptData;
   batchMode?: boolean;
   batchTransactions?: ReceiptData[];
+  productSalesText?: string;
 }
 
-export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchTransactions }: PrintDialogProps) {
+export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchTransactions, productSalesText }: PrintDialogProps) {
   // Use native Bluetooth for Capacitor app, Web Bluetooth for browser
   const webBluetooth = useBluetoothPrinter();
   const nativeBluetooth = useNativeBluetoothPrinter();
@@ -239,6 +240,33 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
         // Small delay between prints
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+    } finally {
+      setIsPrintingBatch(false);
+    }
+  };
+
+  const handlePrintProductSales = async () => {
+    if (!productSalesText) return;
+    setIsPrintingBatch(true);
+    
+    try {
+      if (isNativeApp) {
+        // For native app, use printReceipt with text string
+        await bluetooth.printReceipt(productSalesText);
+      } else {
+        // For web, use print method
+        await bluetooth.print(productSalesText);
+      }
+      toast({
+        title: "Berhasil mencetak",
+        description: "Laporan penjualan produk berhasil dicetak",
+      });
+    } catch (error) {
+      toast({
+        title: "Gagal mencetak",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mencetak",
+        variant: "destructive",
+      });
     } finally {
       setIsPrintingBatch(false);
     }
@@ -857,6 +885,49 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
                     </p>
                   </div>
                 </details>
+              </div>
+            </>
+          )}
+
+          {/* Product Sales Report Print - Simple like POS */}
+          {productSalesText && bluetooth.isConnected && (
+            <>
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                    Cetak Laporan Produk
+                  </p>
+                  <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+                </div>
+                
+                {/* Print Button - Green Theme for Reports */}
+                <button
+                  onClick={handlePrintProductSales}
+                  disabled={isPrintingBatch}
+                  className="w-full group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 dark:from-emerald-500 dark:via-green-600 dark:to-teal-700 shadow-lg hover:shadow-xl"
+                >
+                  {/* Background decoration */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  
+                  <div className="relative flex items-center gap-4">
+                    <div className="p-4 rounded-xl bg-white/20 backdrop-blur-sm">
+                      {isPrintingBatch ? (
+                        <Loader2 className="h-8 w-8 text-white animate-spin" />
+                      ) : (
+                        <ReceiptIcon className="h-8 w-8 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-xl font-bold text-white">
+                        {isPrintingBatch ? 'Mencetak...' : 'Cetak Laporan Penjualan'}
+                      </p>
+                      <p className="text-sm text-white/90 mt-1">
+                        Thermal receipt dengan ringkasan produk
+                      </p>
+                    </div>
+                    <Printer className="h-6 w-6 text-white/50" />
+                  </div>
+                </button>
               </div>
             </>
           )}
