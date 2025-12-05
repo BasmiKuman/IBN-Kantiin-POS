@@ -92,12 +92,26 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     data.items.forEach((item, idx) => {
       console.log(`Item ${idx}:`, item);
       
-      // Product name on first line (NO trailing space)
+      // Product name - truncate if too long (max 24 chars for 58mm printer)
       let itemName = item.name;
       if (item.variant) {
         itemName += ' - ' + item.variant;
       }
-      receipt += itemName + '\n';
+      
+      // Log original length
+      console.log(`Product name: "${itemName}" (${itemName.length} chars)`);
+      
+      // Wrap long names to multiple lines (24 char width)
+      if (itemName.length > 24) {
+        const lines = [];
+        for (let i = 0; i < itemName.length; i += 24) {
+          lines.push(itemName.substring(i, i + 24));
+        }
+        receipt += lines.join('\n') + '\n';
+        console.log(`Wrapped to ${lines.length} lines:`, lines);
+      } else {
+        receipt += itemName + '\n';
+      }
       
       // Qty x price = total on second line (all vertical)
       const itemTotal = item.price * item.quantity;
