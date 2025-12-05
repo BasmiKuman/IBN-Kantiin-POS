@@ -200,7 +200,9 @@ export function generateCashierReceipt(data: ReceiptData): string {
   // Items with better spacing
   receipt += LINE_FEED;
   data.items.forEach((item, index) => {
-    const itemName = item.variant ? `${item.name} (${item.variant})` : item.name;
+    // Check if item.name already contains variant in parentheses
+    const hasVariantInName = item.name.includes('(') && item.name.includes(')');
+    const itemName = (!hasVariantInName && item.variant) ? `${item.name} (${item.variant})` : item.name;
     
     // Item name (bold)
     receipt += BOLD_ON;
