@@ -127,7 +127,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     receipt += 'Tidak ada item\n';
   }
   
-  receipt += '--------------------\n'; // Shorter separator (20 chars)
+  receipt += '\n'; // Blank line instead of separator
   
   // Totals - right aligned
   const subtotalLabel = 'Subtotal:';
@@ -146,8 +146,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   const totalValue = 'Rp' + data.total;
   spaces = 24 - totalLabel.length - totalValue.length;
   receipt += totalLabel + ' '.repeat(Math.max(1, spaces)) + totalValue + '\n';
-  receipt += '--------------------\n'; // Shorter separator (20 chars)
-  receipt += '\n';
+  receipt += '\n'; // Blank line instead of separator
   
   // Payment method
   const paymentLabels: Record<string, string> = {
