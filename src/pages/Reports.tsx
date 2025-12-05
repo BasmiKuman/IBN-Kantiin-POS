@@ -99,6 +99,15 @@ export default function Reports() {
   };
   const { start: productStart, end: productEnd } = getProductSalesDateRange();
   const { data: productSales = [], isLoading: loadingProductSales } = useProductSales(productStart, productEnd);
+  
+  // Debug: Log productSales setiap kali data berubah
+  console.log('🔍 ProductSales Hook Data:', {
+    filter: productDateFilter,
+    start: productStart,
+    end: productEnd,
+    dataLength: productSales.length,
+    data: productSales,
+  });
 
   // Filter transactions by date
   const getFilteredTransactions = () => {
