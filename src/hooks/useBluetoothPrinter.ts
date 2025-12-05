@@ -247,16 +247,20 @@ export function useBluetoothPrinter() {
 
     try {
       // Convert to ASCII-safe encoding for thermal printers
-      // Replace non-ASCII characters to prevent printer issues
-      const asciiText = text
-        .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII
-        .replace(/\u001b/g, '\x1b');  // Ensure ESC is correct
+      // Normalize text for thermal printer (keep all printable chars)
+      // Don't strip characters - just ensure proper encoding
+      const normalizedText = text
+        .replace(/\u001b/g, '\x1b')  // Ensure ESC is correct
+        .replace(/\r\n/g, '\n')       // Normalize line endings
+        .replace(/\r/g, '\n');
       
       console.log('Original text length:', text.length);
-      console.log('ASCII text length:', asciiText.length);
+      console.log('Normalized text length:', normalizedText.length);
+      console.log('First 100 chars:', normalizedText.substring(0, 100));
       
+      // Use TextEncoder with UTF-8 (don't strip characters!)
       const encoder = new TextEncoder();
-      const data = encoder.encode(asciiText);
+      const data = encoder.encode(normalizedText);
       
       // Check if characteristic supports write or writeWithoutResponse
       const hasWrite = printer.characteristic.properties.write;
