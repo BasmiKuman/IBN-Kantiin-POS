@@ -340,11 +340,16 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += SEPARATOR;
   
   data.products.forEach((product, index) => {
+    const hargaSatuan = product.total_quantity > 0 
+      ? Math.round(product.total_revenue / product.total_quantity)
+      : 0;
+    
     receipt += LINE_FEED;
     receipt += BOLD_ON;
     receipt += `${product.product_name}\n`;
     receipt += BOLD_OFF;
-    receipt += padText(`Qty: ${product.total_quantity}`, `Rp ${product.total_revenue.toLocaleString('id-ID')}`) + '\n';
+    receipt += `Qty: ${product.total_quantity} x Rp ${hargaSatuan.toLocaleString('id-ID')}\n`;
+    receipt += padText('Total:', `Rp ${product.total_revenue.toLocaleString('id-ID')}`) + '\n';
   });
   
   receipt += LINE_FEED;
