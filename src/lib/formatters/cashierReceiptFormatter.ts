@@ -80,10 +80,8 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   receipt += '\n';
   
   // Items section - simple format with right-aligned prices
+  // No "PESANAN:" header - all products have consistent 2-line format
   console.log('Checking items - exists:', !!data.items, 'length:', data.items?.length);
-  
-  receipt += 'PESANAN:\n';
-  receipt += '\n';
   
   if (data.items && data.items.length > 0) {
     console.log('Processing', data.items.length, 'items');
