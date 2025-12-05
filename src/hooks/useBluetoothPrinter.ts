@@ -246,8 +246,17 @@ export function useBluetoothPrinter() {
     }
 
     try {
+      // Convert to ASCII-safe encoding for thermal printers
+      // Replace non-ASCII characters to prevent printer issues
+      const asciiText = text
+        .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII
+        .replace(/\u001b/g, '\x1b');  // Ensure ESC is correct
+      
+      console.log('Original text length:', text.length);
+      console.log('ASCII text length:', asciiText.length);
+      
       const encoder = new TextEncoder();
-      const data = encoder.encode(text);
+      const data = encoder.encode(asciiText);
       
       // Check if characteristic supports write or writeWithoutResponse
       const hasWrite = printer.characteristic.properties.write;
@@ -263,10 +272,13 @@ export function useBluetoothPrinter() {
       
       console.log('Print: Using method:', useWriteWithoutResponse ? 'writeValueWithoutResponse' : 'writeValue');
       
-      // Split data into chunks if needed (some printers have max packet size)
-      const chunkSize = 512;
+      // Split data into smaller chunks for better compatibility (256 bytes)
+      const chunkSize = 256; // Smaller chunks for Android compatibility
+      console.log('Print: Total chunks:', Math.ceil(data.length / chunkSize));
+      
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
+        console.log(`Print: Sending chunk ${Math.floor(i / chunkSize) + 1}/${Math.ceil(data.length / chunkSize)} (${chunk.length} bytes)`);
         
         if (useWriteWithoutResponse) {
           await printer.characteristic.writeValueWithoutResponse(chunk);
@@ -274,8 +286,8 @@ export function useBluetoothPrinter() {
           await printer.characteristic.writeValue(chunk);
         }
         
-        // Small delay between chunks
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Longer delay between chunks for Android stability
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       return true;
