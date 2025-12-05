@@ -24,26 +24,22 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   console.log('Total Revenue:', data.totalRevenue);
   console.log('Total Items:', data.totalItems);
   
-  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3, CUT_PAPER } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, CUT_PAPER } = PrinterCommands;
   const { receiptSettings } = getReceiptSettings();
   
   let receipt = INIT;
   
   // Header - Centered
-  receipt += ALIGN_CENTER + LINE_FEED;
-  receipt += SEPARATOR_BOLD;
-  receipt += BOLD_ON;
+  receipt += ALIGN_CENTER + '\n';
+  receipt += '========================\n';
   receipt += 'BK POS\n';
-  receipt += BOLD_OFF;
-  receipt += SEPARATOR_BOLD;
-  receipt += LINE_FEED;
+  receipt += '========================\n';
+  receipt += '\n';
   
   // Report Title
-  receipt += BOLD_ON;
   receipt += 'LAPORAN PENJUALAN\n';
   receipt += 'PRODUK\n';
-  receipt += BOLD_OFF;
-  receipt += LINE_FEED;
+  receipt += '\n';
   
   // Period - Left aligned
   receipt += ALIGN_LEFT;
@@ -54,15 +50,10 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   } else {
     receipt += `Tanggal: ${new Date().toLocaleDateString('id-ID')}\n`;
   }
-  receipt += LINE_FEED;
-  receipt += SEPARATOR_BOLD;
+  receipt += '\n';
+  receipt += '========================\n';
   
-  // Products List
-  receipt += LINE_FEED;
-  receipt += BOLD_ON;
-  receipt += 'DETAIL PRODUK:\n';
-  receipt += BOLD_OFF;
-  receipt += SEPARATOR;
+  // Products List - NO header, direct to products
   receipt += '\n';
   
   console.log('Formatting', data.products.length, 'products...');
@@ -73,7 +64,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
-    // Product name - no bold for Android compatibility
+    // Product name - direct without formatting
     receipt += `${product.product_name}\n`;
     
     // Quantity and price per item
@@ -83,7 +74,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   console.log('Products formatted, adding summary...');
   
-  receipt += SEPARATOR_BOLD;
+  receipt += '========================\n';
   
   // Summary - simplified for Android
   receipt += '\n';
@@ -103,7 +94,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += itemLabel + ' '.repeat(Math.max(1, itemPadding)) + itemValue + '\n';
   
   receipt += '\n';
-  receipt += SEPARATOR_BOLD;
+  receipt += '========================\n';
   
   // GRAND TOTAL - simplified for Android
   receipt += '\n';
@@ -111,7 +102,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   const grandValue = `Rp${data.totalRevenue.toLocaleString('id-ID')}`;
   const grandPadding = 24 - grandLabel.length - grandValue.length;
   receipt += grandLabel + ' '.repeat(Math.max(1, grandPadding)) + grandValue + '\n';
-  receipt += SEPARATOR_BOLD;
+  receipt += '========================\n';
   
   console.log('Grand total added:', grandValue);
   console.log('Receipt length:', receipt.length);

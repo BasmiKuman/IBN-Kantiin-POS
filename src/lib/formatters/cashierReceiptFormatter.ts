@@ -22,7 +22,7 @@ export interface CashierReceiptData {
 
 // Generate Cashier Receipt (untuk kasir/customer)
 export function generateCashierReceipt(data: CashierReceiptData): string {
-  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, CUT_PAPER, LINE_FEED_3 } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, CUT_PAPER } = PrinterCommands;
   const { receiptSettings, storeSettings } = getReceiptSettings();
   
   // Debug log
@@ -82,21 +82,18 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   if (data.customerName) {
     receipt += `Customer: ${data.customerName}\n`;
   }
-  receipt += LINE_FEED;
-  receipt += SEPARATOR_BOLD;
-  
-  // Items section - Simplified for Android compatibility
   receipt += '\n';
-  receipt += 'DETAIL PESANAN:\n';
-  receipt += SEPARATOR;
+  receipt += '========================\n';
   
-  // Check if items exist and has length
+  // Items section - NO header, direct to products for Android compatibility
   console.log('Checking items - exists:', !!data.items, 'length:', data.items?.length);
   
   if (data.items && data.items.length > 0) {
     console.log('Processing', data.items.length, 'items');
     
-    // Items with simple format (no BOLD to avoid Android issues)
+    receipt += '\n';
+    
+    // Items - direct format without any header
     data.items.forEach((item, idx) => {
       console.log(`Item ${idx}:`, item);
       
@@ -104,7 +101,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
       const hasVariantInName = item.name.includes('(') && item.name.includes(')');
       const itemName = (!hasVariantInName && item.variant) ? `${item.name} (${item.variant})` : item.name;
       
-      // Item name on one line (no bold)
+      // Item name on one line
       receipt += itemName + '\n';
       
       // Quantity, price, and subtotal on one line
@@ -117,10 +114,10 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     });
   } else {
     console.log('NO ITEMS FOUND!');
-    receipt += 'Tidak ada item\n';
+    receipt += '\nTidak ada item\n\n';
   }
   
-  receipt += SEPARATOR;
+  receipt += '------------------------\n';
   
   // Totals - simplified for Android
   receipt += '\n';
@@ -149,13 +146,13 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   // Footer - simplified for Android
   receipt += '\n\n';
   receipt += ALIGN_CENTER;
-  receipt += SEPARATOR;
+  receipt += '------------------------\n';
   const footerLines = wrapText(receiptSettings.footer, 24);
   footerLines.forEach(line => {
     receipt += `${line}\n`;
   });
   receipt += 'Terima kasih!\n';
-  receipt += SEPARATOR;
+  receipt += '------------------------\n';
   receipt += '\n\n\n';
   
   // Cut paper
