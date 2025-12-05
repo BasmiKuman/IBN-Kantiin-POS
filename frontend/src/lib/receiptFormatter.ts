@@ -69,16 +69,20 @@ function getReceiptSettings() {
 
 // Generate Kitchen Receipt (untuk dapur)
 export function generateKitchenReceipt(data: ReceiptData): string {
-  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_DOUBLE, FONT_SIZE_LARGE, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3 } = PrinterCommands;
-  const { storeSettings } = getReceiptSettings();
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3 } = PrinterCommands;
+  const { receiptSettings, storeSettings } = getReceiptSettings();
   
   let receipt = INIT; // Initialize printer
   
-  // Brand Header - MODERN STYLE
-  receipt += ALIGN_CENTER + BOLD_ON + FONT_SIZE_LARGE;
-  receipt += 'BK POS\n';
-  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
-  receipt += storeSettings.name.toUpperCase() + '\n';
+  // Brand Header - BK POS (selalu muncul)
+  receipt += ALIGN_CENTER + BOLD_ON;
+  receipt += '== BK POS ==\n';
+  receipt += BOLD_OFF;
+  
+  // Store name dari settings
+  if (receiptSettings.header) {
+    receipt += receiptSettings.header + '\n';
+  }
   receipt += LINE_FEED;
   
   // Kitchen Badge
@@ -93,9 +97,9 @@ export function generateKitchenReceipt(data: ReceiptData): string {
   receipt += BOLD_ON;
   receipt += `ORDER #${data.orderNumber}\n`;
   receipt += BOLD_OFF;
-  receipt += `\u23F0 ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}\n`;
+  receipt += `Waktu: ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}\n`;
   if (data.customerName) {
-    receipt += `\uD83D\uDC64 ${data.customerName}\n`;
+    receipt += `Pelanggan: ${data.customerName}\n`;
   }
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
@@ -110,7 +114,7 @@ export function generateKitchenReceipt(data: ReceiptData): string {
     receipt += `${item.quantity}x  ${item.name}\n`;
     receipt += BOLD_OFF;
     if (item.variant) {
-      receipt += `     \u2514\u2500 ${item.variant}\n`;
+      receipt += `     > ${item.variant}\n`;
     }
     if (index < data.items.length - 1) {
       receipt += LINE_FEED;
@@ -128,25 +132,23 @@ export function generateKitchenReceipt(data: ReceiptData): string {
 
 // Generate Cashier Receipt (untuk kasir/customer)
 export function generateCashierReceipt(data: ReceiptData): string {
-  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_DOUBLE, FONT_SIZE_LARGE, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, CUT_PAPER, LINE_FEED_3 } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, BOLD_ON, BOLD_OFF, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, CUT_PAPER, LINE_FEED_3 } = PrinterCommands;
   const { receiptSettings, storeSettings } = getReceiptSettings();
   
   let receipt = INIT; // Initialize printer
   
-  // Modern Header with Box Design
+  // Header
   receipt += ALIGN_CENTER + LINE_FEED;
-  receipt += '\u256D' + '\u2500'.repeat(30) + '\u256E\n';
-  receipt += '\u2502' + ' '.repeat(30) + '\u2502\n';
+  receipt += SEPARATOR_BOLD;
   
-  // Brand Header - ALWAYS SHOW (tidak bisa diubah)
-  receipt += '\u2502  ' + BOLD_ON + FONT_SIZE_LARGE;
-  receipt += 'BK POS';
-  receipt += FONT_SIZE_NORMAL + BOLD_OFF + '  \u2502\n';
-  receipt += '\u2502' + ' '.repeat(30) + '\u2502\n';
-  receipt += '\u2570' + '\u2500'.repeat(30) + '\u256F\n';
+  // Brand Header - ALWAYS SHOW (BK POS tetap muncul)
+  receipt += BOLD_ON;
+  receipt += 'BK POS\n';
+  receipt += BOLD_OFF;
+  receipt += SEPARATOR_BOLD;
   receipt += LINE_FEED;
   
-  // Store Header (dari settings - bisa diubah)
+  // Store Header (dari settings)
   receipt += BOLD_ON;
   receipt += `${receiptSettings.header}\n`;
   receipt += BOLD_OFF;
@@ -157,24 +159,24 @@ export function generateCashierReceipt(data: ReceiptData): string {
   }
   
   // Store Info (dari settings)
-  receipt += `\uD83D\uDCCD ${storeSettings.address}\n`;
+  receipt += `${storeSettings.address}\n`;
   if (storeSettings.phone) {
-    receipt += `\uD83D\uDCDE ${storeSettings.phone}\n`;
+    receipt += `Telp: ${storeSettings.phone}\n`;
   }
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
-  // Order info with icons
+  // Order info
   receipt += ALIGN_LEFT + LINE_FEED;
   receipt += BOLD_ON;
-  receipt += `\uD83D\uDCDD Order #${data.orderNumber}\n`;
+  receipt += `Order #${data.orderNumber}\n`;
   receipt += BOLD_OFF;
-  receipt += `\uD83D\uDCC5 ${data.date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} \u23F0 ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}\n`;
+  receipt += `${data.date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}\n`;
   if (data.cashierName) {
-    receipt += `\uD83D\uDC68\u200D\uD83D\uDCBC Kasir: ${data.cashierName}\n`;
+    receipt += `Kasir: ${data.cashierName}\n`;
   }
   if (data.customerName) {
-    receipt += `\uD83D\uDC64 ${data.customerName}\n`;
+    receipt += `Customer: ${data.customerName}\n`;
   }
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
@@ -218,30 +220,28 @@ export function generateCashierReceipt(data: ReceiptData): string {
   receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
   
-  // Payment method with icon
+  // Payment method
   receipt += LINE_FEED;
   const paymentLabels: Record<string, string> = {
-    cash: '\uD83D\uDCB5 Tunai',
-    qris: '\uD83D\uDCF1 QRIS',
-    transfer: '\uD83C\uDFE6 Transfer',
-    debit: '\uD83D\uDCB3 Debit',
-    credit: '\uD83D\uDCB3 Kartu Kredit',
+    cash: 'Tunai',
+    qris: 'QRIS',
+    transfer: 'Transfer Bank',
+    debit: 'Kartu Debit',
+    credit: 'Kartu Kredit',
   };
   receipt += BOLD_ON;
-  receipt += `Metode: ${paymentLabels[data.paymentMethod] || data.paymentMethod}\n`;
+  receipt += `Pembayaran: ${paymentLabels[data.paymentMethod] || data.paymentMethod}\n`;
   receipt += BOLD_OFF;
   
-  // Footer with decorative elements (dari settings)
+  // Footer (dari settings)
   receipt += LINE_FEED + LINE_FEED;
   receipt += ALIGN_CENTER;
-  receipt += '\u2726'.repeat(32) + '\n';
-  receipt += LINE_FEED;
+  receipt += SEPARATOR;
   receipt += BOLD_ON;
   receipt += `${receiptSettings.footer}\n`;
   receipt += BOLD_OFF;
-  receipt += '\u2665 Sampai jumpa lagi! \u2665\n';
-  receipt += LINE_FEED;
-  receipt += '\u2726'.repeat(32) + '\n';
+  receipt += 'Terima kasih!\n';
+  receipt += SEPARATOR;
   receipt += LINE_FEED_3;
   
   // Cut paper
@@ -252,22 +252,23 @@ export function generateCashierReceipt(data: ReceiptData): string {
 
 // Simple test receipt with modern design
 export function generateTestReceipt(): string {
-  const { INIT, ALIGN_CENTER, BOLD_ON, BOLD_OFF, FONT_SIZE_DOUBLE, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3 } = PrinterCommands;
+  const { INIT, ALIGN_CENTER, BOLD_ON, BOLD_OFF, FONT_SIZE_NORMAL, LINE_FEED, SEPARATOR, SEPARATOR_BOLD, LINE_FEED_3 } = PrinterCommands;
   
   let receipt = INIT;
   receipt += ALIGN_CENTER + LINE_FEED;
   
-  // Header box
-  receipt += '\u256D' + '\u2500'.repeat(30) + '\u256E\n';
-  receipt += '\u2502' + ' '.repeat(12) + 'TEST' + ' '.repeat(14) + '\u2502\n';
-  receipt += '\u2502' + ' '.repeat(11) + 'PRINT' + ' '.repeat(14) + '\u2502\n';
-  receipt += '\u2570' + '\u2500'.repeat(30) + '\u256F\n';
+  // Header
+  receipt += SEPARATOR_BOLD;
+  receipt += BOLD_ON;
+  receipt += 'TEST PRINT\n';
+  receipt += BOLD_OFF;
+  receipt += SEPARATOR_BOLD;
   
-  receipt += LINE_FEED + SEPARATOR_BOLD + LINE_FEED;
+  receipt += LINE_FEED;
   
-  receipt += BOLD_ON + FONT_SIZE_LARGE;
-  receipt += '\u2705 SUKSES!\n';
-  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
+  receipt += BOLD_ON;
+  receipt += 'SUKSES!\n';
+  receipt += BOLD_OFF;
   
   receipt += LINE_FEED;
   receipt += 'Printer berhasil terhubung\n';
@@ -275,7 +276,7 @@ export function generateTestReceipt(): string {
   
   receipt += LINE_FEED + SEPARATOR + LINE_FEED;
   
-  receipt += `\u23F0 ${new Date().toLocaleString('id-ID')}\n`;
+  receipt += `${new Date().toLocaleString('id-ID')}\n`;
   
   receipt += LINE_FEED + SEPARATOR_BOLD + LINE_FEED;
   

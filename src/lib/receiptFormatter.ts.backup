@@ -97,9 +97,9 @@ export function generateKitchenReceipt(data: ReceiptData): string {
   receipt += BOLD_ON;
   receipt += `ORDER #${data.orderNumber}\n`;
   receipt += BOLD_OFF;
-  receipt += `Waktu: ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}\n`;
+  receipt += `\u23F0 ${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}\n`;
   if (data.customerName) {
-    receipt += `Pelanggan: ${data.customerName}\n`;
+    receipt += `\uD83D\uDC64 ${data.customerName}\n`;
   }
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
@@ -114,7 +114,7 @@ export function generateKitchenReceipt(data: ReceiptData): string {
     receipt += `${item.quantity}x  ${item.name}\n`;
     receipt += BOLD_OFF;
     if (item.variant) {
-      receipt += `     > ${item.variant}\n`;
+      receipt += `     \u2514\u2500 ${item.variant}\n`;
     }
     if (index < data.items.length - 1) {
       receipt += LINE_FEED;
