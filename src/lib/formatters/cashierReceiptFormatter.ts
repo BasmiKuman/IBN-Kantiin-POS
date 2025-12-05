@@ -85,13 +85,10 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
-  // Items section - ALWAYS show, even if empty
-  receipt += LINE_FEED;
-  receipt += BOLD_ON;
+  // Items section - Simplified for Android compatibility
+  receipt += '\n';
   receipt += 'DETAIL PESANAN:\n';
-  receipt += BOLD_OFF;
   receipt += SEPARATOR;
-  receipt += LINE_FEED;
   
   // Check if items exist and has length
   console.log('Checking items - exists:', !!data.items, 'length:', data.items?.length);
@@ -99,7 +96,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   if (data.items && data.items.length > 0) {
     console.log('Processing', data.items.length, 'items');
     
-    // Items with detail format
+    // Items with simple format (no BOLD to avoid Android issues)
     data.items.forEach((item, idx) => {
       console.log(`Item ${idx}:`, item);
       
@@ -107,42 +104,39 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
       const hasVariantInName = item.name.includes('(') && item.name.includes(')');
       const itemName = (!hasVariantInName && item.variant) ? `${item.name} (${item.variant})` : item.name;
       
-      // Item name - bold and on one line
-      receipt += BOLD_ON + itemName + '\n' + BOLD_OFF;
+      // Item name on one line (no bold)
+      receipt += itemName + '\n';
       
       // Quantity, price, and subtotal on one line
       const qtyPrice = `${item.quantity} x ${formatCurrency(item.price)}`;
       const subtotal = formatCurrency(item.price * item.quantity);
       receipt += padText(`  ${qtyPrice}`, subtotal) + '\n';
-      receipt += LINE_FEED;
+      receipt += '\n';
       
       console.log('Item formatted:', itemName, qtyPrice, subtotal);
     });
   } else {
     console.log('NO ITEMS FOUND!');
     receipt += 'Tidak ada item\n';
-    receipt += LINE_FEED;
   }
   
   receipt += SEPARATOR;
   
-  // Totals with better formatting
-  receipt += LINE_FEED;
+  // Totals - simplified for Android
+  receipt += '\n';
   receipt += padText('Subtotal:', formatCurrency(data.subtotal)) + '\n';
   
   if (data.tax > 0) {
     receipt += padText('Pajak:', formatCurrency(data.tax)) + '\n';
   }
   
-  receipt += LINE_FEED;
+  receipt += '\n';
   receipt += SEPARATOR_BOLD;
-  receipt += BOLD_ON;
   receipt += padText('TOTAL:', formatCurrency(data.total)) + '\n';
-  receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
   
-  // Payment method
-  receipt += LINE_FEED;
+  // Payment method - simplified
+  receipt += '\n';
   const paymentLabels: Record<string, string> = {
     cash: 'Tunai',
     qris: 'QRIS',
@@ -150,23 +144,19 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     debit: 'Kartu Debit',
     credit: 'Kartu Kredit',
   };
-  receipt += BOLD_ON;
   receipt += `Pembayaran: ${paymentLabels[data.paymentMethod] || data.paymentMethod}\n`;
-  receipt += BOLD_OFF;
   
-  // Footer (dari settings) - centered & word wrap
-  receipt += LINE_FEED + LINE_FEED;
+  // Footer - simplified for Android
+  receipt += '\n\n';
   receipt += ALIGN_CENTER;
   receipt += SEPARATOR;
   const footerLines = wrapText(receiptSettings.footer, 24);
-  receipt += BOLD_ON;
   footerLines.forEach(line => {
     receipt += `${line}\n`;
   });
-  receipt += BOLD_OFF;
   receipt += 'Terima kasih!\n';
   receipt += SEPARATOR;
-  receipt += LINE_FEED_3;
+  receipt += '\n\n\n';
   
   // Cut paper
   receipt += CUT_PAPER;
