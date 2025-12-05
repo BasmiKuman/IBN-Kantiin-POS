@@ -116,6 +116,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
       // Qty x price = total on second line (all vertical)
       const itemTotal = item.price * item.quantity;
       receipt += '  ' + item.quantity + ' x Rp' + item.price + ' = Rp' + itemTotal + '\n';
+      receipt += '\n'; // Add blank line after each item
       
       console.log('Added item to receipt');
     });
@@ -126,7 +127,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     receipt += 'Tidak ada item\n';
   }
   
-  receipt += '------------------------\n';
+  receipt += '--------------------\n'; // Shorter separator (20 chars)
   
   // Totals - right aligned
   const subtotalLabel = 'Subtotal:';
@@ -145,7 +146,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   const totalValue = 'Rp' + data.total;
   spaces = 24 - totalLabel.length - totalValue.length;
   receipt += totalLabel + ' '.repeat(Math.max(1, spaces)) + totalValue + '\n';
-  receipt += '------------------------\n';
+  receipt += '--------------------\n'; // Shorter separator (20 chars)
   receipt += '\n';
   
   // Payment method
