@@ -59,14 +59,14 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
-    // Product name on first line with space after
-    receipt += product.product_name + ' \n';
+    // Product name on first line (NO trailing space)
+    receipt += product.product_name + '\n';
     
     // Qty x price = total on second line (all vertical)
-    receipt += '  ' + product.total_quantity + ' x Rp' + hargaSatuan + ' = Rp' + product.total_revenue + ' \n';
+    receipt += '  ' + product.total_quantity + ' x Rp' + hargaSatuan + ' = Rp' + product.total_revenue + '\n';
     
-    // Add blank line after each product for better readability
-    receipt += '\n';
+    // Separator line after each product
+    receipt += '- - - - - - - - - - - -\n';
   });
   
   console.log('Products formatted, adding summary...');
