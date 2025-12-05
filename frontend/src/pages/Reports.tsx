@@ -10,9 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, TrendingUp, DollarSign, ShoppingCart, Package, FileText, FileSpreadsheet, Calendar, Clock, Hash } from "lucide-react";
+import { Download, TrendingUp, DollarSign, ShoppingCart, Package, FileText, FileSpreadsheet, Calendar, Clock, Hash, Printer } from "lucide-react";
 import { useTransactions, useDailySales, useProductSales, type Transaction } from "@/hooks/supabase/useTransactions";
 import { useProducts } from "@/hooks/supabase/useProducts";
+import { PrintDialog } from "@/components/PrintDialog";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -47,6 +48,9 @@ export default function Reports() {
   const [productDateFilter, setProductDateFilter] = useState<string>('all');
   const [productStartDate, setProductStartDate] = useState<string>('');
   const [productEndDate, setProductEndDate] = useState<string>('');
+  
+  // State for Print Dialog
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
 
   const { data: transactions = [] as Transaction[], isLoading: loadingTransactions } = useTransactions();
   const { data: dailySales = [], isLoading: loadingDailySales } = useDailySales();
@@ -541,6 +545,18 @@ export default function Reports() {
                     </div>
                   </>
                 )}
+                {/* Print Thermal Button */}
+                <div className="ml-auto">
+                  <Button
+                    onClick={() => setShowPrintDialog(true)}
+                    disabled={loadingProductSales || productSales.length === 0}
+                    className="gap-2"
+                    variant="outline"
+                  >
+                    <Printer className="h-4 w-4" />
+                    Print Thermal
+                  </Button>
+                </div>
               </div>
               {loadingProductSales ? (
                 <div className="text-center py-8">
@@ -764,6 +780,28 @@ export default function Reports() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Print Dialog for Product Sales Report */}
+      <PrintDialog 
+        open={showPrintDialog}
+        onOpenChange={setShowPrintDialog}
+        batchMode={true}
+        batchTransactions={productSales.map((product, index) => ({
+          orderNumber: `PROD-${index + 1}`,
+          items: [{
+            name: product.product_name || 'Unknown Product',
+            quantity: product.total_quantity || 0,
+            price: product.total_revenue ? Math.round(product.total_revenue / product.total_quantity) : 0,
+            total: product.total_revenue || 0,
+          }],
+          subtotal: product.total_revenue || 0,
+          tax: 0,
+          total: product.total_revenue || 0,
+          paymentMethod: 'Multiple',
+          date: new Date(),
+          cashierName: 'System',
+        }))}
+      />
     </div>
   );
 }
