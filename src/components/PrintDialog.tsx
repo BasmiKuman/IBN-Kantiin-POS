@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Search, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles } from 'lucide-react';
+import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Search, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles, FileText } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
 import { useNativeBluetoothPrinter } from '@/hooks/useNativeBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
