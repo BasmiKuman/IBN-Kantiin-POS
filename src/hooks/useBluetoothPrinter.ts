@@ -24,8 +24,8 @@ export const PrinterCommands = {
   CUT_PAPER: GS + 'V' + '\x41' + '\x00',
   LINE_FEED: '\n',
   LINE_FEED_3: '\n\n\n',
-  SEPARATOR: '--------------------------------\n',
-  SEPARATOR_BOLD: '================================\n',
+  SEPARATOR: '------------------------\n',      // 24 chars untuk 58mm thermal
+  SEPARATOR_BOLD: '========================\n',  // 24 chars untuk 58mm thermal
 };
 
 export function useBluetoothPrinter() {

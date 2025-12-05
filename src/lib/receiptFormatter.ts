@@ -35,8 +35,8 @@ export interface ProductSalesReportData {
   cashierName?: string;
 }
 
-// Helper function to pad text for alignment (58mm = 32 chars)
-function padText(left: string, right: string, width: number = 32): string {
+// Helper function to pad text for alignment (58mm = 24 chars untuk printer kecil)
+function padText(left: string, right: string, width: number = 24): string {
   const totalLength = left.length + right.length;
   const spaces = width - totalLength;
   return left + ' '.repeat(Math.max(1, spaces)) + right;
