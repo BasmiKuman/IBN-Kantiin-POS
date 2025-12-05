@@ -64,6 +64,9 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
     
     // Qty x price = total on second line (all vertical)
     receipt += '  ' + product.total_quantity + ' x Rp' + hargaSatuan + ' = Rp' + product.total_revenue + ' \n';
+    
+    // Add blank line after each product for better readability
+    receipt += '\n';
   });
   
   console.log('Products formatted, adding summary...');
