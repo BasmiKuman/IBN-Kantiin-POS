@@ -793,6 +793,8 @@ export default function Reports() {
                   productDateFilter === 'month' ? '30 Hari Terakhir' :
                   productDateFilter === 'custom' && productStartDate && productEndDate 
                     ? `${productStartDate} s/d ${productEndDate}` : 'Semua',
+          startDate: productStart,
+          endDate: productEnd,
           products: productSales.map(p => ({
             product_name: p.product_name || 'Unknown Product',
             total_quantity: p.total_quantity || 0,
@@ -800,6 +802,7 @@ export default function Reports() {
           })),
           totalItems: productSales.reduce((sum, p) => sum + (p.total_quantity || 0), 0),
           totalRevenue: productSales.reduce((sum, p) => sum + (p.total_revenue || 0), 0),
+          cashierName: localStorage.getItem('userName') || 'Admin',
         })}
       />
     </div>

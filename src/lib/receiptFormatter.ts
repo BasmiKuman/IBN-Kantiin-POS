@@ -27,9 +27,12 @@ export interface ProductSalesItem {
 
 export interface ProductSalesReportData {
   period: string;
+  startDate?: string;
+  endDate?: string;
   products: ProductSalesItem[];
   totalItems: number;
   totalRevenue: number;
+  cashierName?: string;
 }
 
 // Helper function to pad text for alignment (58mm = 32 chars)
@@ -328,7 +331,12 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   // Period
   receipt += ALIGN_LEFT;
   receipt += `Periode: ${data.period}\n`;
-  receipt += `Tanggal: ${new Date().toLocaleDateString('id-ID')}\n`;
+  if (data.startDate && data.endDate) {
+    receipt += `Dari: ${new Date(data.startDate).toLocaleDateString('id-ID')}\n`;
+    receipt += `Sampai: ${new Date(data.endDate).toLocaleDateString('id-ID')}\n`;
+  } else {
+    receipt += `Tanggal: ${new Date().toLocaleDateString('id-ID')}\n`;
+  }
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
@@ -378,7 +386,9 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += BOLD_ON;
   receipt += `${receiptSettings.footer}\n`;
   receipt += BOLD_OFF;
-  receipt += 'Terima kasih!\n';
+  if (data.cashierName) {
+    receipt += `Dicetak oleh: ${data.cashierName}\n`;
+  }
   receipt += SEPARATOR;
   receipt += LINE_FEED_3;
   
