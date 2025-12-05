@@ -357,6 +357,40 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           </DialogDescription>
         </DialogHeader>
 
+        {/* Tabs untuk Preview dan Print */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'preview' | 'print')} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="preview" className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Preview Struk
+            </TabsTrigger>
+            <TabsTrigger value="print" className="flex items-center gap-2">
+              <Printer className="h-4 w-4" />
+              Cetak Struk
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Preview Tab */}
+          <TabsContent value="preview" className="mt-0">
+            {receiptData && !batchMode && (
+              <div className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg max-h-[500px] overflow-y-auto">
+                  <ReceiptPreview data={receiptData} type="cashier" />
+                </div>
+                <p className="text-sm text-center text-gray-500">
+                  Preview struk kasir - Klik tab "Cetak Struk" untuk mencetak
+                </p>
+              </div>
+            )}
+            {!receiptData && !batchMode && (
+              <div className="text-center py-8 text-gray-500">
+                Tidak ada data struk untuk ditampilkan
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Print Tab */}
+          <TabsContent value="print" className="mt-0">
         <div className="space-y-5">
           {/* Connection Status Card - Colorful */}
           <div className={`relative overflow-hidden rounded-2xl p-5 ${
@@ -780,6 +814,8 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </Alert>
           )}
         </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
