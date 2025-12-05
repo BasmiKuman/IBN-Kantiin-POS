@@ -10,14 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles, FileText, Eye } from 'lucide-react';
+import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles, FileText } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { ReceiptPreview } from './ReceiptPreview';
 
 interface PrintDialogProps {
   open: boolean;
@@ -37,7 +35,6 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
   const [isPrintingCashier, setIsPrintingCashier] = useState(false);
   const [isPrintingBatch, setIsPrintingBatch] = useState(false);
   const [showDeviceList, setShowDeviceList] = useState(false);
-  const [activeTab, setActiveTab] = useState<'print' | 'preview'>('preview');
   
   // Date filter for batch summary
   const today = new Date().toISOString().split('T')[0];
@@ -357,40 +354,6 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           </DialogDescription>
         </DialogHeader>
 
-        {/* Tabs untuk Preview dan Print */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'preview' | 'print')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="preview" className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              Preview Struk
-            </TabsTrigger>
-            <TabsTrigger value="print" className="flex items-center gap-2">
-              <Printer className="h-4 w-4" />
-              Cetak Struk
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Preview Tab */}
-          <TabsContent value="preview" className="mt-0">
-            {receiptData && !batchMode && (
-              <div className="space-y-4">
-                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg max-h-[500px] overflow-y-auto">
-                  <ReceiptPreview data={receiptData} type="cashier" />
-                </div>
-                <p className="text-sm text-center text-gray-500">
-                  Preview struk kasir - Klik tab "Cetak Struk" untuk mencetak
-                </p>
-              </div>
-            )}
-            {!receiptData && !batchMode && (
-              <div className="text-center py-8 text-gray-500">
-                Tidak ada data struk untuk ditampilkan
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Print Tab */}
-          <TabsContent value="print" className="mt-0">
         <div className="space-y-5">
           {/* Connection Status Card - Colorful */}
           <div className={`relative overflow-hidden rounded-2xl p-5 ${
@@ -814,8 +777,6 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </Alert>
           )}
         </div>
-          </TabsContent>
-        </Tabs>
       </DialogContent>
     </Dialog>
   );

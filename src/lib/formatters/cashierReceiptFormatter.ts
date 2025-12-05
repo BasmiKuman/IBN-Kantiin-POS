@@ -84,6 +84,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   
   if (data.items && data.items.length > 0) {
     console.log('Processing', data.items.length, 'items');
+    console.log('Items array:', JSON.stringify(data.items));
     
     receipt += '\n';
     
@@ -95,17 +96,25 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
       const hasVariantInName = item.name.includes('(') && item.name.includes(')');
       const itemName = (!hasVariantInName && item.variant) ? `${item.name} (${item.variant})` : item.name;
       
+      console.log('  - Item name:', itemName);
+      
       // Item name on one line
       receipt += itemName + '\n';
       
       // Quantity, price, and subtotal on one line
       const qtyPrice = `${item.quantity} x ${formatCurrency(item.price)}`;
       const subtotal = formatCurrency(item.price * item.quantity);
+      
+      console.log('  - QtyPrice:', qtyPrice);
+      console.log('  - Subtotal:', subtotal);
+      
       receipt += padText(`  ${qtyPrice}`, subtotal) + '\n';
       receipt += '\n';
       
-      console.log('Item formatted:', itemName, qtyPrice, subtotal);
+      console.log('Item formatted successfully');
     });
+    
+    console.log('All items processed. Receipt length so far:', receipt.length);
   } else {
     console.log('NO ITEMS FOUND!');
     receipt += '\nTidak ada item\n\n';

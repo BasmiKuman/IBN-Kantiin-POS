@@ -38,9 +38,18 @@ export function wrapText(text: string, maxWidth: number = 24): string[] {
   return lines.length > 0 ? lines : [''];
 }
 
-// Format currency (shorter format for 58mm)
+// Format currency (shorter format for 58mm, with fallback for Android)
 export function formatCurrency(amount: number): string {
-  return 'Rp' + amount.toLocaleString('id-ID');
+  try {
+    // Try toLocaleString first
+    const formatted = amount.toLocaleString('id-ID');
+    return 'Rp' + formatted;
+  } catch (e) {
+    // Fallback for Android browsers that might have issues
+    const str = Math.round(amount).toString();
+    // Add thousand separators manually
+    return 'Rp' + str.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
 }
 
 // Get settings from localStorage
