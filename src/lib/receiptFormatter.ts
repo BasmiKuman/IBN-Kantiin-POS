@@ -244,12 +244,8 @@ export function generateCashierReceipt(data: ReceiptData): string {
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
-  // Items header - Table format
+  // Items section
   receipt += LINE_FEED;
-  receipt += BOLD_ON;
-  receipt += 'Item         Qty @Harga\n';
-  receipt += BOLD_OFF;
-  receipt += SEPARATOR;
   
   // Items with detail format
   data.items.forEach((item) => {
@@ -446,10 +442,12 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += SEPARATOR_BOLD;
   
   // GRAND TOTAL - Make it prominent
+  receipt += LINE_FEED;
   receipt += BOLD_ON;
   receipt += padText('TOTAL PENJUALAN:', `Rp${data.totalRevenue.toLocaleString('id-ID')}`) + '\n';
   receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
+  receipt += LINE_FEED;
   
   // Footer - Centered & wrapped
   receipt += LINE_FEED + LINE_FEED;
