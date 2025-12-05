@@ -126,12 +126,21 @@ export function generateKitchenReceipt(data: ReceiptData): string {
   receipt += BOLD_OFF + LINE_FEED;
   
   data.items.forEach((item, index) => {
+    // Check if item.name already contains variant in parentheses
+    const hasVariantInName = item.name.includes('(') && item.name.includes(')');
+    
     receipt += BOLD_ON;
-    receipt += `${item.quantity}x  ${item.name}\n`;
-    receipt += BOLD_OFF;
-    if (item.variant) {
+    // If variant is NOT already in name, show variant separately below
+    if (!hasVariantInName && item.variant) {
+      receipt += `${item.quantity}x  ${item.name}\n`;
+      receipt += BOLD_OFF;
       receipt += `     > ${item.variant}\n`;
+    } else {
+      // If variant already in name or no variant, just show the name
+      receipt += `${item.quantity}x  ${item.name}\n`;
+      receipt += BOLD_OFF;
     }
+    
     if (index < data.items.length - 1) {
       receipt += LINE_FEED;
     }
