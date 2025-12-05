@@ -36,9 +36,9 @@ export function generateKitchenReceipt(data: KitchenReceiptData): string {
   
   // Order info
   receipt += ALIGN_LEFT + LINE_FEED;
-  receipt += BOLD_ON + FONT_SIZE_DOUBLE;
+  receipt += BOLD_ON;
   receipt += `Order #${data.orderNumber}\n`;
-  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
+  receipt += BOLD_OFF;
   receipt += `${data.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}\n`;
   
   if (data.customerName) {

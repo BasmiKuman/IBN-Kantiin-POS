@@ -58,35 +58,23 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += 'DETAIL PRODUK:\n';
   receipt += BOLD_OFF;
   receipt += SEPARATOR;
+  receipt += LINE_FEED;
   
   data.products.forEach((product) => {
     const hargaSatuan = product.total_quantity > 0 
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
-    receipt += LINE_FEED;
+    // Product name - bold, ensure not cut
+    receipt += BOLD_ON;
+    receipt += `${product.product_name}\n`;
+    receipt += BOLD_OFF;
     
-    // Product name - wrap if too long
-    const productLines = wrapText(product.product_name, 24);
-    productLines.forEach((line, idx) => {
-      if (idx === 0) {
-        receipt += BOLD_ON + line + '\n' + BOLD_OFF;
-      } else {
-        receipt += line + '\n';
-      }
-    });
-    
-    // Quantity and unit price
+    // Quantity and price per item
     receipt += `${product.total_quantity} x Rp${hargaSatuan.toLocaleString('id-ID')}\n`;
-    
-    // Total for this product - using padText manually
-    const totalLabel = 'Total:';
-    const totalValue = `Rp${product.total_revenue.toLocaleString('id-ID')}`;
-    const padding = 24 - totalLabel.length - totalValue.length;
-    receipt += totalLabel + ' '.repeat(Math.max(1, padding)) + totalValue + '\n';
+    receipt += LINE_FEED;
   });
   
-  receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
   // Summary
@@ -120,26 +108,16 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += grandLabel + ' '.repeat(Math.max(1, grandPadding)) + grandValue + '\n';
   receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
-  receipt += LINE_FEED;
   
-  // Footer - Centered & wrapped
-  receipt += LINE_FEED + LINE_FEED;
+  // Footer - Simple print info only
+  receipt += LINE_FEED + LINE_FEED + LINE_FEED;
   receipt += ALIGN_CENTER;
-  receipt += SEPARATOR;
   
-  const footerLines = wrapText(receiptSettings.footer, 24);
-  receipt += BOLD_ON;
-  footerLines.forEach(line => {
-    receipt += `${line}\n`;
-  });
-  receipt += BOLD_OFF;
-  
+  receipt += `Dicetak: ${new Date().toLocaleString('id-ID')}\n`;
   if (data.cashierName) {
-    receipt += LINE_FEED;
-    receipt += `Dicetak: ${data.cashierName}\n`;
+    receipt += `Oleh: ${data.cashierName}\n`;
   }
   
-  receipt += SEPARATOR;
   receipt += LINE_FEED_3;
   
   // Cut paper
