@@ -18,9 +18,9 @@ export const PrinterCommands = {
   ALIGN_RIGHT: ESC + 'a' + '\x02',
   BOLD_ON: ESC + 'E' + '\x01',
   BOLD_OFF: ESC + 'E' + '\x00',
-  FONT_SIZE_NORMAL: GS + '!' + '\x00',
-  FONT_SIZE_DOUBLE: GS + '!' + '\x11',
-  FONT_SIZE_LARGE: GS + '!' + '\x22',
+  FONT_SIZE_NORMAL: ESC + '!' + '\x00',     // Normal size (tidak pakai GS)
+  FONT_SIZE_DOUBLE: ESC + '!' + '\x30',     // 2x height + width (lebih kecil dari sebelumnya)
+  FONT_SIZE_LARGE: ESC + '!' + '\x10',      // 2x width only (tidak terlalu besar)
   CUT_PAPER: GS + 'V' + '\x41' + '\x00',
   LINE_FEED: '\n',
   LINE_FEED_3: '\n\n\n',

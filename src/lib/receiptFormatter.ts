@@ -75,16 +75,16 @@ export function generateKitchenReceipt(data: ReceiptData): string {
   let receipt = INIT; // Initialize printer
   
   // Brand Header - MODERN STYLE
-  receipt += ALIGN_CENTER + FONT_SIZE_DOUBLE + BOLD_ON;
+  receipt += ALIGN_CENTER + BOLD_ON + FONT_SIZE_LARGE;
   receipt += 'BK POS\n';
   receipt += FONT_SIZE_NORMAL + BOLD_OFF;
   receipt += storeSettings.name.toUpperCase() + '\n';
   receipt += LINE_FEED;
   
   // Kitchen Badge
-  receipt += BOLD_ON + FONT_SIZE_LARGE;
+  receipt += BOLD_ON;
   receipt += '[ DAPUR ]\n';
-  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
+  receipt += BOLD_OFF;
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
   
@@ -106,9 +106,9 @@ export function generateKitchenReceipt(data: ReceiptData): string {
   receipt += BOLD_OFF + LINE_FEED;
   
   data.items.forEach((item, index) => {
-    receipt += BOLD_ON + FONT_SIZE_LARGE;
+    receipt += BOLD_ON;
     receipt += `${item.quantity}x  ${item.name}\n`;
-    receipt += FONT_SIZE_NORMAL + BOLD_OFF;
+    receipt += BOLD_OFF;
     if (item.variant) {
       receipt += `     \u2514\u2500 ${item.variant}\n`;
     }
@@ -139,7 +139,7 @@ export function generateCashierReceipt(data: ReceiptData): string {
   receipt += '\u2502' + ' '.repeat(30) + '\u2502\n';
   
   // Brand Header - ALWAYS SHOW (tidak bisa diubah)
-  receipt += '\u2502  ' + BOLD_ON + FONT_SIZE_DOUBLE;
+  receipt += '\u2502  ' + BOLD_ON + FONT_SIZE_LARGE;
   receipt += 'BK POS';
   receipt += FONT_SIZE_NORMAL + BOLD_OFF + '  \u2502\n';
   receipt += '\u2502' + ' '.repeat(30) + '\u2502\n';
@@ -147,9 +147,9 @@ export function generateCashierReceipt(data: ReceiptData): string {
   receipt += LINE_FEED;
   
   // Store Header (dari settings - bisa diubah)
-  receipt += BOLD_ON + FONT_SIZE_LARGE;
+  receipt += BOLD_ON;
   receipt += `${receiptSettings.header}\n`;
-  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
+  receipt += BOLD_OFF;
   
   // Tagline (dari settings)
   if (receiptSettings.tagline) {
@@ -213,9 +213,9 @@ export function generateCashierReceipt(data: ReceiptData): string {
   
   receipt += LINE_FEED;
   receipt += SEPARATOR_BOLD;
-  receipt += BOLD_ON + FONT_SIZE_LARGE;
+  receipt += BOLD_ON;
   receipt += padText('TOTAL:', formatCurrency(data.total)) + '\n';
-  receipt += FONT_SIZE_NORMAL + BOLD_OFF;
+  receipt += BOLD_OFF;
   receipt += SEPARATOR_BOLD;
   
   // Payment method with icon
@@ -265,7 +265,7 @@ export function generateTestReceipt(): string {
   
   receipt += LINE_FEED + SEPARATOR_BOLD + LINE_FEED;
   
-  receipt += BOLD_ON + FONT_SIZE_DOUBLE;
+  receipt += BOLD_ON + FONT_SIZE_LARGE;
   receipt += '\u2705 SUKSES!\n';
   receipt += FONT_SIZE_NORMAL + BOLD_OFF;
   
