@@ -20,8 +20,13 @@ export default defineConfig(({ mode }) => ({
     outDir: 'build',
     sourcemap: mode !== 'production',
     minify: mode === 'production' ? 'esbuild' : false,
+    // Add build timestamp to force cache refresh
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
+        entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+        assetFileNames: `assets/[name]-[hash]-${Date.now()}[extname]`,
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           supabase: ['@supabase/supabase-js'],
