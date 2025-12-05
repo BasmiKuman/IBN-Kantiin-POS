@@ -53,7 +53,9 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += '\n';
   receipt += '========================\n';
   
-  // Products List - NO header, direct to products
+  // Products List - ULTRA SIMPLE for Android
+  receipt += '\n';
+  receipt += 'PRODUK TERJUAL:\n';
   receipt += '\n';
   
   console.log('Formatting', data.products.length, 'products...');
@@ -64,48 +66,31 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
-    // Product name - wrap if too long for Android
-    const nameLines = wrapText(product.product_name, 24);
-    nameLines.forEach(line => {
-      receipt += `${line}\n`;
-    });
-    
-    // Quantity and price per item - simplified format
-    const formattedPrice = `Rp${hargaSatuan.toLocaleString('id-ID')}`;
-    receipt += `${product.total_quantity} x ${formattedPrice}\n`;
-    receipt += '- - - - - - - - - - - -\n';  // Separator between products
+    // Simple format - no wrapping
+    receipt += product.product_name + '\n';
+    receipt += product.total_quantity + ' x Rp' + hargaSatuan + '\n';
+    receipt += '- - - - - - - - - - - -\n';
   });
   
   console.log('Products formatted, adding summary...');
   
   receipt += '========================\n';
   
-  // Summary - simplified for Android
+  // Summary - ULTRA SIMPLE
   receipt += '\n';
-  receipt += 'RINGKASAN PENJUALAN\n';
+  receipt += 'RINGKASAN:\n';
   receipt += '\n';
   
-  // Total jenis produk
-  const jenisLabel = 'Total Jenis Produk:';
-  const jenisValue = `${data.products.length}`;
-  const jenisPadding = 24 - jenisLabel.length - jenisValue.length;
-  receipt += jenisLabel + ' '.repeat(Math.max(1, jenisPadding)) + jenisValue + '\n';
-  
-  // Total item terjual
-  const itemLabel = 'Total Item Terjual:';
-  const itemValue = `${data.totalItems}`;
-  const itemPadding = 24 - itemLabel.length - itemValue.length;
-  receipt += itemLabel + ' '.repeat(Math.max(1, itemPadding)) + itemValue + '\n';
+  receipt += 'Jenis Produk: ' + data.products.length + '\n';
+  receipt += 'Total Item: ' + data.totalItems + '\n';
   
   receipt += '\n';
   receipt += '========================\n';
   
-  // GRAND TOTAL - simplified for Android
+  // GRAND TOTAL - ULTRA SIMPLE
   receipt += '\n';
-  const grandLabel = 'TOTAL PENJUALAN:';
-  const grandValue = `Rp${data.totalRevenue.toLocaleString('id-ID')}`;
-  const grandPadding = 24 - grandLabel.length - grandValue.length;
-  receipt += grandLabel + ' '.repeat(Math.max(1, grandPadding)) + grandValue + '\n';
+  receipt += 'TOTAL PENJUALAN:\n';
+  receipt += 'Rp' + data.totalRevenue + '\n';
   receipt += '========================\n';
   
   console.log('Grand total added:', grandValue);

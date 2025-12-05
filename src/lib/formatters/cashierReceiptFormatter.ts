@@ -79,60 +79,55 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   receipt += '\n';
   receipt += '========================\n';
   
-  // Items section - NO header, direct to products for Android compatibility
+  // Items section - ULTRA SIMPLE for Android
   console.log('Checking items - exists:', !!data.items, 'length:', data.items?.length);
+  
+  receipt += '\n';
+  receipt += 'PESANAN:\n';
+  receipt += '\n';
   
   if (data.items && data.items.length > 0) {
     console.log('Processing', data.items.length, 'items');
     console.log('Items array:', JSON.stringify(data.items));
     
-    receipt += '\n';
-    
-    // Items - direct format without any header
+    // Ultra simple format - no fancy formatting
     data.items.forEach((item, idx) => {
       console.log(`Item ${idx}:`, item);
       
-      // Check if item.name already contains variant in parentheses
-      const hasVariantInName = item.name.includes('(') && item.name.includes(')');
-      const itemName = (!hasVariantInName && item.variant) ? `${item.name} (${item.variant})` : item.name;
-      
-      console.log('  - Item name:', itemName);
-      
-      // Item name on one line
-      receipt += itemName + '\n';
-      
-      // Quantity, price, and subtotal on one line
-      const qtyPrice = `${item.quantity} x ${formatCurrency(item.price)}`;
-      const subtotal = formatCurrency(item.price * item.quantity);
-      
-      console.log('  - QtyPrice:', qtyPrice);
-      console.log('  - Subtotal:', subtotal);
-      
-      receipt += padText(`  ${qtyPrice}`, subtotal) + '\n';
+      // Just name
+      receipt += item.name;
+      if (item.variant) {
+        receipt += ' - ' + item.variant;
+      }
       receipt += '\n';
       
-      console.log('Item formatted successfully');
+      // Just qty x price = total (simple format)
+      const itemTotal = item.price * item.quantity;
+      receipt += item.quantity + ' x Rp' + item.price + ' = Rp' + itemTotal + '\n';
+      receipt += '\n';
+      
+      console.log('Added item to receipt');
     });
     
     console.log('All items processed. Receipt length so far:', receipt.length);
   } else {
     console.log('NO ITEMS FOUND!');
-    receipt += '\nTidak ada item\n\n';
+    receipt += 'Tidak ada item\n';
   }
   
   receipt += '------------------------\n';
   
-  // Totals - simplified for Android
+  // Totals - ULTRA SIMPLE
   receipt += '\n';
-  receipt += padText('Subtotal:', formatCurrency(data.subtotal)) + '\n';
+  receipt += 'Subtotal: Rp' + data.subtotal + '\n';
   
   if (data.tax > 0) {
-    receipt += padText('Pajak:', formatCurrency(data.tax)) + '\n';
+    receipt += 'Pajak: Rp' + data.tax + '\n';
   }
   
   receipt += '\n';
   receipt += '========================\n';
-  receipt += padText('TOTAL:', formatCurrency(data.total)) + '\n';
+  receipt += 'TOTAL: Rp' + data.total + '\n';
   receipt += '========================\n';
   
   // Payment method - simplified
