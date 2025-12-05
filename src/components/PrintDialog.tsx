@@ -939,68 +939,45 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
             </>
           )}
 
-          {/* Product Sales Report Print */}
-          {productSalesText && (
+          {/* Product Sales Report Print - Simple like POS */}
+          {productSalesText && bluetooth.isConnected && (
             <>
-              <div className="border-t pt-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">Laporan Penjualan Produk</p>
-                  {!isNativeApp && (
-                    <Badge variant="secondary" className="text-xs">
-                      <Printer className="h-3 w-3 mr-1" />
-                      Browser Print
-                    </Badge>
-                  )}
-                  {isNativeApp && bluetooth.isConnected && (
-                    <Badge variant="secondary" className="text-xs bg-green-100 dark:bg-green-900">
-                      <Bluetooth className="h-3 w-3 mr-1" />
-                      Thermal Ready
-                    </Badge>
-                  )}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                    Cetak Laporan Produk
+                  </p>
+                  <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
                 </div>
                 
-                {/* Product Sales Print Button */}
-                <Button
+                {/* Print Button - Green Theme for Reports */}
+                <button
                   onClick={handlePrintProductSales}
-                  disabled={isPrintingBatch || (isNativeApp && !bluetooth.isConnected)}
-                  className="w-full"
-                  size="lg"
+                  disabled={isPrintingBatch}
+                  className="w-full group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 dark:from-emerald-500 dark:via-green-600 dark:to-teal-700 shadow-lg hover:shadow-xl"
                 >
-                  {isPrintingBatch ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {isNativeApp ? 'Mencetak ke Thermal...' : 'Membuka Print Dialog...'}
-                    </>
-                  ) : (
-                    <>
-                      <Printer className="h-4 w-4 mr-2" />
-                      {isNativeApp ? 'Print ke Thermal Printer' : 'Print Laporan (Browser)'}
-                    </>
-                  )}
-                </Button>
-
-                {/* Warning for native app without connection */}
-                {isNativeApp && !bluetooth.isConnected && (
-                  <Alert>
-                    <Bluetooth className="h-4 w-4" />
-                    <AlertDescription>
-                      Hubungkan printer Bluetooth terlebih dahulu untuk mencetak
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md">
-                  <p className="font-semibold flex items-center gap-1 mb-2">
-                    💡 Laporan Penjualan:
-                  </p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>Ringkasan penjualan per produk</li>
-                    <li>Total quantity dan revenue</li>
-                    <li>Sudah difilter sesuai tanggal yang dipilih</li>
-                    <li><strong>📱 Mobile:</strong> Print ke thermal printer</li>
-                    <li><strong>💻 Browser:</strong> Print dialog (semua printer)</li>
-                  </ul>
-                </div>
+                  {/* Background decoration */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  
+                  <div className="relative flex items-center gap-4">
+                    <div className="p-4 rounded-xl bg-white/20 backdrop-blur-sm">
+                      {isPrintingBatch ? (
+                        <Loader2 className="h-8 w-8 text-white animate-spin" />
+                      ) : (
+                        <FileText className="h-8 w-8 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-xl font-bold text-white">
+                        {isPrintingBatch ? 'Mencetak...' : 'Cetak Laporan Penjualan'}
+                      </p>
+                      <p className="text-sm text-white/90 mt-1">
+                        Thermal receipt dengan ringkasan produk
+                      </p>
+                    </div>
+                    <Printer className="h-6 w-6 text-white/50" />
+                  </div>
+                </button>
               </div>
             </>
           )}
