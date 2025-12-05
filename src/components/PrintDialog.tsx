@@ -271,49 +271,6 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
       setIsPrintingBatch(false);
     }
   };
-            <title>Laporan Penjualan Produk</title>
-            <style>
-              @page { margin: 10mm; }
-              body {
-                font-family: 'Courier New', monospace;
-                font-size: 12px;
-                line-height: 1.4;
-                max-width: 80mm;
-                margin: 0 auto;
-                padding: 10px;
-              }
-              @media print {
-                body { margin: 0; padding: 10px; }
-              }
-            </style>
-          </head>
-          <body>
-            <pre style="margin: 0; font-family: inherit; white-space: pre-wrap; word-wrap: break-word;">${htmlContent}</pre>
-            <script>
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                  window.onafterprint = function() {
-                    window.close();
-                  };
-                }, 500);
-              };
-            </script>
-          </body>
-          </html>
-        `);
-        printWindow.document.close();
-      }
-    } catch (error) {
-      toast({
-        title: "Gagal mencetak",
-        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mencetak",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPrintingBatch(false);
-    }
-  };
 
   const handlePrintSalesSummary = async () => {
     if (!batchTransactions || batchTransactions.length === 0) return;
