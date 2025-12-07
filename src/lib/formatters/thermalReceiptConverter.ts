@@ -36,10 +36,18 @@ interface ThermalReceiptData {
 }
 
 /**
- * Format currency to IDR - Simple format to avoid truncation on 58mm printer
+ * Format currency to IDR with thousand separator
  */
 function formatCurrency(amount: number): string {
-  return 'Rp ' + amount;
+  try {
+    // Format with thousand separator (Indonesian style: Rp15.000)
+    const formatted = amount.toLocaleString('id-ID');
+    return 'Rp' + formatted;
+  } catch (e) {
+    // Fallback: manual thousand separator
+    const str = Math.round(amount).toString();
+    return 'Rp' + str.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
 }
 
 /**
