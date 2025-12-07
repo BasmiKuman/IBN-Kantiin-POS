@@ -342,7 +342,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(
           </div>
         </div>
         <div className="tr-separator">{separator}</div>
-        <div className="tr-center" style={{ fontSize: '7px' }}>
+        <div className="tr-center tr-my-2" style={{ fontSize: '7px' }}>
           <div>Powered by BasmiKuman POS</div>
           <div>© {new Date().getFullYear()}</div>
         </div>

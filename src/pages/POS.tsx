@@ -328,9 +328,19 @@ export default function POS() {
 
   const processTransaction = async (method: 'cash' | 'qris' | 'transfer', paidAmount?: number) => {
     try {
+      console.log('=== PROCESS TRANSACTION DEBUG ===');
+      console.log('Cart:', cart);
+      console.log('Subtotal:', subtotal);
+      console.log('Tax:', tax);
+      console.log('Total:', total);
+      console.log('Paid Amount:', paidAmount);
+      
       const transactionNumber = generateTransactionNumber();
       const paymentAmountNum = paidAmount || total;
       const changeAmount = method === 'cash' ? Math.max(0, paymentAmountNum - total) : 0;
+
+      console.log('Payment Amount Num:', paymentAmountNum);
+      console.log('Change Amount:', changeAmount);
 
       // Determine customer ID (existing customer or newly created)
       const customerId = customer?.id || newCustomerId || null;

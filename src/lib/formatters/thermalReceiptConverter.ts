@@ -288,8 +288,8 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
   receipt += '\n';
   
   // Branding - IMPORTANT!
-  receipt += 'Powered by\n';
-  receipt += 'BasmiKuman POS\n';
+  receipt += 'Powered by BasmiKuman POS\n';
+  receipt += '\n';
   receipt += '\n';
   
   // Cut paper
