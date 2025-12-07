@@ -70,11 +70,8 @@ export const ThermalDailyReport = forwardRef<HTMLDivElement, ThermalDailyReportP
     ref
   ) => {
     const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
-        minimumFractionDigits: 0,
-      }).format(amount).replace('Rp', 'Rp');
+      // Simple format to avoid truncation on 58mm thermal printer
+      return 'Rp' + amount;
     };
 
     const formatDate = (date: Date) => {

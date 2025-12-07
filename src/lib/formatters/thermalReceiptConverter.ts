@@ -36,14 +36,10 @@ interface ThermalReceiptData {
 }
 
 /**
- * Format currency to IDR
+ * Format currency to IDR - Simple format to avoid truncation on 58mm printer
  */
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount).replace('Rp', 'Rp');
+  return 'Rp' + amount;
 }
 
 /**

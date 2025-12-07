@@ -71,10 +71,10 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       }
     });
     
-    // Qty x price = total on second line with better formatting
+    // Qty x price = total - simple format to avoid truncation
     const qtyText = product.total_quantity + ' pcs';
-    const priceText = 'Rp' + hargaSatuan.toLocaleString('id-ID');
-    const totalText = 'Rp' + product.total_revenue.toLocaleString('id-ID');
+    const priceText = 'Rp' + hargaSatuan;
+    const totalText = 'Rp' + product.total_revenue;
     
     receipt += '   ' + qtyText + ' x ' + priceText + '\n';
     receipt += '   = ' + totalText + '\n';
@@ -97,7 +97,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   // Grand total - emphasized
   let label = 'TOTAL PENJUALAN:';
-  let value = 'Rp' + data.totalRevenue.toLocaleString('id-ID');
+  let value = 'Rp' + data.totalRevenue;
   let spaces = 24 - label.length - value.length;
   receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
   receipt += '========================\n';

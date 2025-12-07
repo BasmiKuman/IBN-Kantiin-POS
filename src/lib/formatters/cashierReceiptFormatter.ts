@@ -111,10 +111,11 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
         receipt += itemName + '\n';
       }
       
-      // Qty x price on second line, total on third line (clearer format)
+      // Qty x price on second line, total on third line
+      // Use simple format to avoid truncation on 58mm printer
       const itemTotal = item.price * item.quantity;
-      receipt += '  ' + item.quantity + ' x Rp' + item.price.toLocaleString('id-ID') + '\n';
-      receipt += '  = Rp' + itemTotal.toLocaleString('id-ID') + '\n';
+      receipt += '  ' + item.quantity + ' x Rp' + item.price + '\n';
+      receipt += '  = Rp' + itemTotal + '\n';
       receipt += '\n'; // Add blank line after each item
       
       console.log('Added item to receipt');
