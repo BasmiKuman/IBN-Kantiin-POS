@@ -47,9 +47,11 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += '------------------------\n';
   receipt += '\n';
   
-  // Products List
-  receipt += 'PRODUK TERJUAL:\n';
-  receipt += '\n';
+  // Products List - Centered Header
+  receipt += ALIGN_CENTER;
+  receipt += 'PRODUK TERJUAL\n';
+  receipt += ALIGN_LEFT;
+  receipt += '------------------------\n';
   
   console.log('Formatting', data.products.length, 'products...');
   data.products.forEach((product, idx) => {
@@ -59,38 +61,46 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       ? Math.round(product.total_revenue / product.total_quantity)
       : 0;
     
-    // Product name on first line
-    receipt += product.product_name + '\n';
+    // Wrap long product names (max 24 chars for 58mm)
+    const nameLines = wrapText(product.product_name, 24);
+    nameLines.forEach((line, i) => {
+      if (i === 0) {
+        receipt += `${idx + 1}. ${line}\n`;
+      } else {
+        receipt += `   ${line}\n`;
+      }
+    });
     
-    // Qty x price = total on second line
-    receipt += '  ' + product.total_quantity + ' x Rp' + hargaSatuan + ' = Rp' + product.total_revenue + '\n';
+    // Qty x price = total on second line with better formatting
+    const qtyText = product.total_quantity + ' pcs';
+    const priceText = 'Rp' + hargaSatuan.toLocaleString('id-ID');
+    const totalText = 'Rp' + product.total_revenue.toLocaleString('id-ID');
     
-    // Blank line after each product (no separator lines)
+    receipt += '   ' + qtyText + ' x ' + priceText + '\n';
+    receipt += '   = ' + totalText + '\n';
     receipt += '\n';
   });
   
   console.log('Products formatted, adding summary...');
   
+  receipt += '========================\n';
+  
+  // Summary - centered header, left-aligned content
+  receipt += ALIGN_CENTER;
+  receipt += 'RINGKASAN\n';
+  receipt += ALIGN_LEFT;
   receipt += '------------------------\n';
   
-  // Summary - right aligned
-  receipt += 'RINGKASAN:\n';
+  receipt += 'Jenis Produk: ' + data.products.length + '\n';
+  receipt += 'Total Item: ' + data.totalItems + ' pcs\n';
+  receipt += '\n';
   
-  let label = 'Jenis Produk:';
-  let value = String(data.products.length);
+  // Grand total - emphasized
+  let label = 'TOTAL PENJUALAN:';
+  let value = 'Rp' + data.totalRevenue.toLocaleString('id-ID');
   let spaces = 24 - label.length - value.length;
   receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
-  
-  label = 'Total Item:';
-  value = String(data.totalItems);
-  spaces = 24 - label.length - value.length;
-  receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
-  
-  label = 'TOTAL PENJUALAN:';
-  value = 'Rp' + data.totalRevenue;
-  spaces = 24 - label.length - value.length;
-  receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
-  receipt += '------------------------\n';
+  receipt += '========================\n';
   receipt += '\n';
   
   console.log('Grand total added:', data.totalRevenue);

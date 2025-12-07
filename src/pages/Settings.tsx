@@ -9,6 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { BluetoothPrinterSettings } from "@/components/BluetoothPrinterSettings";
 import { useTheme } from "@/components/theme-provider";
+import { useUserSettings, useSaveUserSettings } from "@/hooks/supabase/useUserSettings";
+import { Loader2 } from "lucide-react";
 
 interface GeneralSettings {
   businessName: string;
@@ -66,6 +68,10 @@ interface LoyaltySettings {
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   
+  // Database settings hooks
+  const { data: dbSettings, isLoading: isLoadingSettings } = useUserSettings();
+  const { mutate: saveSettings, isPending: isSavingSettings } = useSaveUserSettings();
+  
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
     businessName: "BK POS",
     currency: "IDR",
@@ -118,9 +124,76 @@ export default function Settings() {
     minimumPurchaseEarn: 10000, // minimum purchase to earn points
   });
 
-  // Load settings from localStorage on mount
+  // Load settings from database OR localStorage on mount
   useEffect(() => {
     const loadSettings = () => {
+      // Priority 1: Database settings
+      if (dbSettings) {
+        console.log('Loading settings from database:', dbSettings);
+        
+        // Map database settings to state
+        setGeneralSettings({
+          businessName: dbSettings.business_name || "BK POS",
+          currency: dbSettings.currency || "IDR",
+          timezone: dbSettings.timezone || "Asia/Jakarta",
+          language: dbSettings.language || "id",
+          darkMode: dbSettings.dark_mode,
+          soundEnabled: dbSettings.sound_enabled,
+        });
+        
+        setStoreSettings({
+          name: dbSettings.store_name || "Toko Pusat",
+          address: dbSettings.store_address || "",
+          city: dbSettings.store_city || "",
+          postalCode: dbSettings.store_postal_code,
+          phone: dbSettings.store_phone || "",
+          email: dbSettings.store_email || "",
+        });
+        
+        setPaymentSettings({
+          cashEnabled: dbSettings.cash_enabled ?? true,
+          cardEnabled: dbSettings.card_enabled ?? false,
+          ewalletEnabled: dbSettings.ewallet_enabled ?? true,
+          transferEnabled: dbSettings.transfer_enabled ?? true,
+          taxRate: dbSettings.tax_rate || 0,
+          serviceCharge: dbSettings.service_charge || 0,
+          showTaxSeparately: dbSettings.show_tax_separately ?? true,
+          qrisImageUrl: dbSettings.qris_image_url,
+        });
+        
+        if (dbSettings.qris_image_url) {
+          setQrisImagePreview(dbSettings.qris_image_url);
+        }
+        
+        setReceiptSettings({
+          header: dbSettings.receipt_header || "BK POS",
+          tagline: dbSettings.receipt_tagline || "",
+          footer: dbSettings.receipt_footer || "Terima kasih!",
+          showLogo: dbSettings.show_logo ?? true,
+          showCashierDetails: dbSettings.show_cashier_details ?? true,
+        });
+        
+        setNotificationSettings({
+          dailyReport: dbSettings.daily_report ?? false,
+          lowStock: dbSettings.low_stock ?? false,
+          largeTransaction: dbSettings.large_transaction ?? false,
+          whatsappNumber: dbSettings.whatsapp_number || "",
+          whatsappEnabled: dbSettings.whatsapp_enabled ?? false,
+        });
+        
+        setLoyaltySettings({
+          enabled: dbSettings.loyalty_enabled ?? false,
+          pointsPerRupiah: dbSettings.points_per_rupiah || 1000,
+          rupiahPerPoint: dbSettings.rupiah_per_point || 1000,
+          minimumPointsRedeem: dbSettings.minimum_points_redeem || 10,
+          minimumPurchaseEarn: dbSettings.minimum_purchase_earn || 10000,
+        });
+        
+        return; // Exit early if database settings loaded
+      }
+      
+      // Priority 2: localStorage (fallback)
+      console.log('Loading settings from localStorage (fallback)');
       const savedGeneral = localStorage.getItem("settings_general");
       const savedStore = localStorage.getItem("settings_store");
       const savedPayment = localStorage.getItem("settings_payment");
@@ -143,7 +216,7 @@ export default function Settings() {
     };
 
     loadSettings();
-  }, []);
+  }, [dbSettings]);
 
   // Handle QRIS image upload
   const handleQrisImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,58 +260,157 @@ export default function Settings() {
     }
   };
 
-  // Save general settings
+  // Save general settings to database AND localStorage
   const handleSaveGeneral = () => {
+    // Save to localStorage (immediate)
     localStorage.setItem("settings_general", JSON.stringify(generalSettings));
-    toast({
-      title: "Pengaturan Disimpan",
-      description: "Pengaturan umum berhasil disimpan",
-    });
+    
+    // Save to database (synced across devices)
+    saveSettings(
+      {
+        business_name: generalSettings.businessName,
+        currency: generalSettings.currency,
+        timezone: generalSettings.timezone,
+        language: generalSettings.language,
+        dark_mode: generalSettings.darkMode,
+        sound_enabled: generalSettings.soundEnabled,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "✅ Pengaturan Disimpan",
+            description: "Pengaturan umum tersimpan di semua device",
+          });
+        },
+        onError: (error) => {
+          console.error('Failed to save to database:', error);
+          toast({
+            title: "⚠️ Tersimpan Lokal",
+            description: "Settings tersimpan di device ini saja. Database error.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   // Save store settings
   const handleSaveStore = () => {
     localStorage.setItem("settings_store", JSON.stringify(storeSettings));
-    toast({
-      title: "Pengaturan Disimpan",
-      description: "Informasi toko berhasil disimpan",
-    });
+    
+    saveSettings(
+      {
+        store_name: storeSettings.name,
+        store_address: storeSettings.address,
+        store_city: storeSettings.city,
+        store_postal_code: storeSettings.postalCode,
+        store_phone: storeSettings.phone,
+        store_email: storeSettings.email,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "✅ Pengaturan Disimpan",
+            description: "Informasi toko tersimpan di semua device",
+          });
+        },
+      }
+    );
   };
 
   // Save payment settings
   const handleSavePayment = () => {
     localStorage.setItem("settings_payment", JSON.stringify(paymentSettings));
-    toast({
-      title: "Pengaturan Disimpan",
-      description: "Pengaturan pembayaran berhasil disimpan",
-    });
+    
+    saveSettings(
+      {
+        cash_enabled: paymentSettings.cashEnabled,
+        card_enabled: paymentSettings.cardEnabled,
+        ewallet_enabled: paymentSettings.ewalletEnabled,
+        transfer_enabled: paymentSettings.transferEnabled,
+        tax_rate: paymentSettings.taxRate,
+        service_charge: paymentSettings.serviceCharge,
+        show_tax_separately: paymentSettings.showTaxSeparately,
+        qris_image_url: paymentSettings.qrisImageUrl,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "✅ Pengaturan Disimpan",
+            description: "Metode pembayaran tersimpan di semua device",
+          });
+        },
+      }
+    );
   };
 
   // Save receipt settings
   const handleSaveReceipt = () => {
     localStorage.setItem("settings_receipt", JSON.stringify(receiptSettings));
-    toast({
-      title: "Pengaturan Disimpan",
-      description: "Template struk berhasil disimpan",
-    });
+    
+    saveSettings(
+      {
+        receipt_header: receiptSettings.header,
+        receipt_tagline: receiptSettings.tagline,
+        receipt_footer: receiptSettings.footer,
+        show_logo: receiptSettings.showLogo,
+        show_cashier_details: receiptSettings.showCashierDetails,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "✅ Pengaturan Disimpan",
+            description: "Template struk tersimpan di semua device",
+          });
+        },
+      }
+    );
   };
 
   // Save notification settings
   const handleSaveNotification = () => {
     localStorage.setItem("settings_notification", JSON.stringify(notificationSettings));
-    toast({
-      title: "Pengaturan Disimpan",
-      description: "Pengaturan notifikasi berhasil disimpan",
-    });
+    
+    saveSettings(
+      {
+        daily_report: notificationSettings.dailyReport,
+        low_stock: notificationSettings.lowStock,
+        large_transaction: notificationSettings.largeTransaction,
+        whatsapp_number: notificationSettings.whatsappNumber,
+        whatsapp_enabled: notificationSettings.whatsappEnabled,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "✅ Pengaturan Disimpan",
+            description: "Notifikasi tersimpan di semua device",
+          });
+        },
+      }
+    );
   };
 
   // Save loyalty settings
   const handleSaveLoyalty = () => {
     localStorage.setItem("settings_loyalty", JSON.stringify(loyaltySettings));
-    toast({
-      title: "Pengaturan Disimpan",
-      description: "Pengaturan program loyalty berhasil disimpan",
-    });
+    
+    saveSettings(
+      {
+        loyalty_enabled: loyaltySettings.enabled,
+        points_per_rupiah: loyaltySettings.pointsPerRupiah,
+        rupiah_per_point: loyaltySettings.rupiahPerPoint,
+        minimum_points_redeem: loyaltySettings.minimumPointsRedeem,
+        minimum_purchase_earn: loyaltySettings.minimumPurchaseEarn,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "✅ Pengaturan Disimpan",
+            description: "Program loyalty tersimpan di semua device",
+          });
+        },
+      }
+    );
   };
 
   return (
@@ -246,9 +418,20 @@ export default function Settings() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Pengaturan</h2>
         <p className="text-muted-foreground">Kelola pengaturan sistem POS Anda</p>
+        {isLoadingSettings && (
+          <p className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Memuat pengaturan dari database...
+          </p>
+        )}
       </div>
 
-      <Tabs defaultValue="general" className="space-y-4">
+      <Tabs defaultValue="general" className="space-y-4">{isLoadingSettings ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <>
         <TabsList>
           <TabsTrigger value="general">Umum</TabsTrigger>
           <TabsTrigger value="store">Toko</TabsTrigger>
@@ -293,7 +476,10 @@ export default function Settings() {
                   onChange={(e) => setGeneralSettings({...generalSettings, language: e.target.value})}
                 />
               </div>
-              <Button onClick={handleSaveGeneral}>Simpan Perubahan</Button>
+              <Button onClick={handleSaveGeneral} disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Perubahan
+              </Button>
             </CardContent>
           </Card>
 
@@ -329,7 +515,10 @@ export default function Settings() {
                   onCheckedChange={(checked) => setGeneralSettings({...generalSettings, soundEnabled: checked})}
                 />
               </div>
-              <Button onClick={handleSaveGeneral} className="mt-4">Simpan Preferensi</Button>
+              <Button onClick={handleSaveGeneral} className="mt-4" disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Preferensi
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -381,7 +570,10 @@ export default function Settings() {
                   />
                 </div>
               </div>
-              <Button onClick={handleSaveStore}>Simpan Perubahan</Button>
+              <Button onClick={handleSaveStore} disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Perubahan
+              </Button>
             </CardContent>
           </Card>
 
@@ -490,7 +682,10 @@ export default function Settings() {
                   onCheckedChange={(checked) => setPaymentSettings({...paymentSettings, transferEnabled: checked})}
                 />
               </div>
-              <Button onClick={handleSavePayment} className="mt-4">Simpan Metode Pembayaran</Button>
+              <Button onClick={handleSavePayment} className="mt-4" disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Metode Pembayaran
+              </Button>
             </CardContent>
           </Card>
 
@@ -527,7 +722,10 @@ export default function Settings() {
                   onCheckedChange={(checked) => setPaymentSettings({...paymentSettings, showTaxSeparately: checked})}
                 />
               </div>
-              <Button onClick={handleSavePayment}>Simpan Pengaturan</Button>
+              <Button onClick={handleSavePayment} disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Pengaturan
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -604,7 +802,10 @@ export default function Settings() {
                   onCheckedChange={(checked) => setReceiptSettings({...receiptSettings, showCashierDetails: checked})}
                 />
               </div>
-              <Button onClick={handleSaveReceipt}>Simpan Template</Button>
+              <Button onClick={handleSaveReceipt} disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Template
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -647,7 +848,10 @@ export default function Settings() {
                   onCheckedChange={(checked) => setNotificationSettings({...notificationSettings, largeTransaction: checked})}
                 />
               </div>
-              <Button onClick={handleSaveNotification} className="mt-4">Simpan Pengaturan Email</Button>
+              <Button onClick={handleSaveNotification} className="mt-4" disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Pengaturan Email
+              </Button>
             </CardContent>
           </Card>
 
@@ -674,7 +878,10 @@ export default function Settings() {
                   onCheckedChange={(checked) => setNotificationSettings({...notificationSettings, whatsappEnabled: checked})}
                 />
               </div>
-              <Button onClick={handleSaveNotification}>Simpan Pengaturan</Button>
+              <Button onClick={handleSaveNotification} disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Pengaturan
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -762,7 +969,8 @@ export default function Settings() {
                 </>
               )}
 
-              <Button onClick={handleSaveLoyalty} className="mt-4">
+              <Button onClick={handleSaveLoyalty} className="mt-4" disabled={isSavingSettings}>
+                {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Simpan Pengaturan Loyalty
               </Button>
             </CardContent>
@@ -794,6 +1002,8 @@ export default function Settings() {
             </Card>
           )}
         </TabsContent>
+        </>
+        )}
       </Tabs>
     </div>
   );

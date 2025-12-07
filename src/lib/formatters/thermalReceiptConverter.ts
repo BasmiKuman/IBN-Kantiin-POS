@@ -161,9 +161,9 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
       receipt += line + '\n';
     });
     
-    // Item detail: qty x price = subtotal
-    receipt += '  ' + item.quantity + ' x ' + formatCurrency(item.price) + '\n';
-    receipt += '  = ' + formatCurrency(item.subtotal) + '\n';
+    // Item detail: qty x price = subtotal (all on one line)
+    receipt += '  ' + item.quantity + ' x ' + formatCurrency(item.price);
+    receipt += ' = ' + formatCurrency(item.subtotal) + '\n';
     receipt += '\n'; // Blank line after each item
   });
   
