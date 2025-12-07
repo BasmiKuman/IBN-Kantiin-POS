@@ -71,10 +71,10 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       }
     });
     
-    // Qty x price = total - simple format to avoid truncation
+    // Qty x price = total - with proper currency formatting
     const qtyText = product.total_quantity + ' pcs';
-    const priceText = 'Rp ' + hargaSatuan;
-    const totalText = 'Rp ' + product.total_revenue;
+    const priceText = formatCurrency(hargaSatuan);
+    const totalText = formatCurrency(product.total_revenue);
     
     receipt += '   ' + qtyText + ' x ' + priceText + '\n';
     receipt += '   = ' + totalText + '\n';
