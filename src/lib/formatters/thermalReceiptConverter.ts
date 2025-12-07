@@ -297,6 +297,11 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
   // Cut paper
   receipt += CUT_PAPER;
   
+  console.log('=== THERMAL RECEIPT DEBUG ===');
+  console.log('Receipt length:', receipt.length);
+  console.log('Last 200 chars:', receipt.slice(-200));
+  console.log('Footer check - includes "Powered by BK POS":', receipt.includes('Powered by BK POS'));
+  
   return receipt;
 }
 
