@@ -59,15 +59,15 @@ export function getReceiptSettings() {
     const savedStore = localStorage.getItem('settings_store');
     
     const receiptSettings = savedReceipt ? JSON.parse(savedReceipt) : {
-      header: 'BK POS',
-      tagline: 'Makanan Enak, Harga Terjangkau',
-      footer: 'Terima kasih atas kunjungan Anda!',
+      header: '', // Default kosong - user bisa isi di settings
+      tagline: '',
+      footer: '',
     };
     
     const storeSettings = savedStore ? JSON.parse(savedStore) : {
-      name: 'Toko Pusat',
-      address: 'Jl. Contoh No. 123',
-      phone: '(021) 12345678',
+      name: 'BK POS',
+      address: '',
+      phone: '',
     };
     
     return { receiptSettings, storeSettings };
@@ -75,14 +75,14 @@ export function getReceiptSettings() {
     console.error('Error loading receipt settings:', error);
     return {
       receiptSettings: {
-        header: 'BK POS',
-        tagline: 'Makanan Enak, Harga Terjangkau',
-        footer: 'Terima kasih atas kunjungan Anda!',
+        header: '',
+        tagline: '',
+        footer: '',
       },
       storeSettings: {
-        name: 'Toko Pusat',
-        address: 'Jl. Contoh No. 123',
-        phone: '(021) 12345678',
+        name: 'BK POS',
+        address: '',
+        phone: '',
       },
     };
   }
