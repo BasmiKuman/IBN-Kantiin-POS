@@ -20,6 +20,10 @@ export {
   type ProductSalesItem
 } from './formatters/productSalesReportFormatter';
 
+export {
+  generateThermalReceipt
+} from './formatters/thermalReceiptConverter';
+
 // Export shared types for backward compatibility
 import type { CashierReceiptData, CashierReceiptItem } from './formatters/cashierReceiptFormatter';
 
