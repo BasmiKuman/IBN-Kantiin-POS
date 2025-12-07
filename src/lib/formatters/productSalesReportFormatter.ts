@@ -85,21 +85,30 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   receipt += '========================\n';
   
-  // Summary - centered header, left-aligned content
-  receipt += ALIGN_CENTER;
-  receipt += 'RINGKASAN\n';
+  // Summary - simple and aligned
   receipt += ALIGN_LEFT;
+  receipt += '\n';
+  receipt += 'RINGKASAN\n';
   receipt += '------------------------\n';
   
-  receipt += 'Jenis Produk: ' + data.products.length + '\n';
-  receipt += 'Total Item: ' + data.totalItems + ' pcs\n';
-  receipt += '\n';
+  const jenisLabel = 'Jenis Produk';
+  const jenisValue = String(data.products.length);
+  const jenisSpaces = ' '.repeat(Math.max(1, 24 - jenisLabel.length - jenisValue.length));
+  receipt += jenisLabel + jenisSpaces + jenisValue + '\n';
   
-  // Grand total - emphasized with proper currency formatting
-  let label = 'TOTAL PENJUALAN:';
-  let value = formatCurrency(data.totalRevenue);
-  let spaces = 24 - label.length - value.length;
-  receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
+  const itemLabel = 'Total Item';
+  const itemValue = data.totalItems + ' pcs';
+  const itemSpaces = ' '.repeat(Math.max(1, 24 - itemLabel.length - itemValue.length));
+  receipt += itemLabel + itemSpaces + itemValue + '\n';
+  
+  receipt += '------------------------\n';
+  
+  // Grand total - with proper alignment
+  const totalLabel = 'TOTAL';
+  const totalValue = formatCurrency(data.totalRevenue);
+  const totalSpaces = ' '.repeat(Math.max(1, 24 - totalLabel.length - totalValue.length));
+  receipt += totalLabel + totalSpaces + totalValue + '\n';
+  
   receipt += '========================\n';
   receipt += '\n';
   
