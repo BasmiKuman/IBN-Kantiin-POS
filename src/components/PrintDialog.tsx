@@ -169,8 +169,29 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
     
     try {
       for (const transaction of batchTransactions) {
-        // Always use web Bluetooth (text receipt)
-        const receipt = generateCashierReceipt(transaction);
+        // Use Thermal Receipt for better formatting
+        const thermalReceiptData = {
+          transactionNumber: transaction.orderNumber,
+          date: new Date(transaction.date),
+          items: transaction.items.map((item: any) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.price * item.quantity,
+            variant: item.variant,
+          })),
+          subtotal: transaction.subtotal,
+          tax: transaction.tax || 0,
+          total: transaction.total,
+          paymentMethod: transaction.paymentMethod,
+          paymentAmount: transaction.total,
+          changeAmount: 0,
+          customerName: transaction.customerName,
+          paperWidth: '58mm' as const,
+          storeName: 'BK POS',
+          cashierName: transaction.cashierName || localStorage.getItem('username') || 'Kasir',
+        };
+        const receipt = generateThermalReceipt(thermalReceiptData);
         await bluetooth.printReceipt(receipt);
         
         // Small delay between prints
