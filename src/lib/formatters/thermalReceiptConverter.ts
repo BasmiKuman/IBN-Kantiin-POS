@@ -120,23 +120,54 @@ function wrapText(text: string, maxLength: number): string[] {
 export function generateThermalReceipt(data: ThermalReceiptData): string {
   const { INIT, ALIGN_CENTER, ALIGN_LEFT, CUT_PAPER } = PrinterCommands;
   
+  // Get settings from localStorage
+  const { receiptSettings, storeSettings } = getReceiptSettings();
+  
   // Default to 58mm for Xiaomi Redmi Pad SE optimization
   const paperWidth = data.paperWidth || '58mm';
   const maxChars = paperWidth === '58mm' ? 24 : 32;
   const separator = '='.repeat(maxChars);
   const lightSeparator = '-'.repeat(maxChars);
   
-  const storeName = data.storeName || 'BK POS';
-  const storeAddress = data.storeAddress || '';
-  const storePhone = data.storePhone || '';
+  const storeName = data.storeName || storeSettings.name || 'BK POS';
+  const storeAddress = data.storeAddress || storeSettings.address || '';
+  const storePhone = data.storePhone || storeSettings.phone || '';
   
   let receipt = INIT; // Initialize printer
   
-  // Header - Centered (compact)
+  // Header - Centered (compact) - dari settings
   receipt += ALIGN_CENTER;
-  receipt += storeName + '\n';
-  if (storeAddress) receipt += storeAddress + '\n';
-  if (storePhone) receipt += storePhone + '\n';
+  
+  // Custom header dari settings (jika ada)
+  if (receiptSettings.header && receiptSettings.header.trim()) {
+    const headerLines = wrapText(receiptSettings.header, maxChars);
+    headerLines.forEach(line => {
+      receipt += line + '\n';
+    });
+  } else {
+    // Default: store name
+    receipt += storeName + '\n';
+  }
+  
+  // Tagline dari settings (jika ada)
+  if (receiptSettings.tagline && receiptSettings.tagline.trim()) {
+    const taglineLines = wrapText(receiptSettings.tagline, maxChars);
+    taglineLines.forEach(line => {
+      receipt += line + '\n';
+    });
+  }
+  
+  // Store info (address & phone) - jika ada
+  if (storeAddress && storeAddress.trim()) {
+    const addressLines = wrapText(storeAddress, maxChars);
+    addressLines.forEach(line => {
+      receipt += line + '\n';
+    });
+  }
+  if (storePhone && storePhone.trim()) {
+    receipt += storePhone + '\n';
+  }
+  
   receipt += separator + '\n';
   
   // Transaction Info - Left Aligned (compact)
