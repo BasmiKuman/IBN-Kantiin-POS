@@ -83,11 +83,11 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   console.log('Products formatted, adding summary...');
   
+  receipt += '\n';
   receipt += '========================\n';
   
-  // Summary - simple and aligned
+  // Summary - simple and aligned (force LEFT align)
   receipt += ALIGN_LEFT;
-  receipt += '\n';
   receipt += 'RINGKASAN\n';
   receipt += '------------------------\n';
   
