@@ -520,22 +520,31 @@ export default function POS() {
     // If already connected, print directly
     if (isConnected) {
       try {
-        const receiptData = {
-          orderNumber: lastTransaction.transactionNumber,
+        // Use Thermal Receipt for better formatting
+        const thermalReceiptData = {
+          transactionNumber: lastTransaction.transactionNumber,
+          date: new Date(lastTransaction.date),
           items: lastTransaction.items.map(item => ({
             name: item.name,
             quantity: item.quantity,
             price: item.price,
-            variant: item.variantName || undefined,
+            subtotal: item.price * item.quantity,
+            variant: item.variantName,
           })),
           subtotal: lastTransaction.subtotal,
-          tax: lastTransaction.tax,
+          tax: lastTransaction.tax || 0,
           total: lastTransaction.total,
           paymentMethod: lastTransaction.paymentMethod,
+          paymentAmount: lastTransaction.paymentAmount || lastTransaction.total,
+          changeAmount: lastTransaction.changeAmount || 0,
           customerName: lastTransaction.customerName,
-          date: lastTransaction.date,
+          earnedPoints: lastTransaction.earnedPoints,
+          totalPoints: lastTransaction.totalPoints,
+          paperWidth: '58mm' as const, // Optimized for Xiaomi Redmi Pad SE
+          storeName: 'BK POS',
+          cashierName: localStorage.getItem('username') || 'Kasir',
         };
-        const receipt = generateCashierReceipt(receiptData);
+        const receipt = generateThermalReceipt(thermalReceiptData);
         await printReceipt(receipt);
         
         toast({
