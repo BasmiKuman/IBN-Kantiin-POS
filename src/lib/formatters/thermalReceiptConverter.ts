@@ -122,7 +122,7 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
   // Default to 58mm for Xiaomi Redmi Pad SE optimization
   const paperWidth = data.paperWidth || '58mm';
   const maxChars = paperWidth === '58mm' ? 24 : 32;
-  const separator = '-'.repeat(maxChars);
+  const separator = '='.repeat(maxChars);
   const lightSeparator = '-'.repeat(maxChars);
   
   const storeName = data.storeName || 'BK POS';
@@ -131,31 +131,23 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
   
   let receipt = INIT; // Initialize printer
   
-  // Header - Centered
+  // Header - Centered (compact)
   receipt += ALIGN_CENTER;
-  receipt += separator + '\n';
   receipt += storeName + '\n';
   if (storeAddress) receipt += storeAddress + '\n';
-  if (storePhone) receipt += 'Telp: ' + storePhone + '\n';
+  if (storePhone) receipt += storePhone + '\n';
   receipt += separator + '\n';
-  receipt += '\n';
   
-  // Transaction Info - Left Aligned
+  // Transaction Info - Left Aligned (compact)
   receipt += ALIGN_LEFT;
   receipt += 'No: ' + data.transactionNumber + '\n';
   receipt += 'Tgl: ' + formatDate(data.date) + '\n';
   if (data.cashierName) receipt += 'Kasir: ' + data.cashierName + '\n';
-  if (data.customerName) receipt += 'Pelanggan: ' + data.customerName + '\n';
-  receipt += '\n';
+  if (data.customerName) receipt += 'Cust: ' + data.customerName + '\n';
+  receipt += lightSeparator + '\n';
   
-  receipt += ALIGN_CENTER;
-  receipt += separator + '\n';
-  receipt += '\n';
-  
-  // Items - NO "PRODUK" header to maintain consistency
-  receipt += ALIGN_LEFT;
-  
-  data.items.forEach((item) => {
+  // Items - Compact format
+  data.items.forEach((item, index) => {
     let itemName = item.name;
     if (item.variant) itemName += ' - ' + item.variant;
     
@@ -165,47 +157,47 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
       receipt += line + '\n';
     });
     
-    // Item detail: qty x price on one line, total on next line
-    receipt += '  ' + item.quantity + ' x ' + formatCurrency(item.price) + '\n';
-    receipt += '  = ' + formatCurrency(item.subtotal) + '\n';
-    receipt += '\n'; // Blank line after each item
+    // Compact: qty x price = total on ONE line with proper alignment
+    const qtyPrice = item.quantity + 'x' + formatCurrency(item.price);
+    const total = formatCurrency(item.subtotal);
+    const spaces = ' '.repeat(Math.max(1, maxChars - qtyPrice.length - total.length));
+    receipt += qtyPrice + spaces + total + '\n';
+    
+    // Only add separator between items, not after last item
+    if (index < data.items.length - 1) {
+      receipt += '\n';
+    }
   });
   
-  // Light separator before totals
-  receipt += ALIGN_CENTER;
   receipt += lightSeparator + '\n';
-  receipt += '\n';
   
-  // Totals
+  // Totals - Compact
   receipt += ALIGN_LEFT;
-  const subtotalLabel = 'Subtotal:';
+  
+  // Subtotal
+  const subtotalLabel = 'Subtotal';
   const subtotalValue = formatCurrency(data.subtotal);
   const subtotalSpaces = ' '.repeat(Math.max(1, maxChars - subtotalLabel.length - subtotalValue.length));
   receipt += subtotalLabel + subtotalSpaces + subtotalValue + '\n';
   
+  // Tax (if any)
   if (data.tax > 0) {
     const taxRate = data.taxRate || 0;
-    const taxLabel = `Pajak (${taxRate}%):`;
+    const taxLabel = taxRate > 0 ? `Pajak(${taxRate}%)` : 'Pajak';
     const taxValue = formatCurrency(data.tax);
     const taxSpaces = ' '.repeat(Math.max(1, maxChars - taxLabel.length - taxValue.length));
     receipt += taxLabel + taxSpaces + taxValue + '\n';
   }
   
-  receipt += '\n';
-  
-  // TOTAL - Bold separator
-  receipt += ALIGN_CENTER;
   receipt += separator + '\n';
-  receipt += ALIGN_LEFT;
   
-  const totalLabel = 'TOTAL:';
+  // TOTAL - Bold
+  const totalLabel = 'TOTAL';
   const totalValue = formatCurrency(data.total);
   const totalSpaces = ' '.repeat(Math.max(1, maxChars - totalLabel.length - totalValue.length));
   receipt += totalLabel + totalSpaces + totalValue + '\n';
   
-  receipt += ALIGN_CENTER;
   receipt += separator + '\n';
-  receipt += '\n';
   
   // Payment Info
   receipt += ALIGN_LEFT;
