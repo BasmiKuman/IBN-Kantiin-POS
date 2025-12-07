@@ -341,9 +341,8 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(
             <div>tidak dapat dikembalikan</div>
           </div>
         </div>
-        <div className="tr-separator">{separator}</div>
-        <div className="tr-center tr-my-2" style={{ fontSize: '7px' }}>
-          <div>Powered by BasmiKuman POS</div>
+        <div className="tr-center tr-my-2" style={{ fontSize: '7px', marginTop: '12px' }}>
+          <div>Powered by BK POS</div>
           <div>© {new Date().getFullYear()}</div>
         </div>
       </div>
