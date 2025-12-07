@@ -55,7 +55,29 @@ export function SimplePrintDialog({ open, onOpenChange, receiptData }: SimplePri
   const handlePrintCashier = async () => {
     setIsPrintingCashier(true);
     try {
-      const receipt = generateCashierReceipt(receiptData);
+      // Use Thermal Receipt for better formatting
+      const thermalReceiptData = {
+        transactionNumber: receiptData.orderNumber,
+        date: new Date(receiptData.date),
+        items: receiptData.items.map((item: any) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          subtotal: item.price * item.quantity,
+          variant: item.variant,
+        })),
+        subtotal: receiptData.subtotal,
+        tax: receiptData.tax || 0,
+        total: receiptData.total,
+        paymentMethod: receiptData.paymentMethod,
+        paymentAmount: receiptData.total,
+        changeAmount: 0,
+        customerName: receiptData.customerName,
+        paperWidth: '58mm' as const,
+        storeName: 'BK POS',
+        cashierName: receiptData.cashierName || localStorage.getItem('username') || 'Kasir',
+      };
+      const receipt = generateThermalReceipt(thermalReceiptData);
       const success = await bluetooth.printReceipt(receipt);
       
       if (success) {
