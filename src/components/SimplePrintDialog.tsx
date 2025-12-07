@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Printer, Loader2, Settings, AlertCircle, ChefHat, Receipt } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, type ReceiptData } from '@/lib/receiptFormatter';
+import { generateThermalReceipt } from '@/lib/formatters/thermalReceiptConverter';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 
