@@ -271,9 +271,20 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
   
   receipt += separator + '\n';
   
-  // Footer - Compact
+  // Footer - Compact - dari settings
   receipt += ALIGN_CENTER;
-  receipt += 'Terima Kasih!\n';
+  
+  if (receiptSettings.footer && receiptSettings.footer.trim()) {
+    // Custom footer dari settings
+    const footerLines = wrapText(receiptSettings.footer, maxChars);
+    footerLines.forEach(line => {
+      receipt += line + '\n';
+    });
+  } else {
+    // Default footer
+    receipt += 'Terima Kasih!\n';
+  }
+  
   receipt += separator + '\n';
   
   // Cut paper
