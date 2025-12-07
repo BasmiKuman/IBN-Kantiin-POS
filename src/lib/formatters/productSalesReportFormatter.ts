@@ -73,8 +73,8 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
     
     // Qty x price = total - simple format to avoid truncation
     const qtyText = product.total_quantity + ' pcs';
-    const priceText = 'Rp' + hargaSatuan;
-    const totalText = 'Rp' + product.total_revenue;
+    const priceText = 'Rp ' + hargaSatuan;
+    const totalText = 'Rp ' + product.total_revenue;
     
     receipt += '   ' + qtyText + ' x ' + priceText + '\n';
     receipt += '   = ' + totalText + '\n';
@@ -97,7 +97,7 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   // Grand total - emphasized
   let label = 'TOTAL PENJUALAN:';
-  let value = 'Rp' + data.totalRevenue;
+  let value = 'Rp ' + data.totalRevenue;
   let spaces = 24 - label.length - value.length;
   receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
   receipt += '========================\n';

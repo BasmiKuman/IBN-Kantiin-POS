@@ -36,9 +36,9 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   
   // Header - Centered
   receipt += ALIGN_CENTER + '\n';
-  receipt += '========================\n';
+  receipt += '--------------------------------\n';
   receipt += 'BK POS\n';
-  receipt += '========================\n';
+  receipt += '--------------------------------\n';
   receipt += '\n';
   
   // Store Header (dari settings) - word wrap jika perlu
@@ -64,7 +64,7 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
     receipt += `Telp: ${storeSettings.phone}\n`;
   }
   receipt += '\n';
-  receipt += '========================\n';
+  receipt += '--------------------------------\n';
   
   // Order info - Left aligned
   receipt += ALIGN_LEFT + '\n';
@@ -114,8 +114,8 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
       // Qty x price on second line, total on third line
       // Use simple format to avoid truncation on 58mm printer
       const itemTotal = item.price * item.quantity;
-      receipt += '  ' + item.quantity + ' x Rp' + item.price + '\n';
-      receipt += '  = Rp' + itemTotal + '\n';
+      receipt += '  ' + item.quantity + ' x Rp ' + item.price + '\n';
+      receipt += '  = Rp ' + itemTotal + '\n';
       receipt += '\n'; // Add blank line after each item
       
       console.log('Added item to receipt');
@@ -131,19 +131,19 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   
   // Totals - right aligned
   const subtotalLabel = 'Subtotal:';
-  const subtotalValue = 'Rp' + data.subtotal;
+  const subtotalValue = 'Rp ' + data.subtotal;
   let spaces = 24 - subtotalLabel.length - subtotalValue.length;
   receipt += subtotalLabel + ' '.repeat(Math.max(1, spaces)) + subtotalValue + '\n';
   
   if (data.tax > 0) {
     const taxLabel = 'Pajak:';
-    const taxValue = 'Rp' + data.tax;
+    const taxValue = 'Rp ' + data.tax;
     spaces = 24 - taxLabel.length - taxValue.length;
     receipt += taxLabel + ' '.repeat(Math.max(1, spaces)) + taxValue + '\n';
   }
   
   const totalLabel = 'TOTAL:';
-  const totalValue = 'Rp' + data.total;
+  const totalValue = 'Rp ' + data.total;
   spaces = 24 - totalLabel.length - totalValue.length;
   receipt += totalLabel + ' '.repeat(Math.max(1, spaces)) + totalValue + '\n';
   receipt += '\n'; // Blank line instead of separator

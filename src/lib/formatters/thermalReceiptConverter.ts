@@ -39,7 +39,7 @@ interface ThermalReceiptData {
  * Format currency to IDR - Simple format to avoid truncation on 58mm printer
  */
 function formatCurrency(amount: number): string {
-  return 'Rp' + amount;
+  return 'Rp ' + amount;
 }
 
 /**
@@ -114,7 +114,7 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
   // Default to 58mm for Xiaomi Redmi Pad SE optimization
   const paperWidth = data.paperWidth || '58mm';
   const maxChars = paperWidth === '58mm' ? 24 : 32;
-  const separator = '='.repeat(maxChars);
+  const separator = '-'.repeat(maxChars);
   const lightSeparator = '-'.repeat(maxChars);
   
   const storeName = data.storeName || 'BK POS';

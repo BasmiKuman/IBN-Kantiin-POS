@@ -71,7 +71,7 @@ export const ThermalDailyReport = forwardRef<HTMLDivElement, ThermalDailyReportP
   ) => {
     const formatCurrency = (amount: number) => {
       // Simple format to avoid truncation on 58mm thermal printer
-      return 'Rp' + amount;
+      return 'Rp ' + amount;
     };
 
     const formatDate = (date: Date) => {
