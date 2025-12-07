@@ -95,9 +95,9 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   receipt += 'Total Item: ' + data.totalItems + ' pcs\n';
   receipt += '\n';
   
-  // Grand total - emphasized
+  // Grand total - emphasized with proper currency formatting
   let label = 'TOTAL PENJUALAN:';
-  let value = 'Rp ' + data.totalRevenue;
+  let value = formatCurrency(data.totalRevenue);
   let spaces = 24 - label.length - value.length;
   receipt += label + ' '.repeat(Math.max(1, spaces)) + value + '\n';
   receipt += '========================\n';
