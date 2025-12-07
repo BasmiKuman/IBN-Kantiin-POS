@@ -161,6 +161,12 @@ function generateThermalReceipt(data) {
   receipt += ALIGN_CENTER;
   receipt += 'Terima Kasih!\n';
   receipt += separator + '\n';
+  receipt += '\n';
+  
+  // Branding
+  receipt += 'Powered by\n';
+  receipt += 'BasmiKuman POS\n';
+  receipt += '\n';
   
   receipt += CUT_PAPER;
   
