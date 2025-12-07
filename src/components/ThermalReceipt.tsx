@@ -258,9 +258,13 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(
                     <div key={i}>{line}</div>
                   ))}
                 </div>
-                <div className="tr-item-detail">
-                  <span style={{ flex: 1 }}>  {item.quantity} x {formatCurrency(item.price)}</span>
-                  <span className="tr-bold" style={{ whiteSpace: 'nowrap' }}>= {formatCurrency(item.subtotal)}</span>
+                {/* Qty x price on one line */}
+                <div style={{ fontSize: paperWidth === '58mm' ? '8px' : '9px', marginLeft: '4px' }}>
+                  {item.quantity} x {formatCurrency(item.price)}
+                </div>
+                {/* Total on separate line for clarity */}
+                <div style={{ fontSize: paperWidth === '58mm' ? '8px' : '9px', marginLeft: '4px' }} className="tr-bold">
+                  = {formatCurrency(item.subtotal)}
                 </div>
               </div>
             );
