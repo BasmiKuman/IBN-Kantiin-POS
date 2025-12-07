@@ -15,6 +15,8 @@ export interface CashierReceiptData {
   tax: number;
   total: number;
   paymentMethod: string;
+  paymentAmount?: number;
+  changeAmount?: number;
   cashierName?: string;
   customerName?: string;
   date: Date;

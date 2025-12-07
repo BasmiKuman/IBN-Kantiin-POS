@@ -72,6 +72,8 @@ export default function TransactionHistory() {
       tax: transaction.tax || 0,
       total: transaction.total,
       paymentMethod: transaction.payment_method,
+      paymentAmount: transaction.payment_amount,
+      changeAmount: transaction.change_amount,
       cashierName: transaction.employees?.name,
       customerName: transaction.customers?.name,
       date: new Date(transaction.created_at),

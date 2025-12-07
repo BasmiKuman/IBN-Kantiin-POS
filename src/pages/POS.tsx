@@ -1792,6 +1792,8 @@ export default function POS() {
           tax: lastTransaction.tax,
           total: lastTransaction.total,
           paymentMethod: lastTransaction.paymentMethod,
+          paymentAmount: lastTransaction.paymentAmount,
+          changeAmount: lastTransaction.changeAmount,
           customerName: lastTransaction.customerName,
           date: lastTransaction.date,
         } : lastOpenBill ? {
