@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Printer, Bluetooth, CheckCircle, XCircle, Loader2, Calendar, ChefHat, Receipt as ReceiptIcon, Settings, Sparkles, FileText } from 'lucide-react';
 import { useBluetoothPrinter } from '@/hooks/useBluetoothPrinter';
 import { generateKitchenReceipt, generateCashierReceipt, generateTestReceipt, type ReceiptData } from '@/lib/receiptFormatter';
+import { generateThermalReceipt } from '@/lib/formatters/thermalReceiptConverter';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
