@@ -68,29 +68,23 @@ function generateThermalReceipt(data) {
   
   let receipt = INIT;
   
-  // Header - Centered
+  // Header - Centered (compact)
   receipt += ALIGN_CENTER;
-  receipt += separator + '\n';
   receipt += storeName + '\n';
+  if (data.storeAddress) receipt += data.storeAddress + '\n';
+  if (data.storePhone) receipt += data.storePhone + '\n';
   receipt += separator + '\n';
-  receipt += '\n';
   
-  // Transaction Info - Left Aligned
+  // Transaction Info - Left Aligned (compact)
   receipt += ALIGN_LEFT;
   receipt += 'No: ' + data.transactionNumber + '\n';
   receipt += 'Tgl: ' + formatDate(data.date) + '\n';
   if (data.cashierName) receipt += 'Kasir: ' + data.cashierName + '\n';
-  if (data.customerName) receipt += 'Pelanggan: ' + data.customerName + '\n';
-  receipt += '\n';
+  if (data.customerName) receipt += 'Cust: ' + data.customerName + '\n';
+  receipt += lightSeparator + '\n';
   
-  receipt += ALIGN_CENTER;
-  receipt += separator + '\n';
-  receipt += '\n';
-  
-  // Items
-  receipt += ALIGN_LEFT;
-  
-  data.items.forEach((item) => {
+  // Items - Compact format
+  data.items.forEach((item, index) => {
     let itemName = item.name;
     if (item.variant) itemName += ' - ' + item.variant;
     
@@ -99,56 +93,74 @@ function generateThermalReceipt(data) {
       receipt += line + '\n';
     });
     
-    receipt += '  ' + item.quantity + ' x ' + formatCurrency(item.price) + '\n';
-    receipt += '  = ' + formatCurrency(item.subtotal) + '\n';
-    receipt += '\n';
+    // Compact: qty x price = total on ONE line with proper alignment
+    const qtyPrice = item.quantity + 'x' + formatCurrency(item.price);
+    const total = formatCurrency(item.subtotal);
+    const spaces = ' '.repeat(Math.max(1, maxChars - qtyPrice.length - total.length));
+    receipt += qtyPrice + spaces + total + '\n';
+    
+    // Only add separator between items, not after last item
+    if (index < data.items.length - 1) {
+      receipt += '\n';
+    }
   });
   
-  // Light separator before totals
-  receipt += ALIGN_CENTER;
   receipt += lightSeparator + '\n';
-  receipt += '\n';
   
-  // Totals
+  // Totals - Compact
   receipt += ALIGN_LEFT;
-  const subtotalLabel = 'Subtotal:';
+  
+  // Subtotal
+  const subtotalLabel = 'Subtotal';
   const subtotalValue = formatCurrency(data.subtotal);
   const subtotalSpaces = ' '.repeat(Math.max(1, maxChars - subtotalLabel.length - subtotalValue.length));
   receipt += subtotalLabel + subtotalSpaces + subtotalValue + '\n';
   
+  // Tax (if any)
   if (data.tax > 0) {
     const taxRate = data.taxRate || 0;
-    const taxLabel = `Pajak (${taxRate}%):`;
+    const taxLabel = taxRate > 0 ? `Pajak(${taxRate}%)` : 'Pajak';
     const taxValue = formatCurrency(data.tax);
     const taxSpaces = ' '.repeat(Math.max(1, maxChars - taxLabel.length - taxValue.length));
     receipt += taxLabel + taxSpaces + taxValue + '\n';
   }
   
-  receipt += '\n';
-  
-  // TOTAL
-  receipt += ALIGN_CENTER;
   receipt += separator + '\n';
-  receipt += ALIGN_LEFT;
   
-  const totalLabel = 'TOTAL:';
+  // TOTAL - Bold
+  const totalLabel = 'TOTAL';
   const totalValue = formatCurrency(data.total);
   const totalSpaces = ' '.repeat(Math.max(1, maxChars - totalLabel.length - totalValue.length));
   receipt += totalLabel + totalSpaces + totalValue + '\n';
   
-  receipt += ALIGN_CENTER;
   receipt += separator + '\n';
-  receipt += '\n';
   
-  // Payment info
+  // Payment Info - Compact
   receipt += ALIGN_LEFT;
-  receipt += 'Pembayaran: ' + data.paymentMethod.toUpperCase() + '\n';
+  const methodLabel = 'Bayar';
+  const methodValue = data.paymentMethod.toUpperCase();
+  const methodSpaces = ' '.repeat(Math.max(1, maxChars - methodLabel.length - methodValue.length));
+  receipt += methodLabel + methodSpaces + methodValue + '\n';
   
-  receipt += '\n';
+  const paymentMethodLower = data.paymentMethod.toLowerCase();
+  if (paymentMethodLower === "cash" || paymentMethodLower === "tunai") {
+    const payLabel = 'Uang';
+    const payValue = formatCurrency(data.paymentAmount);
+    const paySpaces = ' '.repeat(Math.max(1, maxChars - payLabel.length - payValue.length));
+    receipt += payLabel + paySpaces + payValue + '\n';
+    
+    const changeLabel = 'Kembali';
+    const changeValue = formatCurrency(data.changeAmount);
+    const changeSpaces = ' '.repeat(Math.max(1, maxChars - changeLabel.length - changeValue.length));
+    receipt += changeLabel + changeSpaces + changeValue + '\n';
+  }
+  
+  receipt += separator + '\n';
+  
+  // Footer - Compact
   receipt += ALIGN_CENTER;
-  receipt += 'Terima kasih!\n';
-  receipt += 'Selamat menikmati!\n';
-  receipt += '\n';
+  receipt += 'Terima Kasih!\n';
+  receipt += separator + '\n';
   
   receipt += CUT_PAPER;
   
