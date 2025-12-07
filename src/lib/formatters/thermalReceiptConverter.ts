@@ -1,0 +1,457 @@
+/**
+ * Thermal Receipt HTML to ESC/POS Converter
+ * Optimized for Xiaomi Redmi Pad SE 8.7" with 58mm thermal printer
+ * 
+ * Converts ThermalReceipt component output to ESC/POS commands
+ * for Bluetooth thermal printer printing
+ */
+
+import { PrinterCommands } from '@/hooks/useBluetoothPrinter';
+
+interface ThermalReceiptData {
+  transactionNumber: string;
+  date: Date;
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+    subtotal: number;
+    variant?: string;
+  }>;
+  subtotal: number;
+  tax: number;
+  taxRate?: number;
+  total: number;
+  paymentMethod: string;
+  paymentAmount: number;
+  changeAmount: number;
+  customerName?: string;
+  earnedPoints?: number;
+  totalPoints?: number;
+  paperWidth?: '58mm' | '80mm';
+  storeName?: string;
+  storeAddress?: string;
+  storePhone?: string;
+  cashierName?: string;
+}
+
+/**
+ * Format currency to IDR
+ */
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(amount).replace('Rp', 'Rp');
+}
+
+/**
+ * Format date to Indonesian format
+ */
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
+/**
+ * Get payment method label
+ */
+function getPaymentMethodLabel(method: string): string {
+  switch (method.toLowerCase()) {
+    case "cash":
+    case "tunai":
+      return "TUNAI";
+    case "qris":
+      return "QRIS";
+    case "transfer":
+      return "TRANSFER";
+    default:
+      return method.toUpperCase();
+  }
+}
+
+/**
+ * Wrap text to fit paper width
+ * Optimized for 58mm (24 chars) and 80mm (32 chars)
+ */
+function wrapText(text: string, maxLength: number): string[] {
+  if (text.length <= maxLength) return [text];
+  
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  words.forEach(word => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= maxLength) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      // If single word is too long, force break it
+      if (word.length > maxLength) {
+        let remaining = word;
+        while (remaining.length > maxLength) {
+          lines.push(remaining.substring(0, maxLength));
+          remaining = remaining.substring(maxLength);
+        }
+        currentLine = remaining;
+      } else {
+        currentLine = word;
+      }
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+  
+  return lines;
+}
+
+/**
+ * Generate thermal receipt ESC/POS commands
+ * Optimized for Xiaomi Redmi Pad SE with 58mm thermal printer
+ */
+export function generateThermalReceipt(data: ThermalReceiptData): string {
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, CUT_PAPER } = PrinterCommands;
+  
+  // Default to 58mm for Xiaomi Redmi Pad SE optimization
+  const paperWidth = data.paperWidth || '58mm';
+  const maxChars = paperWidth === '58mm' ? 24 : 32;
+  const separator = '='.repeat(maxChars);
+  const lightSeparator = '-'.repeat(maxChars);
+  
+  const storeName = data.storeName || 'BK POS';
+  const storeAddress = data.storeAddress || '';
+  const storePhone = data.storePhone || '';
+  
+  let receipt = INIT; // Initialize printer
+  
+  // Header - Centered
+  receipt += ALIGN_CENTER;
+  receipt += separator + '\n';
+  receipt += storeName + '\n';
+  if (storeAddress) receipt += storeAddress + '\n';
+  if (storePhone) receipt += 'Telp: ' + storePhone + '\n';
+  receipt += separator + '\n';
+  receipt += '\n';
+  
+  // Transaction Info - Left Aligned
+  receipt += ALIGN_LEFT;
+  receipt += 'No: ' + data.transactionNumber + '\n';
+  receipt += 'Tgl: ' + formatDate(data.date) + '\n';
+  if (data.cashierName) receipt += 'Kasir: ' + data.cashierName + '\n';
+  if (data.customerName) receipt += 'Pelanggan: ' + data.customerName + '\n';
+  receipt += '\n';
+  
+  receipt += ALIGN_CENTER;
+  receipt += separator + '\n';
+  receipt += '\n';
+  
+  // Items - NO "PRODUK" header to maintain consistency
+  receipt += ALIGN_LEFT;
+  
+  data.items.forEach((item) => {
+    let itemName = item.name;
+    if (item.variant) itemName += ' - ' + item.variant;
+    
+    // Wrap long product names
+    const nameLines = wrapText(itemName, maxChars);
+    nameLines.forEach(line => {
+      receipt += line + '\n';
+    });
+    
+    // Item detail: qty x price = subtotal
+    receipt += '  ' + item.quantity + ' x ' + formatCurrency(item.price) + '\n';
+    receipt += '  = ' + formatCurrency(item.subtotal) + '\n';
+    receipt += '\n'; // Blank line after each item
+  });
+  
+  // Light separator before totals
+  receipt += ALIGN_CENTER;
+  receipt += lightSeparator + '\n';
+  receipt += '\n';
+  
+  // Totals
+  receipt += ALIGN_LEFT;
+  const subtotalLabel = 'Subtotal:';
+  const subtotalValue = formatCurrency(data.subtotal);
+  const subtotalSpaces = ' '.repeat(Math.max(1, maxChars - subtotalLabel.length - subtotalValue.length));
+  receipt += subtotalLabel + subtotalSpaces + subtotalValue + '\n';
+  
+  if (data.tax > 0) {
+    const taxRate = data.taxRate || 0;
+    const taxLabel = `Pajak (${taxRate}%):`;
+    const taxValue = formatCurrency(data.tax);
+    const taxSpaces = ' '.repeat(Math.max(1, maxChars - taxLabel.length - taxValue.length));
+    receipt += taxLabel + taxSpaces + taxValue + '\n';
+  }
+  
+  receipt += '\n';
+  
+  // TOTAL - Bold separator
+  receipt += ALIGN_CENTER;
+  receipt += separator + '\n';
+  receipt += ALIGN_LEFT;
+  
+  const totalLabel = 'TOTAL:';
+  const totalValue = formatCurrency(data.total);
+  const totalSpaces = ' '.repeat(Math.max(1, maxChars - totalLabel.length - totalValue.length));
+  receipt += totalLabel + totalSpaces + totalValue + '\n';
+  
+  receipt += ALIGN_CENTER;
+  receipt += separator + '\n';
+  receipt += '\n';
+  
+  // Payment Info
+  receipt += ALIGN_LEFT;
+  const methodLabel = 'Metode:';
+  const methodValue = getPaymentMethodLabel(data.paymentMethod);
+  const methodSpaces = ' '.repeat(Math.max(1, maxChars - methodLabel.length - methodValue.length));
+  receipt += methodLabel + methodSpaces + methodValue + '\n';
+  
+  const paymentMethodLower = data.paymentMethod.toLowerCase();
+  if (paymentMethodLower === "cash" || paymentMethodLower === "tunai") {
+    const payLabel = 'Bayar:';
+    const payValue = formatCurrency(data.paymentAmount);
+    const paySpaces = ' '.repeat(Math.max(1, maxChars - payLabel.length - payValue.length));
+    receipt += payLabel + paySpaces + payValue + '\n';
+    
+    const changeLabel = 'Kembalian:';
+    const changeValue = formatCurrency(data.changeAmount);
+    const changeSpaces = ' '.repeat(Math.max(1, maxChars - changeLabel.length - changeValue.length));
+    receipt += changeLabel + changeSpaces + changeValue + '\n';
+  }
+  receipt += '\n';
+  
+  // Loyalty Points (if any)
+  if (data.earnedPoints && data.earnedPoints > 0) {
+    receipt += ALIGN_CENTER;
+    receipt += separator + '\n';
+    receipt += 'POIN LOYALTY\n';
+    receipt += separator + '\n';
+    receipt += '\n';
+    
+    receipt += ALIGN_LEFT;
+    const pointsLabel = 'Poin Didapat:';
+    const pointsValue = '+' + data.earnedPoints;
+    const pointsSpaces = ' '.repeat(Math.max(1, maxChars - pointsLabel.length - pointsValue.length));
+    receipt += pointsLabel + pointsSpaces + pointsValue + '\n';
+    
+    if (data.totalPoints !== undefined) {
+      const totalPointsLabel = 'Total Poin:';
+      const totalPointsValue = String(data.totalPoints);
+      const totalPointsSpaces = ' '.repeat(Math.max(1, maxChars - totalPointsLabel.length - totalPointsValue.length));
+      receipt += totalPointsLabel + totalPointsSpaces + totalPointsValue + '\n';
+    }
+    receipt += '\n';
+  }
+  
+  // Footer
+  receipt += ALIGN_CENTER;
+  receipt += separator + '\n';
+  receipt += 'Terima Kasih!\n';
+  receipt += 'Barang yang sudah dibeli\n';
+  receipt += 'tidak dapat dikembalikan\n';
+  receipt += separator + '\n';
+  receipt += '\n';
+  receipt += 'Powered by BasmiKuman POS\n';
+  receipt += '(c) ' + new Date().getFullYear() + '\n';
+  receipt += '\n';
+  
+  // Cut paper
+  receipt += CUT_PAPER;
+  
+  return receipt;
+}
+
+/**
+ * Generate thermal daily report ESC/POS commands
+ */
+interface ThermalReportData {
+  date: Date;
+  cashierName: string;
+  shift?: string;
+  totalTransactions: number;
+  totalRevenue: number;
+  avgTransaction: number;
+  cashAmount: number;
+  cashCount: number;
+  qrisAmount: number;
+  qrisCount: number;
+  transferAmount: number;
+  transferCount: number;
+  topProducts: Array<{
+    name: string;
+    quantity: number;
+    revenue: number;
+  }>;
+  foodRevenue?: number;
+  foodCount?: number;
+  drinkRevenue?: number;
+  drinkCount?: number;
+  totalCost?: number;
+  profit?: number;
+  margin?: number;
+  notes?: string[];
+  paperWidth?: '58mm' | '80mm';
+  storeName?: string;
+}
+
+export function generateThermalReport(data: ThermalReportData): string {
+  const { INIT, ALIGN_CENTER, ALIGN_LEFT, CUT_PAPER } = PrinterCommands;
+  
+  const paperWidth = data.paperWidth || '58mm';
+  const maxChars = paperWidth === '58mm' ? 24 : 32;
+  const separator = '='.repeat(maxChars);
+  
+  const storeName = data.storeName || 'BASMIKUMAN POS';
+  
+  let report = INIT;
+  
+  // Header
+  report += ALIGN_CENTER;
+  report += separator + '\n';
+  report += 'LAPORAN HARIAN\n';
+  report += storeName + '\n';
+  report += separator + '\n';
+  report += '\n';
+  
+  // Report Info
+  report += ALIGN_LEFT;
+  const formatDateLong = new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "long",
+  }).format(data.date);
+  const formatTime = new Intl.DateTimeFormat("id-ID", {
+    timeStyle: "medium",
+  }).format(new Date());
+  
+  report += 'Tanggal: ' + formatDateLong + '\n';
+  report += 'Waktu: ' + formatTime + '\n';
+  report += 'Kasir: ' + data.cashierName + '\n';
+  if (data.shift) report += 'Shift: ' + data.shift + '\n';
+  report += '\n';
+  
+  // Summary
+  report += ALIGN_CENTER;
+  report += separator + '\n';
+  report += 'RINGKASAN\n';
+  report += separator + '\n';
+  
+  report += ALIGN_LEFT;
+  report += 'Total Transaksi: ' + data.totalTransactions + '\n';
+  report += 'Total Pendapatan:\n';
+  report += '  ' + formatCurrency(data.totalRevenue) + '\n';
+  report += 'Rata-rata/Trx:\n';
+  report += '  ' + formatCurrency(data.avgTransaction) + '\n';
+  report += '\n';
+  
+  // Payment Methods
+  report += ALIGN_CENTER;
+  report += separator + '\n';
+  report += 'METODE BAYAR\n';
+  report += separator + '\n';
+  
+  report += ALIGN_LEFT;
+  report += `Tunai (${data.cashCount}x)\n`;
+  report += '  ' + formatCurrency(data.cashAmount) + '\n';
+  report += `QRIS (${data.qrisCount}x)\n`;
+  report += '  ' + formatCurrency(data.qrisAmount) + '\n';
+  report += `Transfer (${data.transferCount}x)\n`;
+  report += '  ' + formatCurrency(data.transferAmount) + '\n';
+  report += '\n';
+  
+  // Top Products
+  report += ALIGN_CENTER;
+  report += separator + '\n';
+  report += 'TOP PRODUK\n';
+  report += separator + '\n';
+  
+  report += ALIGN_LEFT;
+  const topCount = paperWidth === '58mm' ? 5 : 10;
+  data.topProducts.slice(0, topCount).forEach((product, index) => {
+    const nameLines = wrapText(product.name, maxChars - 3);
+    nameLines.forEach((line, i) => {
+      if (i === 0) {
+        report += `${index + 1}. ${line}\n`;
+      } else {
+        report += `   ${line}\n`;
+      }
+    });
+    report += `  ${product.quantity} pcs - ` + formatCurrency(product.revenue) + '\n';
+    report += '\n';
+  });
+  
+  // Category Breakdown
+  if (data.foodRevenue || data.drinkRevenue) {
+    report += ALIGN_CENTER;
+    report += separator + '\n';
+    report += 'KATEGORI\n';
+    report += separator + '\n';
+    
+    report += ALIGN_LEFT;
+    if (data.foodRevenue && data.foodRevenue > 0) {
+      report += `Makanan (${data.foodCount}x)\n`;
+      report += '  ' + formatCurrency(data.foodRevenue) + '\n';
+    }
+    if (data.drinkRevenue && data.drinkRevenue > 0) {
+      report += `Minuman (${data.drinkCount}x)\n`;
+      report += '  ' + formatCurrency(data.drinkRevenue) + '\n';
+    }
+    report += '\n';
+  }
+  
+  // Profit
+  if (data.profit !== undefined && data.totalCost !== undefined) {
+    report += ALIGN_CENTER;
+    report += separator + '\n';
+    report += 'PROFIT\n';
+    report += separator + '\n';
+    
+    report += ALIGN_LEFT;
+    report += 'Modal:\n';
+    report += '  ' + formatCurrency(data.totalCost) + '\n';
+    report += 'Profit Kotor:\n';
+    report += '  ' + formatCurrency(data.profit) + '\n';
+    if (data.margin !== undefined) {
+      report += `Margin: ${data.margin.toFixed(1)}%\n`;
+    }
+    report += '\n';
+  }
+  
+  // Notes
+  if (data.notes && data.notes.length > 0) {
+    report += ALIGN_CENTER;
+    report += separator + '\n';
+    report += 'CATATAN\n';
+    report += separator + '\n';
+    
+    report += ALIGN_LEFT;
+    data.notes.forEach(note => {
+      const noteLines = wrapText(`- ${note}`, maxChars);
+      noteLines.forEach((line, i) => {
+        if (i === 0) {
+          report += line + '\n';
+        } else {
+          report += '  ' + line + '\n';
+        }
+      });
+    });
+    report += '\n';
+  }
+  
+  // Footer
+  report += ALIGN_CENTER;
+  report += separator + '\n';
+  report += 'Laporan Valid\n';
+  report += 'Dicetak Otomatis\n';
+  report += separator + '\n';
+  report += '\n';
+  report += 'Powered by BasmiKuman POS\n';
+  report += '(c) ' + new Date().getFullYear() + '\n';
+  report += '\n';
+  
+  report += CUT_PAPER;
+  
+  return report;
+}
