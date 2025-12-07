@@ -105,10 +105,9 @@ function generateThermalReceipt(data) {
     }
   });
   
-  receipt += lightSeparator + '\n';
-  
-  // Totals - Compact
+  // Totals - Compact (no extra separator)
   receipt += ALIGN_LEFT;
+  receipt += lightSeparator + '\n';
   
   // Subtotal
   const subtotalLabel = 'Subtotal';
