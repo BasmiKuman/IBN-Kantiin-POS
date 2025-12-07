@@ -7,6 +7,7 @@
  */
 
 import { PrinterCommands } from '@/hooks/useBluetoothPrinter';
+import { getReceiptSettings } from './sharedHelpers';
 
 interface ThermalReceiptData {
   transactionNumber: string;
