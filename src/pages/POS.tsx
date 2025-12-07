@@ -21,6 +21,7 @@ import { VariantSelector } from "@/components/VariantSelector";
 import { useReactToPrint } from "react-to-print";
 import { useBluetoothPrinter } from "@/hooks/useBluetoothPrinter";
 import { generateCashierReceipt } from "@/lib/receiptFormatter";
+import { generateThermalReceipt } from "@/lib/formatters/thermalReceiptConverter";
 
 interface CartItem {
   id: string;
