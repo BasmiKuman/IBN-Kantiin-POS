@@ -284,12 +284,12 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
     receipt += 'Terima Kasih!\n';
   }
   
-  receipt += separator + '\n';
+  receipt += '\n';
   receipt += '\n';
   receipt += '\n';
 
   // Branding - IMPORTANT!
-  receipt += 'Powered by BasmiKuman POS\n';
+  receipt += 'Powered by BK POS\n';
   receipt += '\n';
   receipt += '\n';
   receipt += '\n';
