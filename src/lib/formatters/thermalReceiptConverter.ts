@@ -199,61 +199,50 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
   
   receipt += separator + '\n';
   
-  // Payment Info
+  // Payment Info - Compact
   receipt += ALIGN_LEFT;
-  const methodLabel = 'Metode:';
+  const methodLabel = 'Bayar';
   const methodValue = getPaymentMethodLabel(data.paymentMethod);
   const methodSpaces = ' '.repeat(Math.max(1, maxChars - methodLabel.length - methodValue.length));
   receipt += methodLabel + methodSpaces + methodValue + '\n';
   
   const paymentMethodLower = data.paymentMethod.toLowerCase();
   if (paymentMethodLower === "cash" || paymentMethodLower === "tunai") {
-    const payLabel = 'Bayar:';
+    const payLabel = 'Uang';
     const payValue = formatCurrency(data.paymentAmount);
     const paySpaces = ' '.repeat(Math.max(1, maxChars - payLabel.length - payValue.length));
     receipt += payLabel + paySpaces + payValue + '\n';
     
-    const changeLabel = 'Kembalian:';
+    const changeLabel = 'Kembali';
     const changeValue = formatCurrency(data.changeAmount);
     const changeSpaces = ' '.repeat(Math.max(1, maxChars - changeLabel.length - changeValue.length));
     receipt += changeLabel + changeSpaces + changeValue + '\n';
   }
-  receipt += '\n';
   
-  // Loyalty Points (if any)
+  // Loyalty Points (if any) - Compact
   if (data.earnedPoints && data.earnedPoints > 0) {
-    receipt += ALIGN_CENTER;
-    receipt += separator + '\n';
-    receipt += 'POIN LOYALTY\n';
-    receipt += separator + '\n';
-    receipt += '\n';
+    receipt += lightSeparator + '\n';
     
     receipt += ALIGN_LEFT;
-    const pointsLabel = 'Poin Didapat:';
-    const pointsValue = '+' + data.earnedPoints;
+    const pointsLabel = 'Poin+';
+    const pointsValue = String(data.earnedPoints);
     const pointsSpaces = ' '.repeat(Math.max(1, maxChars - pointsLabel.length - pointsValue.length));
     receipt += pointsLabel + pointsSpaces + pointsValue + '\n';
     
     if (data.totalPoints !== undefined) {
-      const totalPointsLabel = 'Total Poin:';
+      const totalPointsLabel = 'Total Poin';
       const totalPointsValue = String(data.totalPoints);
       const totalPointsSpaces = ' '.repeat(Math.max(1, maxChars - totalPointsLabel.length - totalPointsValue.length));
       receipt += totalPointsLabel + totalPointsSpaces + totalPointsValue + '\n';
     }
-    receipt += '\n';
   }
   
-  // Footer
+  receipt += separator + '\n';
+  
+  // Footer - Compact
   receipt += ALIGN_CENTER;
-  receipt += separator + '\n';
   receipt += 'Terima Kasih!\n';
-  receipt += 'Barang yang sudah dibeli\n';
-  receipt += 'tidak dapat dikembalikan\n';
   receipt += separator + '\n';
-  receipt += '\n';
-  receipt += 'Powered by BasmiKuman POS\n';
-  receipt += '(c) ' + new Date().getFullYear() + '\n';
-  receipt += '\n';
   
   // Cut paper
   receipt += CUT_PAPER;
