@@ -95,11 +95,11 @@ function generateProductSalesReport(data) {
     receipt += '\n';
   });
   
+  receipt += '\n';
   receipt += '========================\n';
   
-  // Summary - simple and aligned
+  // Summary - simple and aligned (force LEFT align)
   receipt += ALIGN_LEFT;
-  receipt += '\n';
   receipt += 'RINGKASAN\n';
   receipt += '------------------------\n';
   
