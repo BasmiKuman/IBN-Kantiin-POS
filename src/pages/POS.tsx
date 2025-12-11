@@ -140,6 +140,13 @@ export default function POS() {
     tax: number;
     serviceCharge: number;
     total: number;
+    promotionDiscount?: number;
+    appliedPromotion?: {
+      id: string;
+      code: string;
+      type: 'percentage' | 'fixed';
+      value: number;
+    };
   }>>([]);
 
   // State untuk track open bill yang sedang diedit
@@ -532,7 +539,8 @@ export default function POS() {
     const billSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const billTax = paymentSettings.showTaxSeparately ? (billSubtotal * paymentSettings.taxRate / 100) : 0;
     const billServiceCharge = billSubtotal * paymentSettings.serviceCharge / 100;
-    const billTotal = billSubtotal + billTax + billServiceCharge;
+    const preTotalBeforePromo = billSubtotal + billTax + billServiceCharge;
+    const billTotal = preTotalBeforePromo - (promotionDiscount || 0);
     
     const newOpenBill = {
       orderNumber,
@@ -550,6 +558,8 @@ export default function POS() {
       tax: billTax,
       serviceCharge: billServiceCharge,
       total: billTotal,
+      promotionDiscount: promotionDiscount || undefined,
+      appliedPromotion: appliedPromotion || undefined,
     };
 
     // Simpan ke array openBills
@@ -570,6 +580,8 @@ export default function POS() {
       subtotal: billSubtotal,
       tax: billTax,
       total: billTotal,
+      promotionDiscount: promotionDiscount || undefined,
+      appliedPromotion: appliedPromotion || undefined,
     });
 
     // Show confirmation dialog for open bill
@@ -587,6 +599,8 @@ export default function POS() {
     setCart([]);
     setCustomerName("");
     setOrderNotes("");
+    setAppliedPromotion(null);
+    setPromotionDiscount(0);
   };
 
   const handlePrintOpenBill = () => {
@@ -751,6 +765,15 @@ export default function POS() {
     setOrderNotes(bill.notes || "");
     setEditingOpenBillNumber(orderNumber); // Track yang sedang diedit
     
+    // Restore promotion jika ada
+    if (bill.appliedPromotion && bill.promotionDiscount) {
+      setAppliedPromotion(bill.appliedPromotion);
+      setPromotionDiscount(bill.promotionDiscount);
+    } else {
+      setAppliedPromotion(null);
+      setPromotionDiscount(0);
+    }
+    
     toast({
       title: "Open Bill Dimuat",
       description: `Order ${orderNumber} dimuat ke keranjang untuk diedit`,
@@ -772,7 +795,8 @@ export default function POS() {
     const billSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const billTax = paymentSettings.showTaxSeparately ? (billSubtotal * paymentSettings.taxRate / 100) : 0;
     const billServiceCharge = billSubtotal * paymentSettings.serviceCharge / 100;
-    const billTotal = billSubtotal + billTax + billServiceCharge;
+    const preTotalBeforePromo = billSubtotal + billTax + billServiceCharge;
+    const billTotal = preTotalBeforePromo - (promotionDiscount || 0);
 
     // Update open bill yang ada
     setOpenBills(prev => prev.map(bill => 
@@ -792,6 +816,8 @@ export default function POS() {
             tax: billTax,
             serviceCharge: billServiceCharge,
             total: billTotal,
+            promotionDiscount: promotionDiscount || undefined,
+            appliedPromotion: appliedPromotion || undefined,
           }
         : bill
     ));
@@ -801,6 +827,8 @@ export default function POS() {
     setCustomerName("");
     setOrderNotes("");
     setEditingOpenBillNumber(null);
+    setAppliedPromotion(null);
+    setPromotionDiscount(0);
 
     toast({
       title: "Open Bill Diupdate!",
@@ -1221,6 +1249,8 @@ export default function POS() {
                           setCustomerName("");
                           setOrderNotes("");
                           setEditingOpenBillNumber(null);
+                          setAppliedPromotion(null);
+                          setPromotionDiscount(0);
                         }}
                       >
                         Batal
