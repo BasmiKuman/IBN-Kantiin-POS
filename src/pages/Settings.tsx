@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { BluetoothPrinterSettings } from "@/components/BluetoothPrinterSettings";
+import { PromotionSettings } from "@/components/PromotionSettings";
 import { useTheme } from "@/components/theme-provider";
 import { useUserSettings, useSaveUserSettings } from "@/hooks/supabase/useUserSettings";
 import { Loader2 } from "lucide-react";
@@ -438,6 +439,7 @@ export default function Settings() {
           <TabsTrigger value="payment">Pembayaran</TabsTrigger>
           <TabsTrigger value="receipt">Struk</TabsTrigger>
           <TabsTrigger value="bluetooth">Bluetooth Printer</TabsTrigger>
+          <TabsTrigger value="promotions">Promosi</TabsTrigger>
           <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
           <TabsTrigger value="loyalty">Program Loyalty</TabsTrigger>
         </TabsList>
@@ -732,6 +734,10 @@ export default function Settings() {
 
         <TabsContent value="bluetooth" className="space-y-4">
           <BluetoothPrinterSettings />
+        </TabsContent>
+
+        <TabsContent value="promotions" className="space-y-4">
+          <PromotionSettings />
         </TabsContent>
 
         <TabsContent value="receipt" className="space-y-4">
