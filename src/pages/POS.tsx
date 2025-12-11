@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Loader2, Printer, FileText, ChevronDown, ChevronUp, Gift } from "lucide-react";
+import { Search, Plus, Minus, Trash2, CreditCard, Banknote, Smartphone, Loader2, Printer, FileText, ChevronDown, ChevronUp, Gift, Tag, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { useCategories } from "@/hooks/supabase/useCategories";
 import { useProductVariants } from "@/hooks/supabase/useProductVariants";
 import { useCreateTransaction, generateTransactionNumber } from "@/hooks/supabase/useTransactions";
 import { useSearchCustomer, useUpdateCustomerPoints, useCreateCustomer } from "@/hooks/supabase/useCustomers";
+import { usePromotions, calculatePromotionDiscount, type Promotion } from "@/hooks/supabase/usePromotions";
 import { toast } from "@/hooks/use-toast";
 import { Receipt } from "@/components/Receipt";
 import { PrintDialog } from "@/components/PrintDialog";
@@ -94,6 +95,12 @@ export default function POS() {
   const [usePoints, setUsePoints] = useState(false);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
   
+  // Promotion states
+  const [promotionCode, setPromotionCode] = useState("");
+  const [appliedPromotion, setAppliedPromotion] = useState<Promotion | null>(null);
+  const [promotionDiscount, setPromotionDiscount] = useState(0);
+  const [showPromotionDialog, setShowPromotionDialog] = useState(false);
+  
   const [lastTransaction, setLastTransaction] = useState<{
     transactionNumber: string;
     date: Date;
@@ -151,6 +158,7 @@ export default function POS() {
   const { data: categories = [] } = useCategories();
   const { data: customer } = useSearchCustomer(customerPhone);
   const { data: productVariants = [] } = useProductVariants(selectedProductForVariant?.id || "");
+  const { data: promotions = [] } = usePromotions();
   const createTransaction = useCreateTransaction();
   const updateCustomerPoints = useUpdateCustomerPoints();
   const createCustomer = useCreateCustomer();
@@ -283,6 +291,56 @@ export default function POS() {
     );
   };
 
+  // Promotion handlers
+  const applyPromotion = (promo: Promotion) => {
+    const result = calculatePromotionDiscount(promo, subtotal, cart);
+    
+    if (!result.isValid) {
+      toast({
+        title: "Promosi Tidak Valid",
+        description: result.error,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setAppliedPromotion(promo);
+    setPromotionDiscount(result.discount);
+    setShowPromotionDialog(false);
+    setPromotionCode("");
+    
+    toast({
+      title: "Promosi Diterapkan!",
+      description: `${promo.name} - Hemat Rp${result.discount.toLocaleString('id-ID')}`,
+    });
+  };
+  
+  const removePromotion = () => {
+    setAppliedPromotion(null);
+    setPromotionDiscount(0);
+    setPromotionCode("");
+    
+    toast({
+      title: "Promosi Dihapus",
+      description: "Promosi telah dihapus dari transaksi",
+    });
+  };
+  
+  const applyPromotionByCode = () => {
+    const promo = promotions.find(p => p.code.toUpperCase() === promotionCode.toUpperCase());
+    
+    if (!promo) {
+      toast({
+        title: "Kode Tidak Valid",
+        description: "Kode promosi tidak ditemukan atau sudah tidak berlaku",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    applyPromotion(promo);
+  };
+
   const removeFromCart = (id: string, variantId?: string) => {
     setCart(cart.filter((item) => {
       // For products with variant: match by id AND variantId
@@ -301,13 +359,20 @@ export default function POS() {
   const tax = paymentSettings.showTaxSeparately ? (subtotal * paymentSettings.taxRate / 100) : 0;
   const serviceCharge = subtotal * paymentSettings.serviceCharge / 100;
   
+  // Calculate promotion discount
+  const promotionResult = appliedPromotion 
+    ? calculatePromotionDiscount(appliedPromotion, subtotal, cart)
+    : { discount: 0, isValid: false };
+  
+  const validPromotionDiscount = promotionResult.isValid ? promotionResult.discount : 0;
+  
   // Calculate points discount
   const pointsDiscount = usePoints && customer ? Math.min(
     pointsToRedeem * loyaltySettings.rupiahPerPoint,
-    subtotal + tax + serviceCharge
+    subtotal + tax + serviceCharge - validPromotionDiscount
   ) : 0;
   
-  const total = subtotal + tax + serviceCharge - pointsDiscount;
+  const total = subtotal + tax + serviceCharge - validPromotionDiscount - pointsDiscount;
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -365,6 +430,9 @@ export default function POS() {
           payment_method: method,
           payment_amount: paymentAmountNum,
           change_amount: changeAmount,
+          promotion_id: appliedPromotion?.id || null,
+          promotion_code: appliedPromotion?.code || null,
+          promotion_discount: validPromotionDiscount,
           status: 'completed',
           notes: null,
         },
@@ -428,6 +496,9 @@ export default function POS() {
       setNewCustomerId(null);
       setUsePoints(false);
       setPointsToRedeem(0);
+      setAppliedPromotion(null);
+      setPromotionDiscount(0);
+      setPromotionCode("");
 
       // Show receipt dialog
       setReceiptDialogOpen(true);
@@ -1082,6 +1153,46 @@ export default function POS() {
                       <span className="font-medium">- Rp {pointsDiscount.toLocaleString()}</span>
                     </div>
                   )}
+                  
+                  {/* Promotion Section */}
+                  <div className="border-t pt-2 space-y-2">
+                    {appliedPromotion ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-200">
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-green-600" />
+                            <div>
+                              <div className="text-sm font-medium text-green-900">{appliedPromotion.name}</div>
+                              <div className="text-xs text-green-600">Kode: {appliedPromotion.code}</div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={removePromotion}
+                            className="h-7 w-7 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex justify-between text-sm text-green-600 font-medium">
+                          <span>Diskon Promosi</span>
+                          <span>- Rp {validPromotionDiscount.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPromotionDialog(true)}
+                        className="w-full h-9 gap-2"
+                        disabled={cart.length === 0}
+                      >
+                        <Tag className="h-4 w-4" />
+                        Gunakan Promosi
+                      </Button>
+                    )}
+                  </div>
                   
                   <div className="flex justify-between text-lg font-bold pt-1.5 border-t">
                     <span>Total</span>
@@ -1822,6 +1933,106 @@ export default function POS() {
           date: lastOpenBill.date,
         } : undefined}
       />
+      
+      {/* Promotion Dialog */}
+      <Dialog open={showPromotionDialog} onOpenChange={setShowPromotionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pilih Promosi</DialogTitle>
+            <DialogDescription>
+              Masukkan kode promosi atau pilih dari daftar promosi yang tersedia
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Enter Promo Code */}
+            <div className="space-y-2">
+              <Label htmlFor="promo-code">Kode Promosi</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="promo-code"
+                  value={promotionCode}
+                  onChange={(e) => setPromotionCode(e.target.value.toUpperCase())}
+                  placeholder="Masukkan kode promosi"
+                  className="uppercase"
+                />
+                <Button 
+                  onClick={applyPromotionByCode}
+                  disabled={!promotionCode}
+                >
+                  Terapkan
+                </Button>
+              </div>
+            </div>
+            
+            {/* Available Promotions */}
+            {promotions.length > 0 && (
+              <div className="space-y-2">
+                <Label>Promosi Tersedia</Label>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {promotions.map((promo) => {
+                    const result = calculatePromotionDiscount(promo, subtotal, cart);
+                    const isValid = result.isValid;
+                    
+                    return (
+                      <div
+                        key={promo.id}
+                        className={`p-3 border rounded-lg ${
+                          isValid ? 'border-green-200 bg-green-50 hover:bg-green-100 cursor-pointer' : 'border-gray-200 bg-gray-50 opacity-60'
+                        }`}
+                        onClick={() => isValid && applyPromotion(promo)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={isValid ? "default" : "secondary"} className="text-xs">
+                                {promo.code}
+                              </Badge>
+                              {promo.type === 'percentage' && (
+                                <span className="text-xs font-medium text-green-600">
+                                  {promo.value}% OFF
+                                </span>
+                              )}
+                              {promo.type === 'fixed' && (
+                                <span className="text-xs font-medium text-green-600">
+                                  Rp{promo.value.toLocaleString('id-ID')} OFF
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm font-medium">{promo.name}</div>
+                            {promo.description && (
+                              <div className="text-xs text-muted-foreground">{promo.description}</div>
+                            )}
+                            {promo.min_purchase > 0 && (
+                              <div className="text-xs text-muted-foreground">
+                                Min. pembelian: Rp{promo.min_purchase.toLocaleString('id-ID')}
+                              </div>
+                            )}
+                            {isValid && result.discount > 0 && (
+                              <div className="text-xs font-medium text-green-600">
+                                Hemat: Rp{result.discount.toLocaleString('id-ID')}
+                              </div>
+                            )}
+                            {!isValid && result.error && (
+                              <div className="text-xs text-red-600">{result.error}</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {promotions.length === 0 && (
+              <div className="text-center py-4 text-muted-foreground text-sm">
+                Tidak ada promosi yang tersedia saat ini
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
