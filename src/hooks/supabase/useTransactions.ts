@@ -297,13 +297,20 @@ export function useProductSales(startDate?: string, endDate?: string) {
             avg_price: 0,
             last_sold: null,
             transactions: [],
+            uniqueTransactions: new Set(), // Track unique transaction numbers
           });
         }
         
         const product = productMap.get(key);
         product.total_quantity += item.quantity;
         product.total_sales += item.subtotal;
-        product.transaction_count += 1;
+        
+        // Only count unique transactions, not every item
+        if (!product.uniqueTransactions.has(item.transactions?.transaction_number)) {
+          product.uniqueTransactions.add(item.transactions?.transaction_number);
+          product.transaction_count += 1;
+        }
+        
         product.avg_price = product.total_sales / product.total_quantity;
         product.last_sold = item.transactions?.created_at;
         product.transactions.push({
@@ -316,7 +323,11 @@ export function useProductSales(startDate?: string, endDate?: string) {
       });
 
       // Convert map to array and sort by total sales
-      const productSales = Array.from(productMap.values()).sort(
+      // Remove uniqueTransactions Set before returning (not needed in result)
+      const productSales = Array.from(productMap.values()).map(product => {
+        const { uniqueTransactions, ...productData } = product;
+        return productData;
+      }).sort(
         (a, b) => b.total_sales - a.total_sales
       );
 
