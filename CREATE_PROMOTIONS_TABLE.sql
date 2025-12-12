@@ -20,9 +20,9 @@ CREATE TABLE IF NOT EXISTS promotions (
 );
 
 -- Add indexes for better performance
-CREATE INDEX idx_promotions_code ON promotions(code);
-CREATE INDEX idx_promotions_active ON promotions(is_active);
-CREATE INDEX idx_promotions_dates ON promotions(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_promotions_code ON promotions(code);
+CREATE INDEX IF NOT EXISTS idx_promotions_active ON promotions(is_active);
+CREATE INDEX IF NOT EXISTS idx_promotions_dates ON promotions(start_date, end_date);
 
 -- Disable RLS for promotions table (internal POS system)
 -- For production with multi-tenant, you may want to enable RLS with proper policies

@@ -1,16 +1,21 @@
 -- ============================================
 -- FIX RLS POLICIES FOR PROMOTIONS TABLE
--- Run this in Supabase Dashboard > SQL Editor
+-- Run this SINGLE LINE in Supabase Dashboard > SQL Editor
 -- ============================================
 
--- Step 1: Drop existing policies
-DROP POLICY IF EXISTS "Enable read access for all users" ON promotions;
-DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON promotions;
-DROP POLICY IF EXISTS "Enable update for authenticated users only" ON promotions;
-DROP POLICY IF EXISTS "Enable delete for authenticated users only" ON promotions;
-
--- Step 2: Disable RLS (simplest solution for internal POS system)
+-- This is the ONLY command you need:
 ALTER TABLE promotions DISABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- Optional: Drop policies first (if above fails)
+-- ============================================
+
+-- If the command above gives error, uncomment and run these first:
+-- DROP POLICY IF EXISTS "Enable read access for all users" ON promotions;
+-- DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON promotions;
+-- DROP POLICY IF EXISTS "Enable update for authenticated users only" ON promotions;
+-- DROP POLICY IF EXISTS "Enable delete for authenticated users only" ON promotions;
+-- Then run the ALTER TABLE command above again.
 
 -- ============================================
 -- ALTERNATIVE: Keep RLS enabled with permissive policy
