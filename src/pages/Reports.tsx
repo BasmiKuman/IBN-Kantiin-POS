@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, TrendingUp, DollarSign, ShoppingCart, Package, FileText, FileSpreadsheet, Calendar, Clock, Hash, Printer } from "lucide-react";
+import { Download, TrendingUp, DollarSign, ShoppingCart, Package, FileText, FileSpreadsheet, Calendar, Clock, Hash, Printer, Tag } from "lucide-react";
 import { useTransactions, useDailySales, useProductSales, type Transaction } from "@/hooks/supabase/useTransactions";
 import { useProducts } from "@/hooks/supabase/useProducts";
 import { PrintDialog } from "@/components/PrintDialog";
@@ -149,6 +149,10 @@ export default function Reports() {
     return sum + 1;
   }, 0);
   const avgTransaction = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+  
+  // Calculate promotion metrics
+  const totalPromotionDiscount = filteredTransactions.reduce((sum, t) => sum + (t.promotion_discount || 0), 0);
+  const transactionsWithPromo = filteredTransactions.filter(t => t.promotion_discount > 0).length;
 
   // Payment method breakdown
   const paymentMethods = filteredTransactions.reduce((acc, t) => {
@@ -411,18 +415,23 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalTransactions}</div>
-            <p className="text-xs text-muted-foreground">Transaksi selesai</p>
+            <p className="text-xs text-muted-foreground">
+              {transactionsWithPromo > 0 && (
+                <span className="text-green-600">🎟️ {transactionsWithPromo} dengan promo</span>
+              )}
+              {!transactionsWithPromo && "Transaksi selesai"}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Produk Terjual</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Diskon Promosi</CardTitle>
+            <Tag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalItems}</div>
-            <p className="text-xs text-muted-foreground">Total item</p>
+            <div className="text-2xl font-bold text-green-600">Rp {formatCurrency(totalPromotionDiscount)}</div>
+            <p className="text-xs text-muted-foreground">Total potongan promo</p>
           </CardContent>
         </Card>
 

@@ -165,10 +165,19 @@ export default function POS() {
   const { data: categories = [] } = useCategories();
   const { data: customer } = useSearchCustomer(customerPhone);
   const { data: productVariants = [] } = useProductVariants(selectedProductForVariant?.id || "");
-  const { data: promotions = [] } = usePromotions();
+  const { data: promotions = [], isLoading: isLoadingPromotions } = usePromotions();
   const createTransaction = useCreateTransaction();
   const updateCustomerPoints = useUpdateCustomerPoints();
   const createCustomer = useCreateCustomer();
+
+  // Debug promotions data
+  useEffect(() => {
+    console.log('🎟️ Promotions Data:', {
+      count: promotions.length,
+      isLoading: isLoadingPromotions,
+      data: promotions,
+    });
+  }, [promotions, isLoadingPromotions]);
 
   // Load open bills from localStorage on mount
   useEffect(() => {

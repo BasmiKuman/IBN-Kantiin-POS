@@ -258,6 +258,11 @@ export default function TransactionHistory() {
                             {transaction.transaction_number}
                           </CardTitle>
                           {getStatusBadge(transaction.status || 'completed')}
+                          {transaction.promotion_code && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                              🎟️ {transaction.promotion_code}
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground space-y-1 mt-2">
                           <p>
@@ -340,9 +345,22 @@ export default function TransactionHistory() {
                           <span>Subtotal</span>
                           <span>{formatCurrency(transaction.subtotal)}</span>
                         </div>
+                        {transaction.promotion_discount > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="flex items-center gap-1">
+                              <span className="text-green-600">🎟️ Promo</span>
+                              {transaction.promotion_code && (
+                                <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                                  {transaction.promotion_code}
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-green-600 font-medium">-{formatCurrency(transaction.promotion_discount)}</span>
+                          </div>
+                        )}
                         {transaction.discount > 0 && (
                           <div className="flex justify-between text-sm text-destructive">
-                            <span>Diskon</span>
+                            <span>Diskon Poin</span>
                             <span>-{formatCurrency(transaction.discount)}</span>
                           </div>
                         )}
