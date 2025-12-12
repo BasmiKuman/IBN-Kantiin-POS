@@ -49,6 +49,25 @@ export function usePromotions() {
         nowDate: new Date().toLocaleString('id-ID'),
       });
       
+      // First get all promotions to debug
+      const { data: allPromos } = await supabase
+        .from('promotions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      console.log('🔍 ALL Promotions (no filter):', {
+        count: allPromos?.length || 0,
+        promotions: allPromos?.map(p => ({
+          code: p.code,
+          name: p.name,
+          is_active: p.is_active,
+          start_date: p.start_date,
+          end_date: p.end_date,
+          start_readable: new Date(p.start_date).toLocaleString('id-ID'),
+          end_readable: new Date(p.end_date).toLocaleString('id-ID'),
+        })),
+      });
+      
       const { data, error } = await supabase
         .from('promotions')
         .select('*')
@@ -61,23 +80,17 @@ export function usePromotions() {
         dataCount: data?.length || 0,
         data,
         error,
+        filters: {
+          is_active: true,
+          start_date_lte: now,
+          end_date_gte: now,
+        }
       });
 
       if (error) {
         console.error('❌ usePromotions Error:', error);
         throw error;
       }
-      
-      // Additional debug: check all promotions without filters
-      const { data: allPromos } = await supabase
-        .from('promotions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      console.log('🔍 ALL Promotions (no filter):', {
-        count: allPromos?.length || 0,
-        data: allPromos,
-      });
       
       return data as Promotion[];
     },
