@@ -34,6 +34,8 @@ interface ThermalReceiptData {
   storeAddress?: string;
   storePhone?: string;
   cashierName?: string;
+  promotionCode?: string;
+  promotionDiscount?: number;
 }
 
 /**
@@ -210,6 +212,14 @@ export function generateThermalReceipt(data: ThermalReceiptData): string {
   const subtotalValue = formatCurrency(data.subtotal);
   const subtotalSpaces = ' '.repeat(Math.max(1, maxChars - subtotalLabel.length - subtotalValue.length));
   receipt += subtotalLabel + subtotalSpaces + subtotalValue + '\n';
+  
+  // Promotion discount (if any)
+  if (data.promotionDiscount && data.promotionDiscount > 0) {
+    const promoLabel = data.promotionCode ? `Promo(${data.promotionCode})` : 'Diskon Promo';
+    const promoValue = '-' + formatCurrency(data.promotionDiscount);
+    const promoSpaces = ' '.repeat(Math.max(1, maxChars - promoLabel.length - promoValue.length));
+    receipt += promoLabel + promoSpaces + promoValue + '\n';
+  }
   
   // Tax (if any)
   if (data.tax > 0) {

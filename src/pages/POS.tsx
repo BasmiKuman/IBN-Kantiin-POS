@@ -116,6 +116,8 @@ export default function POS() {
     customerName?: string;
     customerPoints?: number;
     earnedPoints: number;
+    promotionCode?: string;
+    promotionDiscount?: number;
   } | null>(null);
 
   const [lastOpenBill, setLastOpenBill] = useState<{
@@ -501,6 +503,8 @@ export default function POS() {
         customerName: customer?.name,
         customerPoints: updatedCustomerPoints,
         earnedPoints,
+        promotionCode: appliedPromotion?.code,
+        promotionDiscount: promotionDiscount,
       });
 
       // Reset cart and close payment dialog
@@ -647,6 +651,8 @@ export default function POS() {
           paperWidth: '58mm' as const, // Optimized for Xiaomi Redmi Pad SE
           storeName: 'BK POS',
           cashierName: localStorage.getItem('username') || 'Kasir',
+          promotionCode: lastTransaction.promotionCode,
+          promotionDiscount: lastTransaction.promotionDiscount,
         };
         const receipt = generateThermalReceipt(thermalReceiptData);
         await printReceipt(receipt);
@@ -694,6 +700,9 @@ export default function POS() {
           change_amount: changeAmount,
           status: 'completed',
           notes: bill.notes || null,
+          promotion_id: bill.appliedPromotion?.id || null,
+          promotion_code: bill.appliedPromotion?.code || null,
+          promotion_discount: bill.promotionDiscount || 0,
         },
         items: bill.items.map(item => ({
           product_id: item.id,
@@ -734,6 +743,8 @@ export default function POS() {
         customerName: bill.customerName,
         customerPoints: updatedCustomerPoints,
         earnedPoints,
+        promotionCode: bill.appliedPromotion?.code,
+        promotionDiscount: bill.promotionDiscount,
       });
 
       // Remove from open bills

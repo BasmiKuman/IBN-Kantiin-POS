@@ -190,6 +190,8 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           paperWidth: '58mm' as const,
           storeName: 'BK POS',
           cashierName: transaction.cashierName || localStorage.getItem('username') || 'Kasir',
+          promotionCode: transaction.promotionCode,
+          promotionDiscount: transaction.promotionDiscount,
         };
         const receipt = generateThermalReceipt(thermalReceiptData);
         await bluetooth.printReceipt(receipt);
