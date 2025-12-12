@@ -166,9 +166,8 @@ export function useCreatePromotion() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['promotions'] });
-      queryClient.invalidateQueries({ queryKey: ['promotions', 'all'] });
-      queryClient.invalidateQueries({ queryKey: ['promotions', 'active'] });
+      // Invalidate all promotion queries with exact: false for prefix matching
+      queryClient.invalidateQueries({ queryKey: ['promotions'], exact: false });
     },
   });
 }
@@ -190,9 +189,8 @@ export function useUpdatePromotion() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['promotions'] });
-      queryClient.invalidateQueries({ queryKey: ['promotions', 'all'] });
-      queryClient.invalidateQueries({ queryKey: ['promotions', 'active'] });
+      // Invalidate all promotion queries with exact: false for prefix matching
+      queryClient.invalidateQueries({ queryKey: ['promotions'], exact: false });
     },
   });
 }
@@ -211,9 +209,8 @@ export function useDeletePromotion() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['promotions'] });
-      queryClient.invalidateQueries({ queryKey: ['promotions', 'all'] });
-      queryClient.invalidateQueries({ queryKey: ['promotions', 'active'] });
+      // Invalidate all promotion queries with exact: false for prefix matching
+      queryClient.invalidateQueries({ queryKey: ['promotions'], exact: false });
     },
   });
 }
