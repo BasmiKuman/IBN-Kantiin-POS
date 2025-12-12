@@ -21,10 +21,26 @@ export interface Promotion {
   updated_at: string;
 }
 
-// Get all active promotions
+// Get all promotions (for admin/settings page)
+export function useAllPromotions() {
+  return useQuery({
+    queryKey: ['promotions', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('promotions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Promotion[];
+    },
+  });
+}
+
+// Get all active promotions (for POS checkout)
 export function usePromotions() {
   return useQuery({
-    queryKey: ['promotions'],
+    queryKey: ['promotions', 'active'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('promotions')
@@ -151,6 +167,8 @@ export function useCreatePromotion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['promotions', 'all'] });
+      queryClient.invalidateQueries({ queryKey: ['promotions', 'active'] });
     },
   });
 }
@@ -173,6 +191,8 @@ export function useUpdatePromotion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['promotions', 'all'] });
+      queryClient.invalidateQueries({ queryKey: ['promotions', 'active'] });
     },
   });
 }
@@ -192,6 +212,8 @@ export function useDeletePromotion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['promotions', 'all'] });
+      queryClient.invalidateQueries({ queryKey: ['promotions', 'active'] });
     },
   });
 }

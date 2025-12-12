@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { usePromotions, useCreatePromotion, useUpdatePromotion, useDeletePromotion } from "@/hooks/supabase/usePromotions";
+import { useAllPromotions, useCreatePromotion, useUpdatePromotion, useDeletePromotion } from "@/hooks/supabase/usePromotions";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -50,7 +50,7 @@ interface PromotionFormData {
 }
 
 export function PromotionSettings() {
-  const { data: promotions, isLoading } = usePromotions();
+  const { data: promotions, isLoading } = useAllPromotions();
   const { mutate: createPromotion, isPending: isCreating } = useCreatePromotion();
   const { mutate: updatePromotion, isPending: isUpdating } = useUpdatePromotion();
   const { mutate: deletePromotion, isPending: isDeleting } = useDeletePromotion();
@@ -131,7 +131,7 @@ export function PromotionSettings() {
 
     if (editingPromotion) {
       updatePromotion(
-        { id: editingPromotion.id, data: payload },
+        { id: editingPromotion.id, ...payload },
         {
           onSuccess: () => {
             toast({
