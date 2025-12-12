@@ -24,20 +24,9 @@ CREATE INDEX idx_promotions_code ON promotions(code);
 CREATE INDEX idx_promotions_active ON promotions(is_active);
 CREATE INDEX idx_promotions_dates ON promotions(start_date, end_date);
 
--- Add RLS policies
-ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Enable read access for all users" ON promotions
-  FOR SELECT USING (true);
-
-CREATE POLICY "Enable insert for authenticated users only" ON promotions
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Enable update for authenticated users only" ON promotions
-  FOR UPDATE USING (true);
-
-CREATE POLICY "Enable delete for authenticated users only" ON promotions
-  FOR DELETE USING (true);
+-- Disable RLS for promotions table (internal POS system)
+-- For production with multi-tenant, you may want to enable RLS with proper policies
+ALTER TABLE promotions DISABLE ROW LEVEL SECURITY;
 
 -- Add promotion_id column to transactions table
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS promotion_id UUID REFERENCES promotions(id);
