@@ -42,15 +42,43 @@ export function usePromotions() {
   return useQuery({
     queryKey: ['promotions', 'active'],
     queryFn: async () => {
+      const now = new Date().toISOString();
+      
+      console.log('🔍 usePromotions Query Debug:', {
+        now,
+        nowDate: new Date().toLocaleString('id-ID'),
+      });
+      
       const { data, error } = await supabase
         .from('promotions')
         .select('*')
         .eq('is_active', true)
-        .lte('start_date', new Date().toISOString())
-        .gte('end_date', new Date().toISOString())
+        .lte('start_date', now)
+        .gte('end_date', now)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('🔍 usePromotions Query Result:', {
+        dataCount: data?.length || 0,
+        data,
+        error,
+      });
+
+      if (error) {
+        console.error('❌ usePromotions Error:', error);
+        throw error;
+      }
+      
+      // Additional debug: check all promotions without filters
+      const { data: allPromos } = await supabase
+        .from('promotions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      console.log('🔍 ALL Promotions (no filter):', {
+        count: allPromos?.length || 0,
+        data: allPromos,
+      });
+      
       return data as Promotion[];
     },
   });
