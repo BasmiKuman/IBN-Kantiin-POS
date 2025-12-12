@@ -201,3 +201,38 @@ All colors MUST be HSL.
     }
   }
 }
+
+/* Print styles - Ensure promotion info is visible */
+@media print {
+  /* Make sure text colors are visible in print */
+  .text-green-600,
+  .text-green-700 {
+    color: #16a34a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .bg-green-100 {
+    background-color: #dcfce7 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Ensure promotion badge is visible */
+  .text-xs.bg-green-100 {
+    border: 1px solid #16a34a !important;
+  }
+  
+  /* Make font bold for better visibility */
+  .font-medium,
+  .font-semibold,
+  .font-bold {
+    font-weight: 700 !important;
+  }
+  
+  /* Hide non-essential elements */
+  button:not(.print-show),
+  .no-print {
+    display: none !important;
+  }
+}

@@ -37,6 +37,8 @@ interface ThermalDailyReportProps {
   notes?: string[];
   paperWidth?: '58mm' | '80mm';
   storeName?: string;
+  totalPromotionDiscount?: number;
+  transactionsWithPromo?: number;
 }
 
 export const ThermalDailyReport = forwardRef<HTMLDivElement, ThermalDailyReportProps>(
@@ -342,6 +344,27 @@ export const ThermalDailyReport = forwardRef<HTMLDivElement, ThermalDailyReportP
                 <div className="td-row">
                   <span className="td-row-left">Margin:</span>
                   <span className="td-row-right">{margin.toFixed(1)}%</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Promotion Summary */}
+        {totalPromotionDiscount && totalPromotionDiscount > 0 && (
+          <>
+            <div className="td-separator">{separator}</div>
+            <div className="td-center td-bold">PROMOSI</div>
+            <div className="td-separator">{separator}</div>
+            <div className="td-my-1">
+              <div className="td-row">
+                <span className="td-row-left">Total Diskon Promo:</span>
+                <span className="td-row-right td-bold">{formatCurrency(totalPromotionDiscount)}</span>
+              </div>
+              {transactionsWithPromo && totalTransactions && (
+                <div className="td-row">
+                  <span className="td-row-left">Transaksi dgn Promo:</span>
+                  <span className="td-row-right">{transactionsWithPromo}/{totalTransactions} transaksi</span>
                 </div>
               )}
             </div>

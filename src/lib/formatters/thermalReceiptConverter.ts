@@ -336,6 +336,8 @@ interface ThermalReportData {
   notes?: string[];
   paperWidth?: '58mm' | '80mm';
   storeName?: string;
+  totalPromotionDiscount?: number;
+  transactionsWithPromo?: number;
 }
 
 export function generateThermalReport(data: ThermalReportData): string {
@@ -455,6 +457,23 @@ export function generateThermalReport(data: ThermalReportData): string {
     report += '  ' + formatCurrency(data.profit) + '\n';
     if (data.margin !== undefined) {
       report += `Margin: ${data.margin.toFixed(1)}%\n`;
+    }
+    report += '\n';
+  }
+  
+  // Promotion Summary
+  if (data.totalPromotionDiscount && data.totalPromotionDiscount > 0) {
+    report += ALIGN_CENTER;
+    report += separator + '\n';
+    report += 'PROMOSI\n';
+    report += separator + '\n';
+    
+    report += ALIGN_LEFT;
+    report += 'Total Diskon Promo:\n';
+    report += '  ' + formatCurrency(data.totalPromotionDiscount) + '\n';
+    if (data.transactionsWithPromo && data.totalTransactions) {
+      report += `Transaksi dgn Promo:\n`;
+      report += `  ${data.transactionsWithPromo}/${data.totalTransactions} transaksi\n`;
     }
     report += '\n';
   }

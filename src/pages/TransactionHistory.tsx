@@ -77,6 +77,8 @@ export default function TransactionHistory() {
       cashierName: transaction.employees?.name,
       customerName: transaction.customers?.name,
       date: new Date(transaction.created_at),
+      promotionCode: transaction.promotion_code || undefined,
+      promotionDiscount: transaction.promotion_discount || undefined,
     };
   };
 

@@ -20,6 +20,8 @@ export interface CashierReceiptData {
   cashierName?: string;
   customerName?: string;
   date: Date;
+  promotionCode?: string;
+  promotionDiscount?: number;
 }
 
 // Generate Cashier Receipt (untuk kasir/customer)
@@ -136,6 +138,14 @@ export function generateCashierReceipt(data: CashierReceiptData): string {
   const subtotalValue = 'Rp ' + data.subtotal;
   let spaces = 24 - subtotalLabel.length - subtotalValue.length;
   receipt += subtotalLabel + ' '.repeat(Math.max(1, spaces)) + subtotalValue + '\n';
+  
+  // Promotion discount if any
+  if (data.promotionDiscount && data.promotionDiscount > 0) {
+    const promoLabel = `Diskon (${data.promotionCode || 'Promo'}):`;
+    const promoValue = '- Rp ' + data.promotionDiscount;
+    spaces = 24 - promoLabel.length - promoValue.length;
+    receipt += promoLabel + ' '.repeat(Math.max(1, spaces)) + promoValue + '\n';
+  }
   
   if (data.tax > 0) {
     const taxLabel = 'Pajak:';
