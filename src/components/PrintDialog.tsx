@@ -251,7 +251,8 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
       // Calculate totals
       const totalRevenue = filteredTransactions.reduce((sum, t) => sum + (t.subtotal || 0), 0);
       const totalTax = filteredTransactions.reduce((sum, t) => sum + (t.tax || 0), 0);
-      const grandTotal = totalRevenue + totalTax;
+      const totalPromotionDiscount = filteredTransactions.reduce((sum, t) => sum + ((t as any).promotionDiscount || 0), 0);
+      const grandTotal = totalRevenue + totalTax - totalPromotionDiscount;
 
       const startDateFormatted = new Date(startDate).toLocaleDateString('id-ID');
       const endDateFormatted = new Date(endDate).toLocaleDateString('id-ID');
@@ -307,7 +308,8 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
           <div class="separator"></div>
           
           ${filteredTransactions.map((t, idx) => {
-            const transactionTotal = (t.subtotal || 0) + (t.tax || 0);
+            const transactionTotal = (t.subtotal || 0) + (t.tax || 0) - ((t as any).promotionDiscount || 0);
+            const hasPromotion = (t as any).promotionDiscount && (t as any).promotionDiscount > 0;
             return `
             <h3>Transaksi #${idx + 1} - ${t.orderNumber || ''}</h3>
             <table>
@@ -333,7 +335,13 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
                 }).join('')}
               </tbody>
             </table>
-            <p><strong>Pembayaran:</strong> ${t.paymentMethod || 'Tunai'} | <strong>Total:</strong> Rp${transactionTotal.toLocaleString('id-ID')}</p>
+            <p>
+              <strong>Subtotal:</strong> Rp${(t.subtotal || 0).toLocaleString('id-ID')}
+              ${hasPromotion ? `<br><strong>Diskon Promo (${(t as any).promotionCode || 'Promo'}):</strong> <span style="color: green;">- Rp${((t as any).promotionDiscount || 0).toLocaleString('id-ID')}</span>` : ''}
+              ${(t.tax || 0) > 0 ? `<br><strong>Pajak:</strong> Rp${(t.tax || 0).toLocaleString('id-ID')}` : ''}
+              <br><strong>Total:</strong> Rp${transactionTotal.toLocaleString('id-ID')}
+              <br><strong>Pembayaran:</strong> ${t.paymentMethod || 'Tunai'}
+            </p>
             `;
           }).join('<div class="separator"></div>')}
           
@@ -345,6 +353,12 @@ export function PrintDialog({ open, onOpenChange, receiptData, batchMode, batchT
                 <td><strong>Subtotal Penjualan:</strong></td>
                 <td class="text-right"><strong>Rp${totalRevenue.toLocaleString('id-ID')}</strong></td>
               </tr>
+              ${totalPromotionDiscount > 0 ? `
+              <tr style="color: green;">
+                <td><strong>Total Diskon Promo:</strong></td>
+                <td class="text-right"><strong>- Rp${totalPromotionDiscount.toLocaleString('id-ID')}</strong></td>
+              </tr>
+              ` : ''}
               ${totalTax > 0 ? `
               <tr>
                 <td><strong>Total Pajak:</strong></td>
