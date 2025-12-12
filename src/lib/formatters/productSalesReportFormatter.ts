@@ -15,6 +15,9 @@ export interface ProductSalesReportData {
   totalItems: number;
   totalRevenue: number;
   cashierName?: string;
+  totalPromotionDiscount?: number;
+  transactionsWithPromo?: number;
+  totalTransactions?: number;
 }
 
 // Generate Product Sales Report
@@ -121,6 +124,23 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   const itemValue = totalItems + ' pcs';
   const itemSpaces = ' '.repeat(Math.max(1, 24 - itemLabel.length - itemValue.length));
   receipt += itemLabel + itemSpaces + itemValue + '\n';
+  
+  // Add promotion info if any
+  if (data.totalPromotionDiscount && data.totalPromotionDiscount > 0) {
+    receipt += '------------------------\n';
+    
+    const promoLabel = 'Diskon Promo';
+    const promoValue = formatCurrency(data.totalPromotionDiscount);
+    const promoSpaces = ' '.repeat(Math.max(1, 24 - promoLabel.length - promoValue.length));
+    receipt += promoLabel + promoSpaces + promoValue + '\n';
+    
+    if (data.transactionsWithPromo && data.totalTransactions) {
+      const promoTrxLabel = 'Trx dgn Promo';
+      const promoTrxValue = `${data.transactionsWithPromo}/${data.totalTransactions}`;
+      const promoTrxSpaces = ' '.repeat(Math.max(1, 24 - promoTrxLabel.length - promoTrxValue.length));
+      receipt += promoTrxLabel + promoTrxSpaces + promoTrxValue + '\n';
+    }
+  }
   
   receipt += '------------------------\n';
   

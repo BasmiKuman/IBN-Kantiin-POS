@@ -595,6 +595,9 @@ export default function Reports() {
                         })),
                         totalItems: productSales.reduce((sum, p) => sum + (p.total_quantity || 0), 0),
                         totalRevenue: productSales.reduce((sum, p) => sum + (p.total_sales || 0), 0),
+                        totalPromotionDiscount: totalPromotionDiscount,
+                        transactionsWithPromo: transactionsWithPromo,
+                        totalTransactions: totalTransactions,
                         cashierName: localStorage.getItem('userName') || 'Admin',
                       });
                       
