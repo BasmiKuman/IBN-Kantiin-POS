@@ -18,6 +18,10 @@ export interface ProductSalesReportData {
   totalPromotionDiscount?: number;
   transactionsWithPromo?: number;
   totalTransactions?: number;
+  cashTransactionCount?: number;
+  qrisTransactionCount?: number;
+  cashTotal?: number;
+  qrisTotal?: number;
 }
 
 // Generate Product Sales Report
