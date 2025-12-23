@@ -207,8 +207,10 @@ metadata:
 test_plan:
   current_focus:
     - "Test struk kasir printing dengan thermal receipt"
-    - "Test laporan penjualan produk formatting"
+    - "Test laporan penjualan produk thermal print - NEW FORMAT"
     - "Verify currency formatting dengan separator ribuan"
+    - "Verify payment method breakdown (Tunai & QRIS counts)"
+    - "Verify Total Penjualan visibility"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
