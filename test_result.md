@@ -152,17 +152,51 @@ frontend:
         agent: "main"
         comment: "Updated formatCurrency to use toLocaleString('id-ID') with thousand separator (Rp15.000 format)"
   
-  - task: "Fix Product Sales Report formatting"
+  - task: "Fix Product Sales Report thermal print formatting"
     implemented: true
     working: "NA"
-    file: "/app/src/lib/formatters/productSalesReportFormatter.ts"
+    file: "/app/src/lib/formatters/productSalesReportFormatter.ts, /app/src/pages/Reports.tsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Updated to use formatCurrency helper for proper thousand separator formatting"
+        comment: |
+          MAJOR FIX - Laporan Penjualan Produk Thermal Print:
+          
+          1. ✅ Fixed text truncation issues
+             - Product names now wrap at 22 chars (safer margin)
+             - Compact format: "1. Product Name"
+             - Separate lines for wrapped text with proper indentation
+          
+          2. ✅ Added Payment Method Breakdown
+             - Shows "Tunai: X trx" with total amount
+             - Shows "QRIS: X trx" with total amount
+             - Clear section before total
+          
+          3. ✅ Fixed Total Penjualan visibility
+             - Clear header: "TOTAL PENJUALAN:"
+             - Prominent display with separator lines
+             - Moved to end of report (after all breakdowns)
+          
+          4. ✅ Improved layout & spacing
+             - Clean separators between sections
+             - Better alignment for readability
+             - Removed complex padding calculations
+             - Simple left-aligned format
+          
+          5. ✅ Enhanced data flow
+             - Reports.tsx now calculates cashTransactionCount & qrisTransactionCount
+             - Passes cashTotal and qrisTotal to formatter
+             - Updated ProductSalesReportData interface
+          
+          Format sekarang:
+          - Produk list (compact)
+          - Ringkasan (jenis produk, total item)
+          - Metode Pembayaran (Tunai & QRIS dengan count)
+          - Diskon Promo (jika ada)
+          - TOTAL PENJUALAN (prominent & jelas)
 
 metadata:
   created_by: "main_agent"
