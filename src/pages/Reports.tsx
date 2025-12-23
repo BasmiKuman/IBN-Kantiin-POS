@@ -608,6 +608,10 @@ export default function Reports() {
                         totalPromotionDiscount: totalPromotionDiscount,
                         transactionsWithPromo: transactionsWithPromo,
                         totalTransactions: totalTransactions,
+                        cashTransactionCount: cashTransactionCount,
+                        qrisTransactionCount: qrisTransactionCount,
+                        cashTotal: cashTotal,
+                        qrisTotal: paymentMethods.qris || 0,
                         cashierName: localStorage.getItem('userName') || 'Admin',
                       });
                       
