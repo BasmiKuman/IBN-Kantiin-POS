@@ -241,3 +241,61 @@ agent_communication:
       - Verify all currency shows dengan format ribuan (Rp15.000)
       - Test dengan nama produk panjang
       - Test dengan multiple products
+  
+  - agent: "main"
+    message: |
+      🎯 PRODUCT SALES REPORT THERMAL PRINT - MAJOR IMPROVEMENTS
+      
+      User Issues Fixed:
+      ✅ Text terpotong → Fixed dengan wrap di 22 chars (margin aman)
+      ✅ Tidak rapi → Layout diperbaiki, alignment konsisten
+      ✅ Total penjualan hilang → Sekarang prominent dengan header jelas
+      ✅ Tambah breakdown transaksi → QRIS & Cash count + total ditambahkan
+      
+      Perubahan Detail:
+      
+      1. Product List Format (productSalesReportFormatter.ts)
+         - Wrap product name at 22 chars (safer than 24)
+         - Compact format: "1. ProductName"
+         - Clear info: "X pcs x RpY"
+         - Total per product: "Total: RpZ"
+         - No complex padding, simple left-aligned
+      
+      2. Summary Section Reordered:
+         a. RINGKASAN
+            - Jenis Produk: X
+            - Total Item: Y pcs
+         
+         b. METODE PEMBAYARAN (NEW!)
+            - Tunai: X trx
+              RpXXX
+            - QRIS: Y trx
+              RpYYY
+         
+         c. Diskon Promo (if any)
+            - Diskon Promo: RpXXX
+            - Trx dgn Promo: X/Y
+         
+         d. TOTAL PENJUALAN (PROMINENT!)
+            - Clear header dengan separator
+            - Large display
+      
+      3. Data Flow Updates (Reports.tsx)
+         - Added paymentMethodCounts calculation
+         - Extract cashTransactionCount & qrisTransactionCount
+         - Pass to generateProductSalesReport()
+         - Added cashTotal & qrisTotal
+      
+      4. Interface Updates
+         - ProductSalesReportData now includes:
+           * cashTransactionCount
+           * qrisTransactionCount
+           * cashTotal
+           * qrisTotal
+      
+      Testing Focus:
+      - Print laporan dengan berbagai filter tanggal
+      - Verify text tidak terpotong
+      - Verify Total Penjualan terlihat jelas
+      - Verify breakdown Tunai & QRIS muncul
+      - Test dengan nama produk panjang (>22 chars)
