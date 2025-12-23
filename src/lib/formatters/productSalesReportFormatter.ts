@@ -82,24 +82,27 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
       ? Math.round(revenue / quantity)
       : 0;
     
-    // Wrap long product names (max 24 chars for 58mm)
-    const nameLines = wrapText(productName, 24);
-    nameLines.forEach((line, i) => {
-      if (i === 0) {
-        receipt += `${idx + 1}. ${line}\n`;
-      } else {
-        receipt += `   ${line}\n`;
+    // Format nama produk dengan wrapping jika terlalu panjang
+    const nameLines = wrapText(productName, 22); // Lebih pendek untuk margin
+    
+    // Nomor urut dan baris pertama nama
+    receipt += (idx + 1) + '. ' + nameLines[0] + '\n';
+    
+    // Baris tambahan nama jika ada
+    if (nameLines.length > 1) {
+      for (let i = 1; i < nameLines.length; i++) {
+        receipt += '   ' + nameLines[i] + '\n';
       }
-    });
+    }
     
-    // Qty x price = total - with proper currency formatting
-    const qtyText = quantity + ' pcs';
-    const priceText = formatCurrency(hargaSatuan);
-    const totalText = formatCurrency(revenue);
+    // Info quantity dan harga - compact format
+    receipt += '   ' + quantity + ' pcs x ' + formatCurrency(hargaSatuan) + '\n';
+    receipt += '   Total: ' + formatCurrency(revenue) + '\n';
     
-    receipt += '   ' + qtyText + ' x ' + priceText + '\n';
-    receipt += '   = ' + totalText + '\n';
-    receipt += '\n';
+    // Separator antar produk
+    if (idx < productsToShow.length - 1) {
+      receipt += '\n';
+    }
   });
   
   console.log('Products formatted, adding summary...');
