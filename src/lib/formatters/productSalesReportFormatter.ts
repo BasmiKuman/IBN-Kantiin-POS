@@ -104,7 +104,6 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   console.log('Products formatted, adding summary...');
   
-  receipt += '\n';
   receipt += '========================\n';
   
   // Summary - simple and aligned (force LEFT align)
@@ -119,41 +118,53 @@ export function generateProductSalesReport(data: ProductSalesReportData): string
   
   console.log('Summary values:', { totalProducts, totalItems, totalRevenue });
   
-  const jenisLabel = 'Jenis Produk';
-  const jenisValue = String(totalProducts);
-  const jenisSpaces = ' '.repeat(Math.max(1, 24 - jenisLabel.length - jenisValue.length));
-  receipt += jenisLabel + jenisSpaces + jenisValue + '\n';
+  // Jenis Produk
+  receipt += 'Jenis Produk: ' + totalProducts + '\n';
   
-  const itemLabel = 'Total Item';
-  const itemValue = totalItems + ' pcs';
-  const itemSpaces = ' '.repeat(Math.max(1, 24 - itemLabel.length - itemValue.length));
-  receipt += itemLabel + itemSpaces + itemValue + '\n';
-  
-  // Add promotion info if any
-  if (data.totalPromotionDiscount && data.totalPromotionDiscount > 0) {
-    receipt += '------------------------\n';
-    
-    const promoLabel = 'Diskon Promo';
-    const promoValue = formatCurrency(data.totalPromotionDiscount);
-    const promoSpaces = ' '.repeat(Math.max(1, 24 - promoLabel.length - promoValue.length));
-    receipt += promoLabel + promoSpaces + promoValue + '\n';
-    
-    if (data.transactionsWithPromo && data.totalTransactions) {
-      const promoTrxLabel = 'Trx dgn Promo';
-      const promoTrxValue = `${data.transactionsWithPromo}/${data.totalTransactions}`;
-      const promoTrxSpaces = ' '.repeat(Math.max(1, 24 - promoTrxLabel.length - promoTrxValue.length));
-      receipt += promoTrxLabel + promoTrxSpaces + promoTrxValue + '\n';
-    }
-  }
+  // Total Item  
+  receipt += 'Total Item: ' + totalItems + ' pcs\n';
   
   receipt += '------------------------\n';
   
-  // Grand total - with proper alignment
-  const totalLabel = 'TOTAL';
-  const totalValue = formatCurrency(totalRevenue);
-  const totalSpaces = ' '.repeat(Math.max(1, 24 - totalLabel.length - totalValue.length));
-  receipt += totalLabel + totalSpaces + totalValue + '\n';
+  // Payment Method Breakdown
+  const cashCount = data.cashTransactionCount || 0;
+  const qrisCount = data.qrisTransactionCount || 0;
+  const cashTotal = data.cashTotal || 0;
+  const qrisTotal = data.qrisTotal || 0;
   
+  if (cashCount > 0 || qrisCount > 0) {
+    receipt += 'METODE PEMBAYARAN\n';
+    
+    if (cashCount > 0) {
+      receipt += 'Tunai: ' + cashCount + ' trx\n';
+      receipt += '  ' + formatCurrency(cashTotal) + '\n';
+    }
+    
+    if (qrisCount > 0) {
+      receipt += 'QRIS: ' + qrisCount + ' trx\n';
+      receipt += '  ' + formatCurrency(qrisTotal) + '\n';
+    }
+    
+    receipt += '------------------------\n';
+  }
+  
+  // Add promotion info if any
+  if (data.totalPromotionDiscount && data.totalPromotionDiscount > 0) {
+    receipt += 'Diskon Promo:\n';
+    receipt += '  ' + formatCurrency(data.totalPromotionDiscount) + '\n';
+    
+    if (data.transactionsWithPromo && data.totalTransactions) {
+      receipt += 'Trx dgn Promo:\n';
+      receipt += '  ' + data.transactionsWithPromo + '/' + data.totalTransactions + '\n';
+    }
+    
+    receipt += '------------------------\n';
+  }
+  
+  // Grand total - clear and visible
+  receipt += '\n';
+  receipt += 'TOTAL PENJUALAN:\n';
+  receipt += formatCurrency(totalRevenue) + '\n';
   receipt += '========================\n';
   receipt += '\n';
   
