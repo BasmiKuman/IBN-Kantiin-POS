@@ -161,9 +161,19 @@ export default function Reports() {
     return acc;
   }, {} as Record<string, number>);
 
+  // Payment method counts
+  const paymentMethodCounts = filteredTransactions.reduce((acc, t) => {
+    const method = t.payment_method || 'cash';
+    acc[method] = (acc[method] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   const cashTotal = paymentMethods.cash || 0;
   const debitTotal = (paymentMethods.debit || 0) + (paymentMethods.credit || 0);
   const ewalletTotal = (paymentMethods.qris || 0) + (paymentMethods.transfer || 0);
+  
+  const cashTransactionCount = paymentMethodCounts.cash || 0;
+  const qrisTransactionCount = paymentMethodCounts.qris || 0;
 
   // Export to PDF
   const exportToPDF = () => {
